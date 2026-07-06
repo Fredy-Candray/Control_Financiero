@@ -1,0 +1,48 @@
+<section class="page-shell">
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">Mis cuentas</p>
+    </div>
+    <div class="page-badge">{{ cuentas.length }} registradas</div>
+  </div>
+
+  <div class="form-card">
+    <h3>Nueva cuenta</h3>
+    <form (ngSubmit)="onSubmit()" #form="ngForm">
+      <label>
+        Nombre
+        <input type="text" name="nombre" [(ngModel)]="nombre" required />
+      </label>
+
+      <label>
+        Tipo
+        <select name="tipo" [(ngModel)]="tipo">
+          <option value="EFECTIVO">Efectivo</option>
+          <option value="DEBITO">Débito</option>
+          <option value="CREDITO">Crédito</option>
+        </select>
+      </label>
+
+      <label>
+        Saldo actual
+        <input type="number" name="saldoActual" [(ngModel)]="saldoActual" step="0.01" required />
+      </label>
+
+      <button type="submit" [disabled]="form.invalid">Crear cuenta</button>
+    </form>
+  </div>
+
+  <div *ngIf="cargando" class="state-card">Cargando cuentas...</div>
+  <div *ngIf="error" class="state-card error">{{ error }}</div>
+  <div *ngIf="success" class="state-card success">{{ success }}</div>
+
+  <div *ngIf="!cargando && !error" class="accounts-grid">
+    <article class="account-card" *ngFor="let cuenta of cuentas">
+      <div class="account-content">
+        <strong>${{ cuenta.saldoActual | number:'1.0-0' }}</strong>
+        <h3>{{ cuenta.nombre }}</h3>
+        <p>{{ cuenta.tipo }} · {{ cuenta.activa ? 'Activa' : 'Inactiva' }}</p>
+      </div>
+    </article>
+  </div>
+</section>

@@ -1,0 +1,132 @@
+<section class="finance-dashboard">
+  <div class="report-titlebar">
+    <div class="brand-mark">CF</div>
+    <div>
+      <h1>Dashboard financiero</h1>
+    </div>
+    <!-- <span class="status-pill">Actualizado</span> -->
+  </div>
+
+
+
+  <div *ngIf="loading" class="state-panel">Cargando resumen...</div>
+  <div *ngIf="error" class="state-panel error">{{ error }}</div>
+
+  <ng-container *ngIf="resumen && !loading">
+    <div class="filter-row">
+      <label>
+        Seleccione un mes
+        <select>
+          <option>Mes actual</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="metric-grid">
+      <article class="metric-card income">
+        <header>Ingresos</header>
+        <strong>${{ getIngresoMensual() | number:'1.0-0' }}</strong>
+      </article>
+
+      <article class="metric-card expense">
+        <header>Gastos</header>
+        <strong>${{ getGastoMensual() | number:'1.0-0' }}</strong>
+      </article>
+
+      <article class="metric-card profit">
+        <header>Deuda tarjetas de crédito</header>
+        <strong>${{ resumen.deudaTarjetas | number:'1.0-0' }}</strong>
+      </article>
+
+      <article class="metric-card rentability">
+        <header>Patrimonio total</header>
+        <strong>${{ getPatrimonioTotal() | number:'1.0-0' }}</strong>
+      </article>
+    </div>
+
+    <div class="analysis-grid">
+      <article class="analysis-panel cashflow">
+        <header>Flujo de caja comparativo</header>
+        <div class="bar-chart">
+          <div class="bar-column">
+            <span>${{ resumen.efectivo | number:'1.0-0' }}</span>
+            <div class="bar cash" [style.height.%]="getBarHeight(resumen.efectivo)"></div>
+            <small>Efectivo</small>
+          </div>
+          <div class="bar-column">
+            <span>${{ resumen.debito | number:'1.0-0' }}</span>
+            <div class="bar debit" [style.height.%]="getBarHeight(resumen.debito)"></div>
+            <small>Débito</small>
+          </div>
+          <div class="bar-column">
+            <span>${{ resumen.credito | number:'1.0-0' }}</span>
+            <div class="bar credit" [style.height.%]="getBarHeight(resumen.credito)"></div>
+            <small>Crédito</small>
+          </div>
+          <div class="bar-column">
+            <span>${{ resumen.deudaTarjetas | number:'1.0-0' }}</span>
+            <div class="bar debt" [style.height.%]="getBarHeight(resumen.deudaTarjetas)"></div>
+            <small>Deuda</small>
+          </div>
+        </div>
+      </article>
+
+      <article class="analysis-panel balance">
+        <header>Balance de mes</header>
+        <div class="stack-chart">
+          <div class="stack positive" [style.height.%]="getBarHeight(getTotalSaldo())">
+            <span>Saldo</span>
+          </div>
+          <div class="stack muted" [style.height.%]="getBarHeight(resumen.deudaTarjetas)">
+            <span>Deuda</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="analysis-panel income-panel">
+        <header>Distribución de ingresos</header>
+        <div class="donut-layout">
+          <div class="donut-chart">
+            <div class="donut-inner">{{ getTotalSaldo() | number:'1.0-0' }}</div>
+          </div>
+          <div class="legend">
+            <span><i class="dot cash"></i>Efectivo</span>
+            <span><i class="dot debit"></i>Débito</span>
+            <span><i class="dot credit"></i>Crédito</span>
+            <span><i class="dot debt"></i>Deuda</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="analysis-panel expense-panel">
+        <header>Distribución de gastos</header>
+        <div class="donut-layout">
+          <div class="donut-chart expense">
+            <div class="donut-inner">{{ resumen.deudaTarjetas | number:'1.0-0' }}</div>
+          </div>
+          <div class="legend">
+            <span><i class="dot debt"></i>Tarjetas</span>
+            <span><i class="dot credit"></i>Crédito</span>
+            <span><i class="dot cash"></i>Disponible</span>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div *ngIf="movimientos.length" class="movements-strip">
+      <header>
+        <h2>Movimientos recientes</h2>
+        <span>Últimos 5</span>
+      </header>
+      <div class="movement-table">
+        <div class="movement-row" *ngFor="let movimiento of movimientos">
+          <span>{{ movimiento.descripcion || 'Movimiento' }}</span>
+          <span>{{ movimiento.tipo }}</span>
+          <strong [class.negative]="movimiento.tipo !== 'INGRESO'">
+            ${{ movimiento.monto | number:'1.2-2' }}
+          </strong>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</section>

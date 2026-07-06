@@ -1,0 +1,68 @@
+<section class="page-shell">
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">Movimientos</p>
+    </div>
+    <div class="page-badge">{{ movimientos.length }} registros</div>
+  </div>
+
+  <div class="form-card">
+    <h3>Nuevo movimiento</h3>
+    <form (ngSubmit)="onSubmit()" #form="ngForm">
+      <label>
+        Tipo
+        <select name="tipo" [(ngModel)]="tipo">
+          <option value="INGRESO">Ingreso</option>
+          <option value="GASTO">Gasto</option>
+          <option value="TRANSFERENCIA">Transferencia</option>
+          <option value="PAGO_TARJETA">Pago de tarjeta</option>
+        </select>
+      </label>
+
+      <label>
+        Monto
+        <input type="number" name="monto" [(ngModel)]="monto" step="0.01" required />
+      </label>
+
+      <label>
+        Descripción
+        <input type="text" name="descripcion" [(ngModel)]="descripcion" />
+      </label>
+
+      <label>
+        Cuenta origen
+        <select name="cuentaOrigenId" [(ngModel)]="cuentaOrigenId">
+          <option [ngValue]="null">Selecciona una cuenta</option>
+          <option *ngFor="let cuenta of cuentas" [ngValue]="cuenta.id">{{ cuenta.nombre }}</option>
+        </select>
+      </label>
+
+      <label *ngIf="tipo === 'TRANSFERENCIA' || tipo === 'PAGO_TARJETA'">
+        Cuenta destino
+        <select name="cuentaDestinoId" [(ngModel)]="cuentaDestinoId">
+          <option [ngValue]="null">Selecciona una cuenta</option>
+          <option *ngFor="let cuenta of cuentas" [ngValue]="cuenta.id">{{ cuenta.nombre }}</option>
+        </select>
+      </label>
+
+      <button type="submit" [disabled]="form.invalid">Registrar movimiento</button>
+    </form>
+  </div>
+
+  <div *ngIf="cargando" class="state-card">Cargando movimientos...</div>
+  <div *ngIf="error" class="state-card error">{{ error }}</div>
+  <div *ngIf="success" class="state-card success">{{ success }}</div>
+
+  <div *ngIf="!cargando && !error" class="movements-list">
+    <article class="movement-card" *ngFor="let movimiento of movimientos">
+      <div>
+        <h3>{{ movimiento.descripcion || 'Movimiento sin descripción' }}</h3>
+        <p>{{ movimiento.tipo }}</p>
+      </div>
+      <div class="movement-meta">
+        <span class="amount" [class.negative]="movimiento.tipo === 'GASTO' || movimiento.tipo === 'PAGO_TARJETA'">${{ movimiento.monto | number:'1.2-2' }}</span>
+        <span class="date">{{ movimiento.fechaMovimiento | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+    </article>
+  </div>
+</section>

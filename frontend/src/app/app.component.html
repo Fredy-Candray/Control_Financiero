@@ -1,0 +1,47 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <img src="assets/logo.png" alt="Logo Control Financiero" />
+      </div>
+      <div class="brand-text">
+        <h2>Control Financiero</h2>
+        <p>Gestión de finanzas</p>
+      </div>
+    </div>
+
+    <nav class="nav-links">
+      <a routerLink="/dashboard" routerLinkActive="active" title="Dashboard">
+        <span>📊</span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a routerLink="/cuentas" routerLinkActive="active" title="Cuentas">
+        <span>🏦</span>
+        <span class="nav-label">Cuentas</span>
+      </a>
+      <a routerLink="/movimientos" routerLinkActive="active" title="Movimientos">
+        <span>💳</span>
+        <span class="nav-label">Movimientos</span>
+      </a>
+    </nav>
+  </aside>
+
+  <div class="content-area">
+    <header class="topbar" *ngIf="showTopbar">
+      <div class="user-menu">
+        <div class="user-pill" (click)="toggleUserMenu()" role="button" tabindex="0" (keydown.enter)="toggleUserMenu()" (keydown.space)="toggleUserMenu()">
+          <span class="avatar">{{ username.charAt(0).toUpperCase() }}</span>
+          <span>{{ username }}</span>
+          <span class="user-menu-arrow">▾</span>
+        </div>
+        <div class="user-menu-dropdown" *ngIf="showUserMenu">
+          <button type="button" class="logout-btn" (click)="logout()">Cerrar sesión</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

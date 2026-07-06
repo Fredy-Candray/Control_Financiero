@@ -1,0 +1,23 @@
+<section class="login-shell">
+  <div class="login-card">
+    <h1>Iniciar sesión</h1>
+    <p>Accede a tu panel financiero</p>
+
+    <form (ngSubmit)="onSubmit()">
+      <label>
+        Usuario
+        <input type="text" [(ngModel)]="username" name="username" required />
+      </label>
+
+      <label>
+        Contraseña
+        <input type="password" [(ngModel)]="password" name="password" required />
+      </label>
+
+      <button type="submit">Entrar</button>
+    </form>
+
+    <p class="error" *ngIf="error">{{ error }}</p>
+    <p class="link">¿No tienes cuenta? <a routerLink="/register">Regístrate</a></p>
+  </div>
+</section>
