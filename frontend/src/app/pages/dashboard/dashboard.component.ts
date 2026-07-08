@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { DashboardService } from '../../services/dashboard.service';
+import { ThemeService } from '../../services/theme.service';
 import { ResumenDashboard } from '../../models/resumen-dashboard';
 import { MovimientoDashboard } from '../../models/movimiento-dashboard';
 
@@ -14,12 +15,22 @@ import { MovimientoDashboard } from '../../models/movimiento-dashboard';
 })
 export class DashboardComponent implements OnInit {
 
+  themeToggle = false;
+
   resumen?: ResumenDashboard;
   movimientos: MovimientoDashboard[] = [];
   loading = true;
   error = '';
 
-  constructor(private dashboardService: DashboardService) {}
+  constructor(private dashboardService: DashboardService, private themeService: ThemeService) {}
+
+  isDark(): boolean {
+    return this.themeService.isDark();
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggle();
+  }
 
   ngOnInit(): void {
     this.dashboardService.obtenerResumen(1).subscribe({
