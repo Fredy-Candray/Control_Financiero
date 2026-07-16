@@ -10,8 +10,8 @@
   --bg-color: #f4f7fb;
   --surface: #ffffff;
   --card-bg: rgba(255,255,255,0.95);
-  --sidebar-bg: lch(29.49% 34.89 284.52);
-  --topbar-bg: lch(29.49% 34.89 284.52);
+  --sidebar-bg: lch(100% 0.01 296.81);
+  --topbar-bg: lch(100% 0.01 296.81);
   --accent: #6b46ff;
   --text: #0f172a;
   --muted: #6b7280;
@@ -33,11 +33,11 @@ body {
 body.dark-theme {
   color-scheme: dark;
   --bg: linear-gradient(135deg, #05090e 0%, #090f17 100%);
-  --bg-color: #6b6b6b;
-  --surface: #272b31; /* slightly lighter than sidebar/topbar */
+  --bg-color: #000000;
+  --surface: #2f3138; /* slightly lighter than sidebar/topbar */
   --card-bg: rgba(255,255,255,0.03);
-  --sidebar-bg: #05070c; /* keep sidebar/topbar darker */
-  --topbar-bg: #05070c;
+  --sidebar-bg: #2f3138; /* keep sidebar/topbar darker */
+  --topbar-bg: #2f3138;
   --accent: #6b46ff;
   --text: #e6eef8;
   --muted: #8f9fb7;

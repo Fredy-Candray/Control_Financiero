@@ -15,26 +15,38 @@ export class AppComponent implements OnInit {
   title = 'control-financiero-ui';
   username = 'Invitado';
   showTopbar = true;
+  showSidebar = true;
   showUserMenu = false;
+  isAuthenticated = false;
 
   constructor(private router: Router, private themeService: ThemeService) {}
 
   ngOnInit(): void {
     // initialize theme early
     this.themeService.initTheme();
-    this.syncUserFromStorage();
+    this.updateLayoutState(this.router.url);
 
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
-        this.showTopbar = event.urlAfterRedirects !== '/login';
-        this.syncUserFromStorage();
+        this.updateLayoutState(event.urlAfterRedirects);
       });
   }
 
   private syncUserFromStorage(): void {
     const storedName = localStorage.getItem('username');
     this.username = storedName?.trim() ? storedName : 'Invitado';
+    this.isAuthenticated = localStorage.getItem('isLoggedIn') === 'true';
+  }
+
+  private updateLayoutState(url: string): void {
+    this.syncUserFromStorage();
+
+    const normalizedUrl = url.split('?')[0].split('#')[0];
+    const isPublicPage = normalizedUrl === '/login' || normalizedUrl === '/register' || normalizedUrl === '/';
+
+    this.showTopbar = this.isAuthenticated && !isPublicPage;
+    this.showSidebar = this.isAuthenticated && !isPublicPage;
   }
 
   toggleUserMenu(): void {
@@ -55,7 +67,11 @@ export class AppComponent implements OnInit {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('username');
     localStorage.removeItem('userId');
+    sessionStorage.clear();
     this.username = 'Invitado';
-    this.router.navigate(['/login']);
+    this.isAuthenticated = false;
+    this.showTopbar = false;
+    this.showSidebar = false;
+    this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 }
