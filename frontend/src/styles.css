@@ -35,8 +35,8 @@ body.dark-theme {
   --bg: linear-gradient(135deg, #05090e 0%, #090f17 100%);
   --bg-color: #000000;
   --surface: #2f3138; /* slightly lighter than sidebar/topbar */
-  --card-bg: rgba(255,255,255,0.03);
   --sidebar-bg: #2f3138; /* keep sidebar/topbar darker */
+  --card-bg: var(--sidebar-bg);
   --topbar-bg: #2f3138;
   --accent: #6b46ff;
   --text: #e6eef8;

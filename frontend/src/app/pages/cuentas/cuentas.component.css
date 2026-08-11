@@ -36,10 +36,16 @@
 .form-card,
 .account-card,
 .state-card {
-  background: white;
-  border-radius: 18px;
-  padding: 18px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 16px 18px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  color: var(--text);
+}
+
+.form-card h3 {
+  font-weight: 900;
+  color: var(--text);
 }
 
 form {
@@ -86,25 +92,19 @@ button:disabled {
 }
 
 .account-card {
-  border-radius: 3px;
-  padding: 0;
+  border-radius: 16px;
+  padding: 18px;
   overflow: hidden;
   min-height: 118px;
-  color: white;
-  background: #0d8bff;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+  color: var(--text);
+  background: var(--card-bg);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
-.account-card:nth-child(4n + 2) {
-  background: #6f7a83;
-}
-
-.account-card:nth-child(4n + 3) {
-  background: #1ba6b5;
-}
-
+.account-card:nth-child(4n + 2),
+.account-card:nth-child(4n + 3),
 .account-card:nth-child(4n + 4) {
-  background: #06223d;
+  background: var(--card-bg);
 }
 
 .account-content {
@@ -122,7 +122,7 @@ button:disabled {
 .account-card h3,
 .account-card p {
   margin: 0;
-  color: white;
+  color: var(--text);
 }
 
 .account-card h3 {
@@ -144,7 +144,7 @@ button:disabled {
   justify-content: center;
   gap: 4px;
   background: transparent;
-  color: white;
+  color: var(--text);
   font-size: 0.72rem;
   font-weight: 800;
   opacity: 0.95;

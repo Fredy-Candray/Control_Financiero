@@ -2,8 +2,11 @@ package com.dev.control_financiero.service;
 
 import com.dev.control_financiero.dto.ResumenDashboardResponse;
 import com.dev.control_financiero.entity.Cuenta;
+import com.dev.control_financiero.entity.Movimiento;
 import com.dev.control_financiero.enums.TipoCuenta;
+import com.dev.control_financiero.enums.TipoMovimiento;
 import com.dev.control_financiero.repository.CuentaRepository;
+import com.dev.control_financiero.repository.MovimientoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +18,7 @@ import java.util.List;
 public class DashboardService {
 
     private final CuentaRepository cuentaRepository;
+    private final MovimientoRepository movimientoRepository;
 
     public ResumenDashboardResponse obtenerResumen(Long usuarioId) {
 
@@ -24,6 +28,7 @@ public class DashboardService {
         BigDecimal debito = BigDecimal.ZERO;
         BigDecimal credito = BigDecimal.ZERO;
         BigDecimal deudaTarjetas = BigDecimal.ZERO;
+        BigDecimal gastoCredito = BigDecimal.ZERO;
 
         for (Cuenta cuenta : cuentas) {
 
@@ -45,6 +50,20 @@ public class DashboardService {
                     );
                 }
             }
+        }
+
+        List<Movimiento> movimientos = movimientoRepository.findByUsuarioId(usuarioId);
+
+        for (Movimiento movimiento : movimientos) {
+            if (movimiento.getCuentaOrigen() != null &&
+                movimiento.getCuentaOrigen().getTipo() == TipoCuenta.CREDITO &&
+                (movimiento.getTipo() == TipoMovimiento.GASTO || movimiento.getTipo() == TipoMovimiento.PAGO_TARJETA)) {
+                gastoCredito = gastoCredito.add(movimiento.getMonto());
+            }
+        }
+
+        if (gastoCredito.compareTo(BigDecimal.ZERO) > 0) {
+            deudaTarjetas = gastoCredito;
         }
 
         BigDecimal patrimonioDisponible =
