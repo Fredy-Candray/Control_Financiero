@@ -60,7 +60,7 @@ label {
   flex-direction: column;
   gap: 6px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text);
 }
 
 input,
@@ -69,6 +69,8 @@ button {
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid #cbd5e1;
+  color: var(--text);
+  background: var(--surface);
 }
 
 button {

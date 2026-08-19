@@ -18,6 +18,7 @@ export class AppComponent implements OnInit {
   showSidebar = true;
   showUserMenu = false;
   isAuthenticated = false;
+  sidebarCollapsed = false;
 
   constructor(private router: Router, private themeService: ThemeService) {}
 
@@ -47,6 +48,9 @@ export class AppComponent implements OnInit {
 
     this.showTopbar = this.isAuthenticated && !isPublicPage;
     this.showSidebar = this.isAuthenticated && !isPublicPage;
+    if (!this.showSidebar) {
+      this.sidebarCollapsed = false;
+    }
   }
 
   toggleUserMenu(): void {
@@ -60,6 +64,18 @@ export class AppComponent implements OnInit {
 
   toggleTheme(): void {
     this.themeService.toggle();
+  }
+
+  toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+
+  onToggleButtonClick(event: Event): void {
+    this.toggleSidebar();
+    const el = event.currentTarget as HTMLElement | null;
+    if (el && typeof el.blur === 'function') {
+      el.blur();
+    }
   }
 
   logout(): void {
