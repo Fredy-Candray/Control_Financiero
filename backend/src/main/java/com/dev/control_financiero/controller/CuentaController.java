@@ -1,6 +1,7 @@
 package com.dev.control_financiero.controller;
 
 import com.dev.control_financiero.dto.CrearCuentaRequest;
+import com.dev.control_financiero.dto.ActualizarCuentaRequest;
 import com.dev.control_financiero.entity.Cuenta;
 import com.dev.control_financiero.service.CuentaService;
 import jakarta.validation.Valid;
@@ -20,9 +21,12 @@ public class CuentaController {
         return cuentaService.crearCuenta(request);
     }
 
-    @GetMapping
-    public List<Cuenta> listarCuentas() {
-        return cuentaService.listarCuentas();
+    @PutMapping("/{cuentaId}/usuario/{usuarioId}")
+    public Cuenta actualizarCuenta(
+            @PathVariable Long cuentaId,
+            @PathVariable Long usuarioId,
+            @Valid @RequestBody ActualizarCuentaRequest request) {
+        return cuentaService.actualizarCuenta(cuentaId, usuarioId, request);
     }
 
     @GetMapping("/usuario/{usuarioId}")

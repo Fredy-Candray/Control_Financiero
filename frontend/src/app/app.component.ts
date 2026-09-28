@@ -19,7 +19,7 @@ export class AppComponent implements OnInit {
   showUserMenu = false;
   isAuthenticated = false;
   sidebarCollapsed = false;
-
+  sidebarOpen = false; // mobile overlay open state
   constructor(private router: Router, private themeService: ThemeService) {}
 
   ngOnInit(): void {
@@ -68,6 +68,32 @@ export class AppComponent implements OnInit {
 
   toggleSidebar(): void {
     this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+
+  // detect desktop by width; keep simple to avoid injecting Window in constructor
+  isDesktop(): boolean {
+    try {
+      return window.matchMedia('(min-width: 801px)').matches;
+    } catch {
+      return true;
+    }
+  }
+
+  // Mobile drawer controls
+  toggleSidebarOverlay(): void {
+        this.sidebarOpen = !this.sidebarOpen;
+        // when opening the drawer ensure the sidebar is expanded (show full labels)
+        if (this.sidebarOpen) {
+          this.sidebarCollapsed = false;
+          try { document.body.style.overflow = 'hidden'; } catch { }
+        } else {
+          try { document.body.style.overflow = ''; } catch { }
+        }
+  }
+
+  closeSidebarOverlay(): void {
+    this.sidebarOpen = false;
+    try { document.body.style.overflow = ''; } catch { }
   }
 
   onToggleButtonClick(event: Event): void {

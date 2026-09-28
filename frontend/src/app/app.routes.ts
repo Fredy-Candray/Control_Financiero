@@ -5,6 +5,7 @@ import { CuentasComponent } from './pages/cuentas/cuentas.component';
 import { MovimientosComponent } from './pages/movimientos/movimientos.component';
 import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
+import { UsuariosComponent } from './pages/usuarios/usuarios.component';
 
 const authGuard: CanActivateFn = () => {
   const router = inject(Router);
@@ -30,7 +31,8 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'cuentas', component: CuentasComponent },
-      { path: 'movimientos', component: MovimientosComponent }
+      { path: 'movimientos', component: MovimientosComponent },
+      { path: 'usuarios', component: UsuariosComponent }
     ],
     canActivate: [authGuard]
   }

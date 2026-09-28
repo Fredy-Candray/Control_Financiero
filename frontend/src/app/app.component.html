@@ -1,5 +1,8 @@
 <div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed">
-  <aside class="sidebar" *ngIf="showSidebar">
+  <aside class="sidebar drawer" [class.open]="sidebarOpen" *ngIf="showSidebar">
+    <button class="drawer-close" *ngIf="sidebarOpen" (click)="closeSidebarOverlay()" aria-label="Cerrar menú lateral">
+      ✕
+    </button>
     <div class="brand">
       <div class="brand-logo">
         <img src="assets/logo.png" alt="Logo Control Financiero" />
@@ -10,7 +13,7 @@
       </div>
     </div>
 
-    <nav class="nav-links">
+    <nav class="nav-links" #navLinks>
       <a routerLink="/dashboard" routerLinkActive="active" title="Dashboard">
         <span>📊</span>
         <span class="nav-label">Dashboard</span>
@@ -23,32 +26,37 @@
         <span>💳</span>
         <span class="nav-label">Movimientos</span>
       </a>
-    </nav>
-    <div class="sidebar-toggle-wrapper">
-      <button
-        type="button"
-        class="sidebar-toggle-btn"
-        *ngIf="isAuthenticated"
-        (click)="onToggleButtonClick($event)"
-        [attr.aria-expanded]="!sidebarCollapsed"
-        [attr.aria-label]="!sidebarCollapsed ? 'Colapsar menú lateral' : 'Expandir sidebar'"
-      >
-        <svg
-          class="toggle-icon"
-          stroke="currentColor"
-          fill="currentColor"
-          stroke-width="0"
-          viewBox="0 0 320 512"
-          width="12"
-          height="12"
-          xmlns="http://www.w3.org/2000/svg"
-          [style.transform]="sidebarCollapsed ? 'rotate(0deg)' : 'rotate(180deg)'"
+      <a routerLink="/usuarios" routerLinkActive="active" title="Usuarios">
+        <span>👥</span>
+        <span class="nav-label">Usuarios</span>
+      </a>
+
+      <div class="sidebar-toggle-wrapper" #toggleWrapper>
+        <button
+          type="button"
+          class="sidebar-toggle-btn"
+          *ngIf="isAuthenticated"
+          (click)="onToggleButtonClick($event)"
+          [attr.aria-expanded]="!sidebarCollapsed"
+          [attr.aria-label]="!sidebarCollapsed ? 'Colapsar menú lateral' : 'Expandir sidebar'"
         >
-          <path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"></path>
-        </svg>
-      </button>
-      <span class="toggle-tooltip" aria-hidden="true">{{ !sidebarCollapsed ? 'Colapsar menú lateral' : 'Expandir sidebar' }}</span>
-    </div>
+          <svg
+            class="toggle-icon"
+            stroke="currentColor"
+            fill="currentColor"
+            stroke-width="0"
+            viewBox="0 0 320 512"
+            width="12"
+            height="12"
+            xmlns="http://www.w3.org/2000/svg"
+            [style.transform]="sidebarCollapsed ? 'rotate(0deg)' : 'rotate(180deg)'"
+          >
+            <path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"></path>
+          </svg>
+        </button>
+        <span class="toggle-tooltip" aria-hidden="true">{{ !sidebarCollapsed ? 'Colapsar menú lateral' : 'Expandir sidebar' }}</span>
+      </div>
+    </nav>
     <div class="sidebar-footer">
       <button class="theme-btn" (click)="toggleTheme()" [attr.aria-pressed]="isDark()" title="Alternar tema">
         <svg *ngIf="isDark()" class="icon icon-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -73,6 +81,21 @@
 
   <div class="content-area">
     <header class="topbar" *ngIf="showTopbar">
+      <div class="topbar-left">
+        <button class="mobile-hamburger" [class.open]="sidebarOpen" *ngIf="showSidebar" (click)="isDesktop() ? onToggleButtonClick($event) : toggleSidebarOverlay()" [attr.aria-label]="sidebarOpen ? 'Cerrar menú lateral' : 'Abrir menú lateral'" [attr.aria-expanded]="sidebarOpen">
+          <ng-container *ngIf="!sidebarOpen; else closeIcon">
+            <svg class="icon-burger" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+              <path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z"></path>
+            </svg>
+          </ng-container>
+          <ng-template #closeIcon>
+            <svg class="icon-close" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" stroke="currentColor" fill="none" stroke-width="2">
+              <line class="l1" x1="6" y1="6" x2="18" y2="18" stroke-linecap="round" />
+              <line class="l2" x1="6" y1="18" x2="18" y2="6" stroke-linecap="round" />
+            </svg>
+          </ng-template>
+        </button>
+      </div>
       <div class="user-menu">
         <div class="user-pill" (click)="toggleUserMenu()" role="button" tabindex="0" (keydown.enter)="toggleUserMenu()" (keydown.space)="toggleUserMenu()">
           <span class="avatar">{{ username.charAt(0).toUpperCase() }}</span>
@@ -89,4 +112,7 @@
       <router-outlet></router-outlet>
     </main>
   </div>
+
+  <!-- Backdrop for mobile drawer -->
+  <div class="backdrop" *ngIf="sidebarOpen" (click)="closeSidebarOverlay()" aria-hidden="true"></div>
 </div>

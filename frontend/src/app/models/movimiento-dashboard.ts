@@ -4,4 +4,7 @@ export interface MovimientoDashboard {
   monto: number;
   descripcion?: string;
   fechaMovimiento?: string;
+  cuentaOrigen?: string;
+  cuentaDestino?: string;
+  categoria?: string;
 }

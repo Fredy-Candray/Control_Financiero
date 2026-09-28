@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Cuenta } from '../../models/cuenta';
+import { API_BASE_URL } from '../../api.config';
 
 @Component({
   selector: 'app-movimientos',
@@ -14,26 +15,33 @@ import { Cuenta } from '../../models/cuenta';
 export class MovimientosComponent implements OnInit {
   movimientos: any[] = [];
   cuentas: Cuenta[] = [];
+  categorias: { id: number; nombre: string }[] = [];
   cargando = true;
   error = '';
   success = '';
+  guardando = false;
+  busqueda = '';
+  tipoFiltro = 'TODOS';
 
   tipo = 'GASTO';
   monto = 0;
   descripcion = '';
   cuentaOrigenId: number | null = null;
   cuentaDestinoId: number | null = null;
+  categoriaId: number | null = null;
 
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
     this.cargarMovimientos();
     this.cargarCuentas();
+    this.cargarCategorias();
   }
 
   cargarMovimientos(): void {
     this.cargando = true;
-    this.http.get<any[]>('http://localhost:8081/api/movimientos').subscribe({
+    const usuarioId = Number(localStorage.getItem('userId') || '1');
+    this.http.get<any[]>(`${API_BASE_URL}/movimientos/usuario/${usuarioId}`).subscribe({
       next: (data) => {
         this.movimientos = [...data].sort((a, b) => {
           const fechaA = new Date(a.fechaMovimiento ?? '1970-01-01T00:00:00Z').getTime();
@@ -51,37 +59,100 @@ export class MovimientosComponent implements OnInit {
   }
 
   cargarCuentas(): void {
-    this.http.get<Cuenta[]>('http://localhost:8081/api/cuentas').subscribe({
+    const usuarioId = Number(localStorage.getItem('userId') || '1');
+    this.http.get<Cuenta[]>(`${API_BASE_URL}/cuentas/usuario/${usuarioId}`).subscribe({
       next: (data) => {
         this.cuentas = data;
       }
     });
   }
 
-  onSubmit(): void {
-    const usuarioId = Number(localStorage.getItem('userId') || '1');
+  cargarCategorias(): void {
+    this.http.get<{ id: number; nombre: string }[]>(`${API_BASE_URL}/categorias`).subscribe({
+      next: (data) => this.categorias = data
+    });
+  }
 
-    this.http.post('http://localhost:8081/api/movimientos', {
+  onSubmit(): void {
+    if (!this.puedeGuardar) return;
+    const usuarioId = Number(localStorage.getItem('userId') || '1');
+    this.error = '';
+    this.success = '';
+    this.guardando = true;
+
+    this.http.post(`${API_BASE_URL}/movimientos`, {
       tipo: this.tipo,
       monto: this.monto,
       descripcion: this.descripcion,
       cuentaOrigenId: this.cuentaOrigenId,
       cuentaDestinoId: this.cuentaDestinoId,
+      categoriaId: this.categoriaId,
       usuarioId
     }).subscribe({
       next: () => {
+        this.guardando = false;
         this.success = 'Movimiento registrado correctamente.';
         this.tipo = 'GASTO';
         this.monto = 0;
         this.descripcion = '';
         this.cuentaOrigenId = null;
         this.cuentaDestinoId = null;
+        this.categoriaId = null;
         this.cargarMovimientos();
         this.cargarCuentas();
       },
-      error: () => {
-        this.error = 'No se pudo registrar el movimiento.';
+      error: (err) => {
+        this.guardando = false;
+        console.error('Error POST /api/movimientos', err);
+        // Mostrar mensaje devuelto por el servidor si existe, o el body completo
+        if (err && err.error) {
+          try {
+            // err.error puede ser objeto o texto
+            this.error = err.error.message || JSON.stringify(err.error);
+          } catch (e) {
+            this.error = String(err.error);
+          }
+        } else {
+          this.error = err.message || 'No se pudo registrar el movimiento.';
+        }
       }
     });
+  }
+
+  get puedeGuardar(): boolean {
+    if (!this.cuentaOrigenId || this.monto <= 0) return false;
+    if ((this.tipo === 'TRANSFERENCIA' || this.tipo === 'PAGO_TARJETA') &&
+        (!this.cuentaDestinoId || this.cuentaDestinoId === this.cuentaOrigenId)) return false;
+    if (this.tipo === 'PAGO_TARJETA' && !this.cuentas.find(c => c.id === this.cuentaDestinoId && c.tipo === 'CREDITO')) return false;
+    return true;
+  }
+
+  get cuentasOrigen(): Cuenta[] {
+    if (this.tipo !== 'GASTO') return this.cuentas.filter(c => c.tipo !== 'CREDITO');
+    return this.cuentas.filter(c => c.tipo !== 'CREDITO' || c.limiteCredito != null);
+  }
+
+  get cuentasDestino(): Cuenta[] {
+    const candidatas = this.tipo === 'PAGO_TARJETA'
+      ? this.cuentas.filter(c => c.tipo === 'CREDITO')
+      : this.cuentas;
+    return candidatas.filter(c => c.id !== this.cuentaOrigenId);
+  }
+
+  get movimientosFiltrados(): any[] {
+    const consulta = this.busqueda.trim().toLocaleLowerCase();
+    return this.movimientos.filter(m => {
+      const coincideTipo = this.tipoFiltro === 'TODOS' || m.tipo === this.tipoFiltro;
+      const texto = [m.descripcion, m.tipo, m.cuentaOrigen, m.cuentaDestino, m.categoria].filter(Boolean).join(' ').toLocaleLowerCase();
+      return coincideTipo && (!consulta || texto.includes(consulta));
+    });
+  }
+
+  etiquetaTipo(tipo: string): string {
+    return ({ INGRESO: 'Ingreso', GASTO: 'Gasto', TRANSFERENCIA: 'Transferencia', PAGO_TARJETA: 'Pago de tarjeta' } as Record<string, string>)[tipo] ?? tipo;
+  }
+
+  esSalida(tipo: string): boolean {
+    return tipo === 'GASTO' || tipo === 'PAGO_TARJETA' || tipo === 'TRANSFERENCIA';
   }
 }

@@ -1,133 +1,63 @@
 <section class="finance-dashboard">
-  <div class="report-titlebar">
-    <div class="brand-mark">CF</div>
-    <div>
-      <h1>Dashboard financiero</h1>
-    </div>
-    <!-- Theme switch moved to sidebar footer -->
-    <!-- <span class="status-pill">Actualizado</span> -->
-  </div>
+  <header class="dashboard-welcome">
+    <div><p class="welcome-date">{{ fechaHoy | titlecase }}</p><h1>Tu panorama financiero</h1><p class="welcome-subtitle">Un resumen claro de tus cuentas y tarjetas, {{ nombreUsuario }}.</p></div>
+    <div class="welcome-mark" aria-hidden="true">✦</div>
+  </header>
 
-
-
-  <div *ngIf="loading" class="state-panel">Cargando resumen...</div>
-  <div *ngIf="error" class="state-panel error">{{ error }}</div>
+  <div *ngIf="loading" class="state-panel">Preparando tu resumen financiero…</div>
+  <div *ngIf="error" class="state-panel error" role="alert">{{ error }}</div>
 
   <ng-container *ngIf="resumen && !loading">
-    <div class="filter-row">
-      <label>
-        Seleccione un mes
-        <select>
-          <option>Mes actual</option>
-        </select>
-      </label>
+    <div *ngIf="resumen.tarjetasSinLimite" class="data-notice" role="status">
+      <span>!</span><p><strong>{{ resumen.tarjetasSinLimite }} tarjeta(s) necesitan configuración.</strong> El crédito disponible no se puede calcular y el saldo de deuda solo refleja los cargos y pagos registrados. Ingresa límite y saldo disponible actual en Cuentas para cuadrarlo con tu estado de cuenta.</p>
     </div>
-
     <div class="metric-grid">
-      <article class="metric-card income">
-        <header>Ingresos</header>
-        <strong>${{ getIngresoMensual() | number:'1.0-0' }}</strong>
+      <article class="metric-card net-worth">
+        <div class="metric-top"><span class="metric-icon">◎</span><span class="metric-caption">Posición neta</span></div>
+        <strong>${{ getPatrimonioTotal() | number:'1.2-2' }}</strong>
+        <small>Saldo líquido menos deuda de tarjetas</small>
       </article>
-
-      <article class="metric-card expense">
-        <header>Gastos</header>
-        <strong>${{ getGastoMensual() | number:'1.0-0' }}</strong>
+      <article class="metric-card income-card">
+        <div class="metric-top"><span class="metric-icon">↙</span><span class="metric-caption">Ingresos del mes</span></div>
+        <strong>${{ getIngresoMensual() | number:'1.2-2' }}</strong>
+        <small>Ingresos registrados este mes</small>
       </article>
-
-      <article class="metric-card profit">
-        <header>Deuda tarjetas de crédito</header>
-        <strong>${{ resumen.deudaTarjetas | number:'1.0-0' }}</strong>
+      <article class="metric-card spending-card">
+        <div class="metric-top"><span class="metric-icon">↗</span><span class="metric-caption">Gastos del mes</span></div>
+        <strong>${{ getGastoMensual() | number:'1.2-2' }}</strong>
+        <small>Gastos registrados este mes</small>
       </article>
-
-      <article class="metric-card rentability">
-        <header>Patrimonio total</header>
-        <strong>${{ getPatrimonioTotal() | number:'1.0-0' }}</strong>
-      </article>
-    </div>
-
-    <div class="analysis-grid">
-      <article class="analysis-panel cashflow">
-        <header>Flujo de caja comparativo</header>
-        <div class="bar-chart">
-          <div class="bar-column">
-            <span>${{ resumen.efectivo | number:'1.0-0' }}</span>
-            <div class="bar cash" [style.height.%]="getBarHeight(resumen.efectivo)"></div>
-            <small>Efectivo</small>
-          </div>
-          <div class="bar-column">
-            <span>${{ resumen.debito | number:'1.0-0' }}</span>
-            <div class="bar debit" [style.height.%]="getBarHeight(resumen.debito)"></div>
-            <small>Débito</small>
-          </div>
-          <div class="bar-column">
-            <span>${{ resumen.credito | number:'1.0-0' }}</span>
-            <div class="bar credit" [style.height.%]="getBarHeight(resumen.credito)"></div>
-            <small>Crédito</small>
-          </div>
-          <div class="bar-column">
-            <span>${{ resumen.deudaTarjetas | number:'1.0-0' }}</span>
-            <div class="bar debt" [style.height.%]="getBarHeight(resumen.deudaTarjetas)"></div>
-            <small>Deuda</small>
-          </div>
-        </div>
-      </article>
-
-      <article class="analysis-panel balance">
-        <header>Balance de mes</header>
-        <div class="stack-chart">
-          <div class="stack positive" [style.height.%]="getBarHeight(getTotalSaldo())">
-            <span>Saldo</span>
-          </div>
-          <div class="stack muted" [style.height.%]="getBarHeight(resumen.deudaTarjetas)">
-            <span>Deuda</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="analysis-panel income-panel">
-        <header>Distribución de ingresos</header>
-        <div class="donut-layout">
-          <div class="donut-chart">
-            <div class="donut-inner">{{ getTotalSaldo() | number:'1.0-0' }}</div>
-          </div>
-          <div class="legend">
-            <span><i class="dot cash"></i>Efectivo</span>
-            <span><i class="dot debit"></i>Débito</span>
-            <span><i class="dot credit"></i>Crédito</span>
-            <span><i class="dot debt"></i>Deuda</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="analysis-panel expense-panel">
-        <header>Distribución de gastos</header>
-        <div class="donut-layout">
-          <div class="donut-chart expense">
-            <div class="donut-inner">{{ resumen.deudaTarjetas | number:'1.0-0' }}</div>
-          </div>
-          <div class="legend">
-            <span><i class="dot debt"></i>Tarjetas</span>
-            <span><i class="dot credit"></i>Crédito</span>
-            <span><i class="dot cash"></i>Disponible</span>
-          </div>
-        </div>
+      <article class="metric-card debt-card">
+        <div class="metric-top"><span class="metric-icon">▤</span><span class="metric-caption">Deuda de tarjetas</span></div>
+        <strong>${{ resumen.deudaTarjetas | number:'1.2-2' }}</strong>
+        <small *ngIf="!resumen.tarjetasSinLimite">${{ resumen.credito | number:'1.2-2' }} de crédito disponible</small>
+        <small *ngIf="resumen.tarjetasSinLimite">Configura el límite de {{ resumen.tarjetasSinLimite }} tarjeta(s)</small>
       </article>
     </div>
 
-    <div *ngIf="movimientos.length" class="movements-strip">
-      <header>
-        <h2>Movimientos recientes</h2>
-        <span>Últimos 5</span>
-      </header>
-      <div class="movement-table">
-        <div class="movement-row" *ngFor="let movimiento of movimientos">
-          <span>{{ movimiento.descripcion || 'Movimiento' }}</span>
-          <span>{{ movimiento.tipo }}</span>
-          <strong [class.negative]="movimiento.tipo !== 'INGRESO'">
-            ${{ movimiento.monto | number:'1.2-2' }}
-          </strong>
+    <div class="dashboard-content-grid">
+      <article class="dashboard-panel balance-panel">
+        <header class="panel-heading"><div><h2>Saldos de tus cuentas</h2><p>Disponible en cada tipo de cuenta</p></div><span class="panel-icon">◫</span></header>
+        <div class="balance-chart">
+          <div class="balance-column"><div class="balance-value">${{ resumen.efectivo | number:'1.0-0' }}</div><div class="balance-track"><span class="cash-bar" [style.height.%]="getBarHeight(resumen.efectivo)"></span></div><span class="balance-label">Efectivo</span></div>
+          <div class="balance-column"><div class="balance-value">${{ resumen.debito | number:'1.0-0' }}</div><div class="balance-track"><span class="debit-bar" [style.height.%]="getBarHeight(resumen.debito)"></span></div><span class="balance-label">Débito</span></div>
+          <div class="balance-column"><div class="balance-value">${{ resumen.credito | number:'1.0-0' }}</div><div class="balance-track"><span class="credit-bar" [style.height.%]="getBarHeight(resumen.credito)"></span></div><span class="balance-label">Crédito disponible</span></div>
+          <div class="balance-column"><div class="balance-value">${{ resumen.deudaTarjetas | number:'1.0-0' }}</div><div class="balance-track"><span class="debt-bar" [style.height.%]="getBarHeight(resumen.deudaTarjetas)"></span></div><span class="balance-label">Deuda</span></div>
         </div>
-      </div>
+        <div class="balance-footnote"><span><i class="legend-dot liquid-dot"></i>Fondos líquidos <strong>${{ getTotalSaldo() | number:'1.2-2' }}</strong></span><span><i class="legend-dot debt-dot"></i>Deuda tarjeta <strong>${{ resumen.deudaTarjetas | number:'1.2-2' }}</strong></span></div>
+      </article>
+
+      <article class="dashboard-panel recent-panel">
+        <header class="panel-heading"><div><h2>Actividad reciente</h2><p>Los últimos movimientos registrados</p></div><span class="panel-icon">↗</span></header>
+        <div *ngIf="!movimientos.length" class="recent-empty">Todavía no hay movimientos para mostrar.</div>
+        <div class="recent-list" *ngIf="movimientos.length">
+          <div class="recent-row" *ngFor="let movimiento of movimientos">
+            <span class="recent-icon" [class.positive]="movimiento.tipo === 'INGRESO'">{{ movimiento.tipo === 'INGRESO' ? '↙' : movimiento.tipo === 'TRANSFERENCIA' ? '⇄' : '↗' }}</span>
+            <div class="recent-info"><strong>{{ movimiento.descripcion || 'Movimiento' }}</strong><small>{{ movimiento.tipo }} · {{ movimiento.cuentaOrigen || 'Cuenta' }}<ng-container *ngIf="movimiento.cuentaDestino"> → {{ movimiento.cuentaDestino }}</ng-container></small></div>
+            <strong class="recent-amount" [class.outgoing]="movimiento.tipo !== 'INGRESO'">{{ movimiento.tipo === 'INGRESO' ? '+' : '−' }}${{ movimiento.monto | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+      </article>
     </div>
   </ng-container>
 </section>

@@ -1,48 +1,91 @@
-<section class="page-shell">
-  <div class="page-header">
+<section class="page-shell account-page">
+  <header class="page-intro">
     <div>
-      <p class="eyebrow">Mis cuentas</p>
+      <p class="eyebrow">Tu dinero, bien organizado</p>
+      <h1>Cuentas y tarjetas</h1>
+      <p class="page-description">Consulta saldos, disponibilidad y deuda en un solo lugar.</p>
     </div>
-    <div class="page-badge">{{ cuentas.length }} registradas</div>
+    <div class="page-badge"><strong>{{ cuentas.length }}</strong><span>cuentas</span></div>
+  </header>
+
+  <div *ngIf="cargando" class="state-card">Cargando tus cuentas…</div>
+  <div *ngIf="error" class="state-card error" role="alert">{{ error }}</div>
+  <div *ngIf="success" class="state-card success" role="status">{{ success }}</div>
+
+  <div *ngIf="!cargando && !error && !cuentas.length" class="empty-state">
+    <div class="empty-icon">＋</div>
+    <h2>Aún no tienes cuentas</h2>
+    <p>Agrega tu primera cuenta o tarjeta para empezar a registrar movimientos.</p>
   </div>
 
-  <div class="form-card">
-    <h3 class="page-header h2">Nueva cuenta</h3>
-    <form (ngSubmit)="onSubmit()" #form="ngForm">
-      <label>
-        Nombre
-        <input type="text" name="nombre" [(ngModel)]="nombre" required />
-      </label>
+  <div *ngIf="!cargando && cuentas.length" class="accounts-grid">
+    <article class="account-card" *ngFor="let cuenta of cuentas" [class.card-credit]="cuenta.tipo === 'CREDITO'">
+      <div class="account-topline">
+        <span class="account-type-icon" aria-hidden="true">{{ cuenta.tipo === 'CREDITO' ? '▤' : cuenta.tipo === 'DEBITO' ? '◉' : '◌' }}</span>
+        <span class="account-status"><i></i>{{ cuenta.activa ? 'Activa' : 'Inactiva' }}</span>
+      </div>
+      <p class="account-type-label">{{ etiquetaTipo(cuenta.tipo) }}</p>
+      <h2>{{ cuenta.nombre }}</h2>
+      <div class="account-balance-label">{{ cuenta.tipo === 'CREDITO' ? 'Crédito disponible' : 'Saldo actual' }}</div>
+      <strong class="account-balance" *ngIf="cuenta.tipo !== 'CREDITO' || cuenta.limiteCredito != null">${{ cuenta.saldoActual | number:'1.2-2' }}</strong>
+      <ng-container *ngIf="cuenta.tipo === 'CREDITO'">
+        <div *ngIf="cuenta.limiteCredito != null" class="credit-progress" role="progressbar" [attr.aria-valuenow]="utilizacion(cuenta)" aria-valuemin="0" aria-valuemax="100">
+          <span [style.width.%]="utilizacion(cuenta)"></span>
+        </div>
+        <div *ngIf="cuenta.limiteCredito != null" class="credit-details">
+          <span>Deuda <strong>${{ deuda(cuenta) | number:'1.2-2' }}</strong></span>
+          <span>Límite <strong>${{ cuenta.limiteCredito | number:'1.2-2' }}</strong></span>
+        </div>
+        <div *ngIf="cuenta.limiteCredito == null" class="legacy-credit-details">
+          <span>Límite pendiente de configurar</span>
+          <strong>Deuda estimada: ${{ deuda(cuenta) | number:'1.2-2' }}</strong>
+        </div>
+        <button *ngIf="cuenta.limiteCredito == null" type="button" class="configure-card-button" (click)="iniciarEdicion(cuenta)">Configurar tarjeta</button>
+      </ng-container>
+      <div class="account-footer">{{ cuenta.tipo === 'CREDITO' ? (cuenta.limiteCredito == null ? 'Configura el límite para ver la disponibilidad' : utilizacion(cuenta) + '% utilizado') : 'Disponible para tus movimientos' }}</div>
+    </article>
+  </div>
 
-      <label>
-        Tipo
-        <select name="tipo" [(ngModel)]="tipo">
-          <option value="EFECTIVO">Efectivo</option>
-          <option value="DEBITO">Débito</option>
-          <option value="CREDITO">Crédito</option>
-        </select>
+  <div *ngIf="cuentaEditandoId" class="form-card account-form-card edit-card-form">
+    <div class="section-heading"><div><p class="eyebrow">Datos de tarjeta</p><h2>Configurar límite y saldo disponible</h2></div></div>
+    <p class="form-hint">El saldo disponible debe coincidir con lo que indica tu estado de cuenta. Así podremos calcular la deuda correctamente.</p>
+    <form (ngSubmit)="guardarTarjeta()" #editForm="ngForm">
+      <label>Nombre de la tarjeta
+        <input type="text" name="editNombre" [(ngModel)]="editNombre" maxlength="100" required />
       </label>
-
-      <label>
-        Saldo actual
-        <input type="number" name="saldoActual" [(ngModel)]="saldoActual" step="0.01" required />
+      <label>Límite de crédito
+        <div class="input-prefix"><span>$</span><input type="number" name="editLimite" [(ngModel)]="editLimite" step="0.01" min="0.01" required /></div>
       </label>
-
-      <button type="submit" [disabled]="form.invalid">Crear cuenta</button>
+      <label>Crédito disponible actual
+        <div class="input-prefix"><span>$</span><input type="number" name="editDisponible" [(ngModel)]="editDisponible" step="0.01" min="0" [max]="editLimite" required /></div>
+      </label>
+      <div class="edit-actions"><button type="button" class="secondary-button" (click)="cancelarEdicion()">Cancelar</button><button type="submit" class="primary-button" [disabled]="editForm.invalid || guardando || editDisponible > editLimite">{{ guardando ? 'Guardando…' : 'Guardar tarjeta' }}</button></div>
     </form>
   </div>
 
-  <div *ngIf="cargando" class="state-card">Cargando cuentas...</div>
-  <div *ngIf="error" class="state-card error">{{ error }}</div>
-  <div *ngIf="success" class="state-card success">{{ success }}</div>
-
-  <div *ngIf="!cargando && !error" class="accounts-grid">
-    <article class="account-card" *ngFor="let cuenta of cuentas">
-      <div class="account-content">
-        <strong>${{ cuenta.saldoActual | number:'1.0-0' }}</strong>
-        <h3>{{ cuenta.nombre }}</h3>
-        <p>{{ cuenta.tipo }} · {{ cuenta.activa ? 'Activa' : 'Inactiva' }}</p>
-      </div>
-    </article>
+  <div class="form-card account-form-card">
+    <div class="section-heading">
+      <div><p class="eyebrow">Personaliza tu espacio</p><h2>Agregar cuenta o tarjeta</h2></div>
+      <span class="section-symbol">＋</span>
+    </div>
+    <form (ngSubmit)="onSubmit()" #form="ngForm">
+      <label>Nombre de la cuenta
+        <input type="text" name="nombre" [(ngModel)]="nombre" placeholder="Ej. Cuenta principal" maxlength="100" required />
+      </label>
+      <label>Tipo de cuenta
+        <select name="tipo" [(ngModel)]="tipo">
+          <option value="EFECTIVO">Efectivo</option>
+          <option value="DEBITO">Débito</option>
+          <option value="CREDITO">Tarjeta de crédito</option>
+        </select>
+      </label>
+      <label *ngIf="tipo === 'CREDITO'">Límite de crédito
+        <div class="input-prefix"><span>$</span><input type="number" name="limiteCredito" [(ngModel)]="limiteCredito" step="0.01" min="1" placeholder="0.00" required /></div>
+      </label>
+      <label *ngIf="tipo !== 'CREDITO'">Saldo inicial
+        <div class="input-prefix"><span>$</span><input type="number" name="saldoActual" [(ngModel)]="saldoActual" step="0.01" min="0" placeholder="0.00" required /></div>
+      </label>
+      <button type="submit" class="primary-button" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Agregar cuenta' }}</button>
+    </form>
   </div>
 </section>

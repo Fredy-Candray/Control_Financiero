@@ -21,6 +21,7 @@ export class DashboardComponent implements OnInit {
   movimientos: MovimientoDashboard[] = [];
   loading = true;
   error = '';
+  nombreUsuario = localStorage.getItem('username') || 'Bienvenido';
 
   constructor(private dashboardService: DashboardService, private themeService: ThemeService) {}
 
@@ -33,7 +34,10 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.dashboardService.obtenerResumen(1).subscribe({
+    this.loading = true;
+    const usuarioId = Number(localStorage.getItem('userId') || '1');
+
+    this.dashboardService.obtenerResumen(usuarioId).subscribe({
       next: (data) => {
         this.resumen = data;
         this.loading = false;
@@ -46,7 +50,7 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    this.dashboardService.obtenerMovimientosRecientes().subscribe({
+    this.dashboardService.obtenerMovimientosRecientes(usuarioId).subscribe({
       next: (data) => {
         const ordenados = [...data].sort((a, b) => {
           const fechaA = new Date(a.fechaMovimiento ?? '1970-01-01T00:00:00Z').getTime();
@@ -80,7 +84,7 @@ export class DashboardComponent implements OnInit {
       return 0;
     }
 
-    return this.resumen.efectivo + this.resumen.debito + this.resumen.credito;
+    return this.resumen.efectivo + this.resumen.debito;
   }
 
   getIngresoMensual(): number {
@@ -88,7 +92,10 @@ export class DashboardComponent implements OnInit {
       return 0;
     }
 
-    return this.resumen.efectivo + this.resumen.debito;
+    if (this.resumen.ingresosMes !== undefined) return this.resumen.ingresosMes;
+    return this.movimientos
+      .filter((movimiento) => movimiento.tipo === 'INGRESO' && this.esMesActual(movimiento.fechaMovimiento))
+      .reduce((total, movimiento) => total + Number(movimiento.monto), 0);
   }
 
   getGastoMensual(): number {
@@ -96,7 +103,10 @@ export class DashboardComponent implements OnInit {
       return 0;
     }
 
-    return this.resumen.credito + this.resumen.deudaTarjetas;
+    if (this.resumen.gastosMes !== undefined) return this.resumen.gastosMes;
+    return this.movimientos
+      .filter((movimiento) => movimiento.tipo === 'GASTO' && this.esMesActual(movimiento.fechaMovimiento))
+      .reduce((total, movimiento) => total + Number(movimiento.monto), 0);
   }
 
   getRate(value: number, total: number): number {
@@ -112,6 +122,17 @@ export class DashboardComponent implements OnInit {
       return 0;
     }
 
-    return this.resumen.efectivo + this.resumen.debito;
+    return this.resumen.patrimonioDisponible ?? (this.resumen.efectivo + this.resumen.debito - this.resumen.deudaTarjetas);
+  }
+
+  private esMesActual(fecha?: string): boolean {
+    if (!fecha) return false;
+    const date = new Date(fecha);
+    const now = new Date();
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  }
+
+  get fechaHoy(): string {
+    return new Intl.DateTimeFormat('es-SV', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
   }
 }

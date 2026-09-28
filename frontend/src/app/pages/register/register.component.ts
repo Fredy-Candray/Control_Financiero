@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { API_BASE_URL } from '../../api.config';
 
 @Component({
   selector: 'app-register',
@@ -22,7 +23,7 @@ export class RegisterComponent {
   constructor(private http: HttpClient, private router: Router) {}
 
   onSubmit(): void {
-    this.http.post('http://localhost:8081/api/auth/registro', {
+    this.http.post(`${API_BASE_URL}/auth/registro`, {
       nombre: this.nombre,
       correo: this.correo,
       username: this.username,

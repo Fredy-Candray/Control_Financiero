@@ -4,4 +4,7 @@ export interface ResumenDashboard {
   credito: number;
   deudaTarjetas: number;
   patrimonioDisponible: number;
+  ingresosMes?: number;
+  gastosMes?: number;
+  tarjetasSinLimite?: number;
 }

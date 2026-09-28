@@ -1,0 +1,64 @@
+<section class="page-shell users-page">
+  <header class="page-intro">
+    <div>
+      <p class="eyebrow">Administración</p>
+      <h1>Usuarios</h1>
+      <p class="page-description">Administra el acceso y los perfiles de tu equipo.</p>
+    </div>
+    <button class="primary-button add-button" type="button" (click)="abrirCrear()"><span aria-hidden="true">＋</span> Nuevo usuario</button>
+  </header>
+
+  <div class="demo-notice"><span aria-hidden="true">ⓘ</span><div><strong>Vista de demostración</strong><span>Los cambios se mantienen en esta sesión y no se guardan en el servidor.</span></div></div>
+
+  <div class="summary-grid">
+    <article class="summary-card"><span class="summary-icon purple">♙</span><div><span>Usuarios registrados</span><strong>{{ usuarios.length }}</strong></div></article>
+    <article class="summary-card"><span class="summary-icon green">✓</span><div><span>Usuarios activos</span><strong>{{ activos }}</strong></div></article>
+    <article class="summary-card"><span class="summary-icon blue">♛</span><div><span>Administradores</span><strong>{{ administradores }}</strong></div></article>
+  </div>
+
+  <section class="users-panel">
+    <div class="panel-heading"><div><h2>Directorio de usuarios</h2><p>Consulta y gestiona los perfiles registrados.</p></div><span class="result-count">{{ usuariosFiltrados.length }} resultados</span></div>
+    <div class="toolbar">
+      <label class="search-box"><span aria-hidden="true">⌕</span><input type="search" placeholder="Buscar por nombre o correo..." [(ngModel)]="busqueda" aria-label="Buscar usuarios"></label>
+      <label class="filter-box"><span class="sr-only">Filtrar por rol</span><select [(ngModel)]="filtroRol"><option value="">Todos los roles</option><option value="Administrador">Administrador</option><option value="Usuario">Usuario</option></select></label>
+      <label class="filter-box"><span class="sr-only">Filtrar por estado</span><select [(ngModel)]="filtroEstado"><option value="">Todos los estados</option><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></label>
+    </div>
+
+    <div class="table-scroll" *ngIf="usuariosFiltrados.length; else emptyState">
+      <table>
+        <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Fecha de alta</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+        <tbody>
+          <tr *ngFor="let usuario of usuariosFiltrados">
+            <td><div class="identity"><span class="avatar">{{ usuario.nombre.charAt(0).toUpperCase() }}</span><span><strong>{{ usuario.nombre }}</strong><small>{{ usuario.correo }}</small></span></div></td>
+            <td><span class="role-pill" [class.admin-role]="usuario.rol === 'Administrador'">{{ usuario.rol }}</span></td>
+            <td><span class="status-pill" [class.inactive]="usuario.estado === 'Inactivo'"><i></i>{{ usuario.estado }}</span></td>
+            <td class="date-cell">{{ usuario.fechaAlta }}</td>
+            <td><div class="row-actions"><button type="button" class="icon-button" (click)="abrirEditar(usuario)" [attr.aria-label]="'Editar ' + usuario.nombre" title="Editar">✎</button><button type="button" class="icon-button delete-action" (click)="solicitarEliminacion(usuario)" [attr.aria-label]="'Eliminar ' + usuario.nombre" title="Eliminar">⌫</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #emptyState><div class="empty-state"><span class="empty-icon">⌕</span><h3>No encontramos usuarios</h3><p>Prueba con otro término o cambia los filtros.</p></div></ng-template>
+  </section>
+</section>
+
+<div class="modal-backdrop" *ngIf="modalAbierto" (click)="cancelarModal()">
+  <section class="modal-card" role="dialog" aria-modal="true" [attr.aria-label]="editandoId === null ? 'Crear usuario' : 'Editar usuario'" (click)="$event.stopPropagation()">
+    <div class="modal-heading"><div><p class="eyebrow">Gestión de acceso</p><h2>{{ editandoId === null ? 'Nuevo usuario' : 'Editar usuario' }}</h2></div><button type="button" class="close-button" (click)="cancelarModal()" aria-label="Cerrar">×</button></div>
+    <p class="modal-description">Completa la información del perfil.</p>
+    <form (ngSubmit)="guardar()" #userForm="ngForm">
+      <label>Nombre completo<input name="nombre" [(ngModel)]="formulario.nombre" placeholder="Ej. Andrea Rivera" required maxlength="100" /></label>
+      <label>Correo electrónico<input name="correo" type="email" [(ngModel)]="formulario.correo" placeholder="nombre@empresa.com" required maxlength="150" /></label>
+      <div class="form-row"><label>Rol<select name="rol" [(ngModel)]="formulario.rol"><option value="Usuario">Usuario</option><option value="Administrador">Administrador</option></select></label><label>Estado<select name="estado" [(ngModel)]="formulario.estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></label></div>
+      <p class="form-error" *ngIf="errorFormulario" role="alert">{{ errorFormulario }}</p>
+      <div class="modal-actions"><button type="button" class="secondary-button" (click)="cancelarModal()">Cancelar</button><button type="submit" class="primary-button" [disabled]="userForm.invalid">{{ editandoId === null ? 'Crear usuario' : 'Guardar cambios' }}</button></div>
+    </form>
+  </section>
+</div>
+
+<div class="modal-backdrop" *ngIf="modalEliminarAbierto" (click)="cancelarEliminacion()">
+  <section class="modal-card confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="delete-title" (click)="$event.stopPropagation()">
+    <span class="confirm-icon">!</span><h2 id="delete-title">¿Eliminar este usuario?</h2><p>El registro se quitará de esta vista de demostración.</p>
+    <div class="modal-actions"><button type="button" class="secondary-button" (click)="cancelarEliminacion()">Cancelar</button><button type="button" class="danger-button" (click)="eliminar()">Eliminar usuario</button></div>
+  </section>
+</div>

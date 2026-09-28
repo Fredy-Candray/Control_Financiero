@@ -30,6 +30,9 @@ public class Cuenta {
     @Column(nullable = false, precision = 18, scale = 2)
     private BigDecimal saldoActual;
 
+    @Column(precision = 18, scale = 2)
+    private BigDecimal limiteCredito;
+
     @Column(nullable = false)
     private Boolean activa;
 

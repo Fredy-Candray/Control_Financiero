@@ -14,4 +14,7 @@ public class ResumenDashboardResponse {
     private BigDecimal credito;
     private BigDecimal deudaTarjetas;
     private BigDecimal patrimonioDisponible;
+    private BigDecimal ingresosMes;
+    private BigDecimal gastosMes;
+    private Integer tarjetasSinLimite;
 }
