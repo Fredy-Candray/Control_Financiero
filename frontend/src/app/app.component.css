@@ -292,3 +292,48 @@ body:not(.dark-theme) .sidebar-toggle-btn { color: var(--toggle-icon-light, #374
   .main-content { padding: 12px; }
 }
 
+/* Apex-inspired application frame */
+.sidebar { width: 252px; background: linear-gradient(180deg, #101111 0%, #090a0a 100%); padding: 22px 16px; }
+.sidebar-collapsed .sidebar { width: 76px; padding: 22px 10px; }
+.sidebar .brand { padding: 4px 8px 21px; border-bottom-color: rgba(213,239,224,.1); }
+.sidebar .brand-logo { border-radius: 12px; background: rgba(67,194,135,.12); }
+.sidebar .brand h2 { color: #f4fbf6; font-size: .92rem; letter-spacing: -.025em; }
+.sidebar .brand p { color: #91a49a; font-size: .72rem; }
+.nav-links { gap: 6px; }
+.nav-group { display: flex; flex-direction: column; gap: 6px; }
+.nav-group-title { margin: 18px 8px 2px; color: #84958c; font-size: .68rem; font-weight: 750; letter-spacing: .07em; line-height: 1.2; text-transform: uppercase; }
+.nav-group:first-child .nav-group-title { margin-top: 4px; }
+.nav-links a { min-height: 44px; padding: 10px 12px; border-radius: 9px; color: #a6b6ad; font-size: .85rem; }
+.nav-links a span:first-child { width: 22px; font-size: .96rem; }
+.nav-links a .nav-icon { display:inline-flex; align-items:center; justify-content:center; }
+.nav-links a .nav-icon svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.nav-links a:hover { color: #f5fbf7; background: rgba(255,255,255,.055); }
+.nav-links a.active { color: #f4fbf6; background: rgba(24,170,110,.15); border-color: rgba(64,204,143,.12); box-shadow: inset 3px 0 #35c98a; }
+.sidebar-collapsed .nav-group-title { display: none; }
+.sidebar-collapsed .nav-group { gap: 6px; }
+.sidebar-footer { border-color: rgba(213,239,224,.1); }
+.sidebar-footer .theme-btn { color: #c6d6cd; background: rgba(255,255,255,.055); border-color: rgba(255,255,255,.08); border-radius: 10px; }
+.topbar { min-height: 68px; padding: 12px clamp(20px,3vw,40px); background: var(--surface); border-bottom: 1px solid var(--card-border); box-shadow: 0 1px 4px rgba(12,27,18,.035); }
+.user-pill { padding: 6px 10px 6px 7px; border-radius: 10px; background: transparent; border-color: transparent; }
+.user-pill:hover { background: color-mix(in srgb,var(--surface) 88%,var(--accent) 12%); }
+.avatar { width: 32px; height: 32px; border-radius: 9px; background: rgba(15,159,110,.12); color: var(--accent-strong); }
+.main-content { padding: clamp(22px,3vw,38px); }
+.user-menu-dropdown { padding: 5px; }
+.logout-btn { width: 100%; padding: 9px 10px; text-align: left; color: var(--text); background: transparent; border: 0; border-radius: 8px; cursor: pointer; }
+.logout-btn:hover { background: color-mix(in srgb,var(--surface) 88%,var(--accent) 12%); }
+@media (min-width: 641px) and (max-width: 800px) { .sidebar { width:100%; height:auto; min-height:unset; position:relative; } }
+@media (max-width: 800px) { .main-content { padding: 20px 16px; } .topbar { padding: 10px 16px; } }
+
+body.dark-theme .sidebar { background: linear-gradient(180deg,#080909 0%,#050606 100%); border-right-color:#1b1d1e; }
+body.dark-theme .sidebar .brand { border-bottom-color:#1b1d1e; }
+body.dark-theme .sidebar .brand-logo { color:#20c77c; background:rgba(18,165,99,.14); }
+body.dark-theme .nav-group-title { color:#777d7a; }
+body.dark-theme .nav-links a { color:#a5aaa7; }
+body.dark-theme .nav-links a:hover { color:#f1f3f2; background:rgba(255,255,255,.055); }
+body.dark-theme .nav-links a.active { color:#18bc73; background:#191b1a; border-color:#202523; box-shadow:inset 3px 0 #13a965; }
+body.dark-theme .topbar { background:#080909; border-bottom-color:#1b1d1e; box-shadow:0 2px 12px rgba(0,0,0,.18); }
+body.dark-theme .avatar { color:#28c77d; background:rgba(18,165,99,.14); }
+body.dark-theme .sidebar-footer { border-top-color:#1b1d1e; }
+body.dark-theme .sidebar-footer .theme-btn { color:#b6b9b7; background:#151717; border-color:#292c2b; }
+body.dark-theme .sidebar-toggle-btn { color:#aeb2b0; background:#171919; border-color:#292c2b; }
+body.dark-theme .sidebar-toggle-btn .toggle-icon, body.dark-theme .sidebar-toggle-btn .toggle-icon path { color:#aeb2b0 !important; fill:#aeb2b0 !important; }

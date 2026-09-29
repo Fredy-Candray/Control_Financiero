@@ -14,22 +14,34 @@
     </div>
 
     <nav class="nav-links" #navLinks>
-      <a routerLink="/dashboard" routerLinkActive="active" title="Dashboard">
-        <span>📊</span>
-        <span class="nav-label">Dashboard</span>
-      </a>
-      <a routerLink="/cuentas" routerLinkActive="active" title="Cuentas">
-        <span>🏦</span>
-        <span class="nav-label">Cuentas</span>
-      </a>
-      <a routerLink="/movimientos" routerLinkActive="active" title="Movimientos">
-        <span>💳</span>
-        <span class="nav-label">Movimientos</span>
-      </a>
-      <a routerLink="/usuarios" routerLinkActive="active" title="Usuarios">
-        <span>👥</span>
-        <span class="nav-label">Usuarios</span>
-      </a>
+      <section class="nav-group">
+        <h3 class="nav-group-title">Principal</h3>
+        <a routerLink="/dashboard" routerLinkActive="active" title="Dashboard">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/><rect x="3" y="14" width="8" height="7" rx="1.5"/></svg></span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+      </section>
+      <section class="nav-group">
+        <h3 class="nav-group-title">Finanzas</h3>
+        <a routerLink="/cuentas" routerLinkActive="active" title="Cuentas">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg></span>
+          <span class="nav-label">Cuentas</span>
+        </a>
+        <a routerLink="/movimientos" routerLinkActive="active" title="Movimientos">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM3 9h18M7 15h4"/></svg></span>
+          <span class="nav-label">Movimientos</span>
+        </a>        <a routerLink="/calendario" routerLinkActive="active" title="Calendario">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 17h2"/></svg></span>
+          <span class="nav-label">Calendario</span>
+        </a>
+      </section>
+      <section class="nav-group">
+        <h3 class="nav-group-title">Sistema</h3>
+        <a routerLink="/usuarios" routerLinkActive="active" title="Usuarios">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20v-1.2a6 6 0 0 1 12 0V20zM16 5.2a3.2 3.2 0 0 1 0 6.1M18 15a4.5 4.5 0 0 1 3 4.2v.8"/></svg></span>
+          <span class="nav-label">Usuarios</span>
+        </a>
+      </section>
 
       <div class="sidebar-toggle-wrapper" #toggleWrapper>
         <button

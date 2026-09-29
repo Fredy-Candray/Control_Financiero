@@ -25,3 +25,38 @@
 .state-panel { padding:16px 18px;color:var(--text);background:var(--surface);border:1px solid var(--card-border);border-radius:14px;font-weight:650; }.state-panel.error { color:#b42318; }
 @media(max-width:1100px){.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.dashboard-content-grid{grid-template-columns:1fr;}}
 @media(max-width:620px){.finance-dashboard{gap:16px;}.dashboard-welcome h1{font-size:1.8rem;}.welcome-mark{display:none;}.metric-grid{gap:10px;}.metric-card{padding:14px;border-radius:15px;}.metric-card>strong{margin-top:13px;font-size:1.45rem;}.metric-card>small{font-size:.64rem;white-space:normal;}.dashboard-content-grid{gap:12px;}.panel-heading{padding:16px 15px 10px;}.balance-chart{gap:8px;height:205px;padding:16px 10px 8px;}.balance-track{height:126px;width:65%;}.balance-value{font-size:.63rem;}.balance-label{font-size:.61rem;}.balance-footnote{padding:10px 14px;font-size:.65rem;}.recent-list{padding:4px 14px 8px;}.recent-row{grid-template-columns:30px minmax(0,1fr) auto;gap:8px;}.recent-icon{width:29px;height:29px;}}
+
+/* Apex-inspired dashboard surfaces and data visualization palette */
+.finance-dashboard { max-width: 1480px; gap: 20px; }
+.dashboard-welcome { padding: 0 0 3px; }
+.welcome-date { color: var(--muted); font-size: .68rem; letter-spacing: .08em; }
+.dashboard-welcome h1 { font-size: clamp(1.65rem,2.5vw,2.05rem); letter-spacing: -.04em; }
+.welcome-subtitle { margin-top: 7px; font-size: .88rem; }
+.welcome-mark { width: 44px; height: 44px; border-radius: 13px; color: var(--accent); border-color: rgba(15,159,110,.17); background: rgba(15,159,110,.08); }
+.metric-grid { gap: 13px; }
+.metric-card { padding: 17px 18px; border-radius: 13px; box-shadow: var(--shadow-card); transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease; }
+.metric-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb,var(--card-border) 55%,var(--accent) 45%); box-shadow: 0 8px 20px rgba(22,43,33,.08); }
+.metric-top { font-size: .73rem; }
+.metric-icon { width: 31px; height: 31px; border-radius: 9px; color: #078253; background: rgba(15,159,110,.1); }
+.net-worth .metric-icon { color: #078253; background: rgba(15,159,110,.1); }
+.income-card .metric-icon { color: #078253; background: rgba(15,159,110,.1); }
+.spending-card .metric-icon { color: #d24d57; background: rgba(210,77,87,.09); }
+.debt-card .metric-icon { color: #b97727; background: rgba(214,151,57,.13); }
+.metric-card>strong { margin-top: 15px; font-size: clamp(1.4rem,2vw,1.8rem); }
+.metric-card>small { margin-top: 7px; }
+.dashboard-content-grid { grid-template-columns: minmax(0,1.15fr) minmax(320px,.85fr); gap: 13px; }
+.dashboard-panel { border-radius: 13px; box-shadow: var(--shadow-card); }
+.panel-heading { padding: 17px 19px 11px; }
+.panel-heading h2 { font-size: .94rem; font-weight: 750; }
+.panel-heading p { font-size: .72rem; }
+.panel-icon { width: 32px; height: 32px; border-radius: 9px; color: #078253; background: rgba(15,159,110,.09); }
+.balance-chart { height: 212px; padding-top: 14px; }
+.balance-track { border-radius: 8px 8px 4px 4px; }
+.cash-bar { background: linear-gradient(180deg,#6fe2b1,#14a46e); }
+.debit-bar { background: linear-gradient(180deg,#a3e7ca,#34bb83); }
+.credit-bar { background: linear-gradient(180deg,#8bc9b1,#299777); }
+.debt-bar { background: linear-gradient(180deg,#ffc987,#e79a4d); }
+.recent-row { padding: 11px 0; }
+.recent-icon { border-radius: 9px; }
+.recent-icon.positive { color: #087c55; background: rgba(15,159,110,.1); }
+.data-notice { border-radius: 11px; }

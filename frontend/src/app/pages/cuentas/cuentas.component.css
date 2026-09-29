@@ -46,3 +46,59 @@ input::placeholder { color: #9ca9b9; }
 .empty-state { text-align: center; }.empty-state h2 { margin: 10px 0 5px; }.empty-state p { margin: 0; color: var(--muted); }
 .empty-icon { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto; color: var(--accent); background: rgba(91,92,226,.1); border-radius: 15px; font-size: 1.8rem; }
 @media (max-width: 640px) { .page-intro { align-items: flex-start; }.accounts-grid { grid-template-columns: 1fr; }.account-card { min-height: 235px; }.form-card { padding: 18px; }form { grid-template-columns: 1fr; }.primary-button { width: 100%; } }
+
+/* Keep credit usage, limit and card actions in separate rows. */
+.account-card { display: flex; flex-direction: column; min-height: 260px; }
+.account-card.card-credit { min-height: 282px; }
+.account-actions { display: flex; align-items: center; gap: 10px; }
+.account-status.inactive i { background: #ffb2a8; }
+.account-edit-button { display: grid; place-items: center; width: 32px; height: 32px; color: rgba(255,255,255,.92); background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.19); border-radius: 9px; cursor: pointer; font-size: 1rem; }
+.account-edit-button:hover { background: rgba(255,255,255,.23); }
+.credit-usage-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 16px; color: rgba(245,247,255,.78); font-size: .73rem; }
+.credit-usage-heading strong { color: #fff; font-size: .8rem; white-space: nowrap; }
+.credit-progress { margin-top: 7px; }
+.credit-details { margin-top: 10px; }
+.credit-details span { display: flex; flex-direction: column; gap: 3px; }
+.account-footer { position: static; margin-top: auto; padding-top: 13px; text-align: right; }
+.configure-card-button { display: none; }
+.edit-card-form form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.account-card::after { pointer-events: none; }
+.account-topline { position: relative; z-index: 1; }
+.account-edit-backdrop { position: fixed; z-index: 1200; inset: 0; display: grid; place-items: center; padding: 20px; overflow-y: auto; background: rgba(15,23,42,.56); backdrop-filter: blur(4px); }
+.edit-card-form { width: min(100%, 680px); max-height: min(90vh, 800px); overflow-y: auto; }
+.edit-close-button { display: grid; place-items: center; width: 36px; height: 36px; color: var(--muted); background: var(--surface); border: 1px solid var(--card-border); border-radius: 10px; cursor: pointer; font-size: 1.35rem; }
+.edit-close-button:hover { color: var(--accent); background: rgba(91,92,226,.08); }
+@media (max-width: 640px) { .account-card { min-height: 245px; }.account-card.card-credit { min-height: 275px; }.edit-card-form form { grid-template-columns: 1fr; } }
+
+/* Apex-inspired account cards */
+.page-shell { max-width: 1480px; gap: 20px; }
+.page-intro h1 { font-size: clamp(1.65rem,2.5vw,2.05rem); }
+.page-badge { padding: 8px 12px; color: #087c55; background: rgba(15,159,110,.08); border-color: rgba(15,159,110,.16); border-radius: 10px; }
+.account-card { color: #1c2b23; border: 1px solid #e1eae4; border-radius: 14px; background: linear-gradient(145deg,#fff 0%,#f5faf7 100%); box-shadow: var(--shadow-card); }
+.account-card.card-credit { color: #163a2b; background: linear-gradient(145deg,#effbf4 0%,#e2f5ea 100%); border-color: #d1eadb; }
+.account-card::after { background: rgba(29,174,111,.055); }
+.account-type-icon { color: #078253; background: rgba(15,159,110,.1); border-radius: 10px; }
+.account-status { color: #167652; }
+.account-status i { background: #22ab76; }
+.account-status.inactive { color: #79857e; }
+.account-status.inactive i { background: #a0aaa4; }
+.account-type-label,.account-balance-label { color: #74847a; }
+.account-card h2,.account-balance { color: #172a20; }
+.account-balance { font-size: 1.72rem; }
+.account-edit-button { color: #087c55; background: rgba(15,159,110,.075); border-color: rgba(15,159,110,.14); }
+.account-edit-button:hover { background: rgba(15,159,110,.15); }
+.credit-usage-heading,.credit-details,.legacy-credit-details { color: #62776a; }
+.credit-usage-heading strong,.credit-details strong,.legacy-credit-details strong { color: #1b5038; }
+.credit-progress { background: rgba(24,114,72,.12); }
+.credit-progress span { background: linear-gradient(90deg,#39c783,#098f5b); }
+.account-footer { color: #77877d; }
+.form-card { border-radius: 13px; box-shadow: var(--shadow-card); }
+.section-symbol,.empty-icon { color: #078253; background: rgba(15,159,110,.09); }
+.primary-button { background: linear-gradient(110deg,#0a9a66,#12b77b); border-radius: 9px; box-shadow: 0 5px 12px rgba(13,145,94,.17); }
+.secondary-button { border-radius: 9px; }
+:host-context(body.dark-theme) .account-card { color:#ededed; background:linear-gradient(145deg,#171818,#111212); border-color:#292c2b; }
+:host-context(body.dark-theme) .account-card.card-credit { color:#ededed; background:linear-gradient(145deg,#1b1c1c,#121313); border-color:#303332; }
+:host-context(body.dark-theme) .account-card h2,:host-context(body.dark-theme) .account-balance { color:#f0f8f3; }
+:host-context(body.dark-theme) .account-type-label,:host-context(body.dark-theme) .account-balance-label,:host-context(body.dark-theme) .credit-usage-heading,:host-context(body.dark-theme) .credit-details,:host-context(body.dark-theme) .legacy-credit-details,:host-context(body.dark-theme) .account-footer { color:#929796; }
+:host-context(body.dark-theme) .credit-usage-heading strong,:host-context(body.dark-theme) .credit-details strong,:host-context(body.dark-theme) .legacy-credit-details strong { color:#d9f4e3; }
+:host-context(body.dark-theme) .account-edit-button { color:#8ce5b9; background:rgba(75,211,155,.09); border-color:rgba(75,211,155,.2); }

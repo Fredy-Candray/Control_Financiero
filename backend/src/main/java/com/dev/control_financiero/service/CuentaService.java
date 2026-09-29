@@ -65,6 +65,9 @@ public class CuentaService {
         }
         cuenta.setNombre(request.getNombre().trim());
         cuenta.setSaldoActual(request.getSaldoActual());
+        if (request.getActiva() != null) {
+            cuenta.setActiva(request.getActiva());
+        }
         return cuentaRepository.save(cuenta);
     }
 

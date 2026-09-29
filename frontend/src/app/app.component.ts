@@ -3,6 +3,7 @@ import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } fro
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { ThemeService } from './services/theme.service';
+import { CalendarReminderService } from './services/calendar-reminder.service';
 
 @Component({
   selector: 'app-root',
@@ -20,11 +21,12 @@ export class AppComponent implements OnInit {
   isAuthenticated = false;
   sidebarCollapsed = false;
   sidebarOpen = false; // mobile overlay open state
-  constructor(private router: Router, private themeService: ThemeService) {}
+  constructor(private router: Router, private themeService: ThemeService, private calendarReminders: CalendarReminderService) {}
 
   ngOnInit(): void {
     // initialize theme early
     this.themeService.initTheme();
+    this.calendarReminders.start();
     this.updateLayoutState(this.router.url);
 
     this.router.events

@@ -21,4 +21,6 @@ public class ActualizarCuentaRequest {
     @DecimalMin(value = "0.01")
     @Digits(integer = 16, fraction = 2)
     private BigDecimal limiteCredito;
+
+    private Boolean activa;
 }

@@ -87,3 +87,14 @@ button {
     padding: 22px;
   }
 }
+
+.register-shell { background:radial-gradient(ellipse at top right,rgba(28,169,112,.2),transparent 42%),linear-gradient(135deg,#111b17,#18251e); }
+.register-card { border:1px solid rgba(226,236,229,.85); border-radius:16px; box-shadow:0 24px 70px rgba(4,24,14,.22); }
+.register-card h1 { letter-spacing:-.04em; }
+input:focus { border-color:#0f9f6e; box-shadow:0 0 0 3px rgba(15,159,110,.14); }
+button { background:linear-gradient(110deg,#0a9a66,#12b77b); border-radius:9px; box-shadow:0 7px 16px rgba(13,145,94,.18); }
+:host-context(body.dark-theme) .register-card { color:#ededed; background:#141414; border-color:#292c2b; box-shadow:0 24px 70px rgba(0,0,0,.35); }
+:host-context(body.dark-theme) .register-card h1,:host-context(body.dark-theme) label { color:#ededed; }
+:host-context(body.dark-theme) .register-card p,:host-context(body.dark-theme) .link { color:#969a98; }
+:host-context(body.dark-theme) input { color:#ededed; background:#1b1c1c; border-color:#303332; }
+:host-context(body.dark-theme) .register-shell { background:radial-gradient(ellipse at top right,rgba(18,165,99,.13),transparent 42%),#090a0a; }

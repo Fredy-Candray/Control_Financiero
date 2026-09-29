@@ -28,6 +28,7 @@ export class CuentasComponent implements OnInit {
   editNombre = '';
   editLimite = 0;
   editDisponible = 0;
+  editActiva = true;
 
   constructor(private http: HttpClient) {}
 
@@ -107,6 +108,10 @@ export class CuentasComponent implements OnInit {
     return limite > 0 ? Math.min(100, Math.round((this.deuda(cuenta) / limite) * 100)) : 0;
   }
 
+  get cuentaActual(): Cuenta | undefined {
+    return this.cuentas.find(cuenta => cuenta.id === this.cuentaEditandoId);
+  }
+
   etiquetaTipo(tipo: string): string {
     return tipo === 'CREDITO' ? 'Tarjeta de crédito' : tipo === 'DEBITO' ? 'Cuenta débito' : 'Efectivo';
   }
@@ -116,31 +121,37 @@ export class CuentasComponent implements OnInit {
     this.editNombre = cuenta.nombre;
     this.editLimite = Number(cuenta.limiteCredito ?? 0);
     this.editDisponible = Number(cuenta.saldoActual ?? 0);
+    this.editActiva = cuenta.activa;
+    this.error = '';
+    this.success = '';
   }
 
   cancelarEdicion(): void {
     this.cuentaEditandoId = null;
   }
 
-  guardarTarjeta(): void {
-    if (!this.cuentaEditandoId || !this.editNombre.trim() || this.editLimite <= 0 || this.editDisponible < 0 || this.editDisponible > this.editLimite) return;
+  guardarCuenta(cuenta: Cuenta): void {
+    if (!this.cuentaEditandoId || !this.editNombre.trim() || this.editDisponible < 0) return;
+    if (cuenta.tipo === 'CREDITO' && (this.editLimite <= 0 || this.editDisponible > this.editLimite)) return;
     const usuarioId = Number(localStorage.getItem('userId') || '1');
     this.guardando = true;
     this.error = '';
-    this.http.put(`${API_BASE_URL}/cuentas/${this.cuentaEditandoId}/usuario/${usuarioId}`, {
+    const payload: any = {
       nombre: this.editNombre.trim(),
       saldoActual: this.editDisponible,
-      limiteCredito: this.editLimite
-    }).subscribe({
+      activa: this.editActiva
+    };
+    if (cuenta.tipo === 'CREDITO') payload.limiteCredito = this.editLimite;
+    this.http.put(`${API_BASE_URL}/cuentas/${this.cuentaEditandoId}/usuario/${usuarioId}`, payload).subscribe({
       next: () => {
         this.guardando = false;
-        this.success = 'Tarjeta actualizada correctamente.';
+        this.success = 'Cuenta actualizada correctamente.';
         this.cuentaEditandoId = null;
         this.cargarCuentas();
       },
       error: (err) => {
         this.guardando = false;
-        this.error = err?.error?.message || 'No se pudo actualizar la tarjeta.';
+        this.error = err?.error?.message || 'No se pudo actualizar la cuenta.';
       }
     });
   }

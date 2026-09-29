@@ -18,7 +18,7 @@
     </div>
     <form (ngSubmit)="onSubmit()" #form="ngForm">
       <label>Tipo de movimiento
-        <select name="tipo" [(ngModel)]="tipo" (ngModelChange)="cuentaDestinoId = null">
+        <select  name="tipo" [(ngModel)]="tipo" (ngModelChange)="cuentaDestinoId = null">
           <option value="INGRESO">Ingreso</option>
           <option value="GASTO">Gasto</option>
           <option value="TRANSFERENCIA">Transferencia</option>
@@ -26,28 +26,28 @@
         </select>
       </label>
       <label>Cuenta de origen
-        <select name="cuentaOrigenId" [(ngModel)]="cuentaOrigenId" (ngModelChange)="cuentaDestinoId = null" required>
+        <select  name="cuentaOrigenId" [(ngModel)]="cuentaOrigenId" (ngModelChange)="cuentaDestinoId = null" required>
           <option [ngValue]="null">Selecciona una cuenta</option>
           <option *ngFor="let cuenta of cuentasOrigen" [ngValue]="cuenta.id">{{ cuenta.nombre }} · {{ cuenta.tipo }}</option>
         </select>
       </label>
       <label *ngIf="tipo === 'TRANSFERENCIA' || tipo === 'PAGO_TARJETA'">Cuenta de destino
-        <select name="cuentaDestinoId" [(ngModel)]="cuentaDestinoId" required>
+        <select  name="cuentaDestinoId" [(ngModel)]="cuentaDestinoId" required>
           <option [ngValue]="null">Selecciona una cuenta</option>
           <option *ngFor="let cuenta of cuentasDestino" [ngValue]="cuenta.id">{{ cuenta.nombre }} · {{ cuenta.tipo }}</option>
         </select>
       </label>
       <label>Monto
-        <div class="input-prefix"><span>$</span><input type="number" name="monto" [(ngModel)]="monto" step="0.01" min="0.01" placeholder="0.00" required /></div>
+        <div class="input-prefix"><span>$</span><input  type="number" name="monto" [(ngModel)]="monto" step="0.01" min="0.01" placeholder="0.00" required /></div>
       </label>
       <label>Categoría
-        <select name="categoriaId" [(ngModel)]="categoriaId">
+        <select  name="categoriaId" [(ngModel)]="categoriaId">
           <option [ngValue]="null">Sin categoría</option>
           <option *ngFor="let categoria of categorias" [ngValue]="categoria.id">{{ categoria.nombre }}</option>
         </select>
       </label>
       <label class="description-field">Descripción
-        <input type="text" name="descripcion" [(ngModel)]="descripcion" maxlength="255" placeholder="¿Qué registramos?" />
+        <input  type="text" name="descripcion" [(ngModel)]="descripcion" maxlength="255" placeholder="¿Qué registramos?" />
       </label>
       <button type="submit" class="primary-button" [disabled]="form.invalid || !puedeGuardar || guardando || !cuentas.length">{{ guardando ? 'Guardando…' : 'Guardar movimiento' }}</button>
     </form>
@@ -59,8 +59,8 @@
       <span class="history-count">{{ movimientosFiltrados.length }} de {{ movimientos.length }}</span>
     </div>
     <div class="history-tools">
-      <label class="search-box"><span aria-hidden="true">⌕</span><input type="search" [(ngModel)]="busqueda" placeholder="Buscar por descripción o cuenta" aria-label="Buscar movimientos" /></label>
-      <select [(ngModel)]="tipoFiltro" aria-label="Filtrar por tipo">
+      <label class="search-box"><span aria-hidden="true">⌕</span><input  type="search" [(ngModel)]="busqueda" placeholder="Buscar por descripción o cuenta" aria-label="Buscar movimientos" /></label>
+      <select  [(ngModel)]="tipoFiltro" aria-label="Filtrar por tipo">
         <option value="TODOS">Todos los movimientos</option>
         <option value="INGRESO">Ingresos</option>
         <option value="GASTO">Gastos</option>
