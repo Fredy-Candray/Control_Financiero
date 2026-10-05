@@ -1,0 +1,85 @@
+<section class="profile-page" *ngIf="profile as user; else profileLoading">
+  <header class="profile-header-card">
+    <div class="profile-cover"></div>
+    <div class="profile-hero">
+      <div class="profile-avatar-wrap">
+        <button *ngIf="user.fotoPerfil; else initials" class="profile-avatar profile-avatar-clickable" type="button" (click)="openProfileImage()" aria-label="Ampliar foto de perfil" title="Ampliar foto de perfil">
+          <img [src]="user.fotoPerfil" alt="Foto de {{ user.nombre }}" />
+        </button>
+        <ng-template #initials><span class="profile-avatar">{{ user.nombre.charAt(0).toUpperCase() }}</span></ng-template>
+        <ng-container *ngIf="activeTab === 'edit'">
+          <input #photoInput type="file" accept="image/*" (change)="onPhotoSelected($event)" hidden />
+          <button class="photo-edit-button" type="button" aria-label="Cambiar foto de perfil" title="Cambiar foto de perfil" (click)="photoInput.click()" [disabled]="busy">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          </button>
+        </ng-container>
+      </div>
+      <div class="profile-identity">
+        <h1>{{ user.nombre }}</h1>
+        <strong>{{ user.rol }}</strong>
+        <div class="identity-meta"><span>✉ {{ user.correo }}</span><span *ngIf="user.telefono">☎ {{ user.telefono }}</span></div>
+      </div>
+      <button *ngIf="activeTab === 'overview'" class="edit-profile-button" type="button" (click)="selectTab('edit')"><span aria-hidden="true">✎</span> Editar perfil</button>
+    </div>
+    <nav class="profile-tabs" aria-label="Secciones del perfil">
+      <button type="button" [class.active]="activeTab === 'overview'" (click)="selectTab('overview')">Resumen</button>
+      <button type="button" [class.active]="activeTab === 'edit'" (click)="selectTab('edit')">Editar perfil</button>
+    </nav>
+  </header>
+
+  <p class="profile-alert" *ngIf="errorMessage" role="alert">{{ errorMessage }}</p>
+
+  <div class="overview-grid" *ngIf="activeTab === 'overview'">
+    <section class="profile-panel about-panel">
+      <h2>Sobre el perfil</h2>
+      <p>Información de tu cuenta en Control Financiero.</p>
+      <div class="about-summary"><span class="about-mark">{{ user.nombre.charAt(0).toUpperCase() }}</span><div><strong>{{ user.nombre }}</strong><small>{{ user.rol }} · &#64;{{ user.username }}</small></div></div>
+      <div class="account-status"><span class="status-dot" [class.inactive]="!user.activo"></span>{{ user.activo ? 'Cuenta activa' : 'Cuenta inactiva' }}</div>
+    </section>
+
+    <section class="profile-panel details-panel">
+      <h2>Detalles</h2>
+      <p>Datos personales y de acceso</p>
+      <dl class="details-grid">
+        <div><dt>Nombre completo</dt><dd>{{ user.nombre }}</dd></div>
+        <div><dt>Correo electrónico</dt><dd>{{ user.correo }}</dd></div>
+        <div><dt>Nombre de usuario</dt><dd>&#64;{{ user.username }}</dd></div>
+        <div><dt>Teléfono</dt><dd>{{ user.telefono || 'No registrado' }}</dd></div>
+        <div><dt>Rol</dt><dd>{{ user.rol }}</dd></div>
+        <div><dt>Miembro desde</dt><dd>{{ createdDate() }}</dd></div>
+      </dl>
+    </section>
+  </div>
+
+  <section class="profile-panel edit-panel" *ngIf="activeTab === 'edit'">
+    <div class="panel-heading"><div><h2>Editar perfil</h2><p>Actualiza tus datos personales y de contacto.</p></div><span class="role-tag">{{ user.rol }}</span></div>
+    <form class="profile-form" (ngSubmit)="saveProfile()">
+      <label>Nombre completo<input name="nombre" [(ngModel)]="profileDraft.nombre" required maxlength="100" /></label>
+      <label>Correo electrónico<input name="correo" type="email" [(ngModel)]="profileDraft.correo" required maxlength="100" /></label>
+      <label>Nombre de usuario<input name="username" [(ngModel)]="profileDraft.username" required maxlength="50" pattern="[A-Za-z0-9._-]+" /></label>
+      <label>Teléfono<input name="telefono" [(ngModel)]="profileDraft.telefono" inputmode="tel" maxlength="15" placeholder="7777-7777" /></label>
+      <div class="form-actions"><button class="secondary-button" type="button" (click)="selectTab('overview')" [disabled]="busy">Cancelar</button><button class="primary-button" type="submit" [disabled]="busy">{{ busy ? 'Guardando…' : 'Guardar cambios' }}</button></div>
+    </form>
+  </section>
+</section>
+
+<div class="profile-image-backdrop" *ngIf="expandedProfileImage" role="dialog" aria-modal="true" aria-label="Foto de perfil ampliada" (click)="closeProfileImage()">
+  <img class="profile-image-expanded" [src]="expandedProfileImage" alt="Foto de perfil ampliada" />
+</div>
+
+<ng-template #profileLoading>
+  <div class="profile-state" *ngIf="loading">Cargando perfil…</div>
+  <div class="profile-state error" *ngIf="!loading && errorMessage"><h2>Perfil no disponible</h2><p>{{ errorMessage }}</p></div>
+</ng-template>
+
+<div class="photo-editor-backdrop" *ngIf="photoEditorSource" (click)="cancelPhotoCrop()">
+  <section class="photo-editor-dialog" role="dialog" aria-modal="true" aria-label="Ajustar foto de perfil" (click)="$event.stopPropagation()">
+    <h2>Ajustar foto</h2>
+    <p>Arrastra la imagen para centrarla y usa el control para acercar o alejar.</p>
+    <div class="photo-crop-frame" (pointerdown)="startPhotoCrop($event)" (pointermove)="movePhotoCrop($event)" (pointerup)="stopPhotoCrop()" (pointercancel)="stopPhotoCrop()">
+      <img [src]="photoEditorSource" [style.transform]="photoCropTransform()" alt="Vista previa para recortar" draggable="false" />
+    </div>
+    <label class="photo-zoom-control">Zoom <input type="range" min="1" max="3" step="0.05" [value]="photoZoom" (input)="setPhotoZoom($event)" /></label>
+    <div class="photo-editor-actions"><button type="button" class="secondary-button" (click)="cancelPhotoCrop()">Cancelar</button><button type="button" class="primary-button" (click)="applyPhotoCrop()">Usar esta foto</button></div>
+  </section>
+</div>

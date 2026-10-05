@@ -10,4 +10,5 @@ public class LoginResponse {
     private boolean success;
     private Long userId;
     private String username;
+    private String rol;
 }

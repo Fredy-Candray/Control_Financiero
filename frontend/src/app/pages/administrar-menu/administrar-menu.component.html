@@ -1,0 +1,55 @@
+<main class="menu-admin-page">
+  <header class="menu-admin-heading">
+    <div><p>Administración del sistema</p><h1>Menú de navegación</h1><span>Administra las secciones, opciones, rutas y roles que las pueden ver.</span></div>
+    <button class="primary-button" type="button" (click)="agregarSeccion()" [disabled]="cargando">＋ Agregar sección</button>
+  </header>
+
+  <div class="menu-message error" *ngIf="error" role="alert">{{ error }}</div>
+  <div class="menu-message success" *ngIf="mensaje" role="status">{{ mensaje }}</div>
+  <div class="menu-loading" *ngIf="cargando">Cargando configuración del menú…</div>
+
+  <div class="save-confirmation-backdrop" *ngIf="confirmacionVisible" role="presentation">
+    <section class="save-confirmation" role="status" aria-live="polite">
+      <div class="confirmation-content">
+        <span class="confirmation-icon">✓</span>
+        <strong>¡Menú guardado!</strong>
+        <p>Los cambios se guardaron correctamente.</p>
+      </div>
+      <button type="button" class="confirmation-button" (click)="irAlDashboard()">Aceptar</button>
+    </section>
+  </div>
+
+  <section class="menu-sections" *ngIf="!cargando">
+    <article class="menu-section-card" *ngFor="let seccion of secciones; let sectionIndex = index">
+      <header class="section-heading">
+        <div class="section-title"><span class="section-index">{{ sectionIndex + 1 }}</span><h2>Sección</h2></div>
+        <button class="remove-button" type="button" (click)="eliminarSeccion(sectionIndex)" aria-label="Eliminar sección">Eliminar sección</button>
+      </header>
+      <div class="section-fields">
+        <label>Título<input [(ngModel)]="seccion.titulo" maxlength="80" placeholder="Ejemplo: Finanzas" /></label>
+        <label>Orden<input type="number" min="1" [(ngModel)]="seccion.orden" /></label>
+        <label class="toggle-field"><input type="checkbox" [(ngModel)]="seccion.activo" /> Sección activa</label>
+      </div>
+
+      <div class="options-heading"><h3>Opciones</h3><button type="button" class="add-option" (click)="agregarOpcion(seccion)">＋ Agregar opción</button></div>
+      <div class="option-card" *ngFor="let opcion of seccion.opciones; let optionIndex = index">
+        <div class="option-fields">
+          <label>Nombre<input [(ngModel)]="opcion.etiqueta" maxlength="80" placeholder="Ejemplo: Cuentas" /></label>
+          <label>Ruta<input [(ngModel)]="opcion.ruta" maxlength="120" placeholder="/cuentas" /></label>
+          <label>Icono<select [(ngModel)]="opcion.icono"><option *ngFor="let icono of iconos" [value]="icono">{{ icono }}</option></select></label>
+          <label>Orden<input type="number" min="1" [(ngModel)]="opcion.orden" /></label>
+          <label class="toggle-field"><input type="checkbox" [(ngModel)]="opcion.activo" /> Activa</label>
+        </div>
+        <fieldset class="role-fields"><legend>Visible para los roles</legend>
+          <label *ngFor="let rol of roles"><input type="checkbox" [checked]="tieneRol(opcion, rol)" (change)="cambiarRol(opcion, rol, $event)" /> {{ rol }}</label>
+        </fieldset>
+        <button class="remove-option" type="button" (click)="eliminarOpcion(seccion, optionIndex)">Eliminar opción</button>
+      </div>
+      <p class="empty-options" *ngIf="!seccion.opciones.length">Esta sección todavía no tiene opciones.</p>
+    </article>
+
+    <div class="empty-menu" *ngIf="!secciones.length"><h2>No hay secciones</h2><p>Agrega una sección para empezar a configurar el menú.</p></div>
+  </section>
+
+  <footer class="menu-admin-footer" *ngIf="!cargando"><p>La opción «Administrar menú» debe seguir activa y asignada a Administrador para no perder el acceso a esta pantalla.</p><button class="primary-button" type="button" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar menú' }}</button></footer>
+</main>

@@ -88,8 +88,45 @@ button {
 .login-card h1 { letter-spacing:-.04em; }
 input:focus { border-color:#0f9f6e; box-shadow:0 0 0 3px rgba(15,159,110,.14); }
 button { background:linear-gradient(110deg,#0a9a66,#12b77b); border-radius:9px; box-shadow:0 7px 16px rgba(13,145,94,.18); }
+.password-input-wrap { position:relative; display:block; width:100%; }
+.password-input-wrap input { width:100%; padding-right:48px; }
+.password-toggle { position:absolute; top:50%; right:6px; display:grid; place-items:center; width:36px; height:36px; margin:0; padding:7px; color:#657386; background:transparent; border:0; border-radius:8px; box-shadow:none; transform:translateY(-50%); cursor:pointer; }
+.password-toggle:hover { color:#0f9f6e; background:rgba(15,159,110,.08); }
+.password-toggle svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 :host-context(body.dark-theme) .login-card { color:#ededed; background:#141414; border-color:#292c2b; box-shadow:0 24px 70px rgba(0,0,0,.35); }
 :host-context(body.dark-theme) .login-card h1,:host-context(body.dark-theme) label { color:#ededed; }
 :host-context(body.dark-theme) .login-card p,:host-context(body.dark-theme) .link { color:#969a98; }
 :host-context(body.dark-theme) input { color:#ededed; background:#1b1c1c; border-color:#303332; }
+:host-context(body.dark-theme) .password-toggle { color:#a7b0b7; background:transparent; box-shadow:none; }
 :host-context(body.dark-theme) .login-shell { background:radial-gradient(ellipse at top right,rgba(18,165,99,.13),transparent 42%),#090a0a; }
+:host-context(body:not(.dark-theme)) .login-shell { background:radial-gradient(ellipse at top right,rgba(15,159,110,.1),transparent 42%),#f1f5f3; }
+:host-context(body:not(.dark-theme)) .login-card { color:#17231e; background:#fff; border:1px solid #dce6e0; }
+:host-context(body:not(.dark-theme)) .login-card h1 { color:#17231e; }
+:host-context(body:not(.dark-theme)) label { color:#33443b; }
+
+.login-toast { position:fixed; z-index:20; top:24px; right:24px; display:flex; align-items:center; gap:12px; width:min(350px,calc(100vw - 32px)); min-height:68px; padding:12px 14px; color:#b4232f; background:#fff0f0; border:1px solid #f6d0d3; border-left:5px solid #f04452; border-radius:9px; box-shadow:0 12px 30px rgba(15,23,42,.16); animation:login-toast-enter .22s ease-out; }
+.toast-icon { display:grid; flex:none; place-items:center; width:28px; height:28px; }
+.toast-icon svg { width:27px; height:27px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.toast-copy { display:flex; flex:1; flex-direction:column; gap:3px; min-width:0; font-size:.82rem; line-height:1.35; }.toast-copy strong { font-size:.85rem; }.toast-close { display:grid; place-items:center; width:28px; height:28px; margin:0; padding:0; color:inherit; background:transparent; border:0; box-shadow:none; font-size:1.25rem; line-height:1; cursor:pointer; }
+:host-context(body.dark-theme) .login-toast { color:#ffb3b8; background:#351d20; border-color:#583034; border-left-color:#f04452; }
+@keyframes login-toast-enter { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+@media (max-width:600px) { .login-toast { top:14px; right:16px; } }
+.login-card button.text-button {
+  margin: 0;
+  padding: 4px 0;
+  color: #087c55;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-size: .9rem;
+  font-weight: 600;
+  text-align: left;
+}
+.login-card button.text-button:hover { color: #065f43; text-decoration: underline; }
+.login-card button:disabled { opacity: .65; cursor: wait; }
+.recovery-message, .recovery-error { margin: 0 !important; padding: 10px 12px; border-radius: 9px; font-size: .88rem; }
+.recovery-message { color: #087c55 !important; background: rgba(15,159,110,.1); }
+.recovery-error { color: #b4232f !important; background: #fff0f0; }
+:host-context(body.dark-theme) .login-card button.text-button { color: #42d397; }
+:host-context(body.dark-theme) .recovery-message { color: #75d5a6 !important; background: rgba(18,165,99,.13); }
+:host-context(body.dark-theme) .recovery-error { color: #ffb3b8 !important; background: #351d20; }

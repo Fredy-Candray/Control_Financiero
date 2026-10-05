@@ -9,11 +9,13 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.core.annotation.Order;
 
 import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Order(1)
 public class RolDataInitializer implements ApplicationRunner {
 
     private final RolRepository rolRepository;

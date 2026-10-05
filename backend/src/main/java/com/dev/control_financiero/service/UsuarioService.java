@@ -4,6 +4,8 @@ import com.dev.control_financiero.dto.LoginRequest;
 import com.dev.control_financiero.dto.LoginResponse;
 import com.dev.control_financiero.dto.RegistroUsuarioRequest;
 import com.dev.control_financiero.dto.UsuarioResponse;
+import com.dev.control_financiero.dto.PerfilUsuarioResponse;
+import com.dev.control_financiero.dto.ActualizarPerfilRequest;
 import com.dev.control_financiero.dto.GuardarUsuarioRequest;
 import com.dev.control_financiero.entity.Rol;
 import com.dev.control_financiero.entity.Usuario;
@@ -40,6 +42,7 @@ public class UsuarioService {
         Usuario usuario = Usuario.builder()
                 .nombre(request.getNombre())
                 .correo(request.getCorreo())
+                .telefono(normalizarTelefono(request.getTelefono()))
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .activo(true)
@@ -75,6 +78,7 @@ public class UsuarioService {
                 .success(true)
                 .userId(usuario.getId())
                 .username(usuario.getUsername())
+                .rol(usuario.getRol() == null ? "Usuario" : usuario.getRol().getNombre())
                 .build();
     }
 
@@ -83,9 +87,74 @@ public class UsuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 
+    @Transactional(readOnly = true)
+    public UsuarioResponse obtenerUsuarioResponse(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el usuario."));
+        return respuesta(usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public PerfilUsuarioResponse obtenerPerfil(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el usuario."));
+        return perfil(usuario);
+    }
+
+    @Transactional
+    public PerfilUsuarioResponse actualizarFotoPerfil(Long id, String fotoPerfil) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el usuario."));
+        if (fotoPerfil == null || !(fotoPerfil.startsWith("data:image/jpeg;base64,")
+                || fotoPerfil.startsWith("data:image/png;base64,")
+                || fotoPerfil.startsWith("data:image/webp;base64,"))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La foto debe ser JPG, PNG o WebP.");
+        }
+        usuario.setFotoPerfil(fotoPerfil);
+        return perfil(usuarioRepository.save(usuario));
+    }
+
+    @Transactional
+    public PerfilUsuarioResponse actualizarPerfil(Long id, ActualizarPerfilRequest request) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el usuario."));
+        String correo = request.correo().trim().toLowerCase();
+        String username = request.username().trim();
+        usuarioRepository.findByCorreoIgnoreCase(correo).ifPresent(existing -> {
+            if (!existing.getId().equals(id))
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Ese correo ya está registrado.");
+        });
+        usuarioRepository.findByUsername(username).ifPresent(existing -> {
+            if (!existing.getId().equals(id))
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Ese nombre de usuario ya está en uso.");
+        });
+        usuario.setNombre(request.nombre().trim());
+        usuario.setCorreo(correo);
+        usuario.setTelefono(normalizarTelefono(request.telefono()));
+        usuario.setUsername(username);
+        return perfil(usuarioRepository.save(usuario));
+    }
+
+    @Transactional
+    public PerfilUsuarioResponse eliminarFotoPerfil(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el usuario."));
+        usuario.setFotoPerfil(null);
+        return perfil(usuarioRepository.save(usuario));
+    }
+
+    @Transactional
+    public UsuarioResponse actualizarTelefono(Long id, String telefono) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el usuario."));
+        usuario.setTelefono(normalizarTelefono(telefono));
+        return respuesta(usuarioRepository.save(usuario));
+    }
+
+    @Transactional(readOnly = true)
     public List<UsuarioResponse> listarUsuarios() {
         return usuarioRepository.findAllByOrderByIdAsc().stream()
-                .map(usuario -> new UsuarioResponse(usuario.getId(), usuario.getNombre(), usuario.getCorreo(),
+                .map(usuario -> new UsuarioResponse(usuario.getId(), usuario.getNombre(), usuario.getCorreo(), usuario.getTelefono(),
                         usuario.getUsername(), usuario.getActivo(), usuario.getFechaCreacion(),
                         usuario.getRol() == null ? "Usuario" : usuario.getRol().getNombre()))
                 .toList();
@@ -98,6 +167,7 @@ public class UsuarioService {
         Usuario nuevo = Usuario.builder()
                 .nombre(request.getNombre().trim())
                 .correo(request.getCorreo().trim().toLowerCase())
+                .telefono(normalizarTelefono(request.getTelefono()))
                 .username(request.getUsername().trim())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .activo(request.getActivo() == null || request.getActivo())
@@ -120,6 +190,7 @@ public class UsuarioService {
         }
         usuario.setNombre(request.getNombre().trim());
         usuario.setCorreo(request.getCorreo().trim().toLowerCase());
+        if (request.getTelefono() != null) usuario.setTelefono(normalizarTelefono(request.getTelefono()));
         usuario.setUsername(request.getUsername().trim());
         usuario.setRol(buscarRol(request.getRol()));
         if (request.getActivo() != null) usuario.setActivo(request.getActivo());
@@ -169,7 +240,26 @@ public class UsuarioService {
     }
 
     private UsuarioResponse respuesta(Usuario usuario) {
-        return new UsuarioResponse(usuario.getId(), usuario.getNombre(), usuario.getCorreo(), usuario.getUsername(),
+        return new UsuarioResponse(usuario.getId(), usuario.getNombre(), usuario.getCorreo(), usuario.getTelefono(), usuario.getUsername(),
                 usuario.getActivo(), usuario.getFechaCreacion(), usuario.getRol().getNombre());
+    }
+
+    private PerfilUsuarioResponse perfil(Usuario usuario) {
+        return new PerfilUsuarioResponse(usuario.getId(), usuario.getNombre(), usuario.getCorreo(), usuario.getTelefono(),
+                usuario.getUsername(), usuario.getActivo(), usuario.getFechaCreacion(),
+                usuario.getRol() == null ? "Usuario" : usuario.getRol().getNombre(), usuario.getFotoPerfil());
+    }
+
+    private String normalizarTelefono(String telefono) {
+        if (telefono == null || telefono.isBlank()) return null;
+        String valor = telefono.trim();
+        if (valor.startsWith("+")) {
+            String internacional = valor.replaceAll("[\\s()-]", "");
+            if (internacional.length() <= 15 && internacional.matches("\\+[1-9][0-9]{7,13}")) return internacional;
+        } else {
+            String digitos = valor.replaceAll("\\D", "");
+            if (digitos.matches("[0-9]{8}")) return digitos.substring(0, 4) + "-" + digitos.substring(4);
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ingresa un número de 8 dígitos, por ejemplo 7777-7777.");
     }
 }

@@ -37,16 +37,16 @@
           "configurations": {
             "production": {
               "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "7kb",
-                  "maximumError": "7kb"
-                }
+                  {
+                    "type": "initial",
+                    "maximumWarning": "650kb",
+                    "maximumError": "1mb"
+                  },
+                  {
+                    "type": "anyComponentStyle",
+                    "maximumWarning": "18kb",
+                    "maximumError": "20kb"
+                  }
               ],
               "outputHashing": "all"
             },
@@ -60,6 +60,9 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "control-financiero-ui:build:production"

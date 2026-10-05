@@ -4,6 +4,30 @@ import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { ThemeService } from './services/theme.service';
 import { CalendarReminderService } from './services/calendar-reminder.service';
+import { HttpClient } from '@angular/common/http';
+import { API_BASE_URL } from './api.config';
+import { AuthService } from './services/auth.service';
+
+interface PerfilBadge {
+  username: string;
+  fotoPerfil: string | null;
+}
+
+interface MenuOption {
+  etiqueta: string;
+  ruta: string;
+  icono: 'dashboard' | 'cuentas' | 'movimientos' | 'calendario' | 'usuarios' | 'configuracion' | 'reporte';
+}
+
+interface MenuSection {
+  titulo: string;
+  opciones: MenuOption[];
+}
+
+interface MenuResponse {
+  secciones: MenuSection[];
+  rutasPermitidas: string[];
+}
 
 @Component({
   selector: 'app-root',
@@ -15,13 +39,26 @@ import { CalendarReminderService } from './services/calendar-reminder.service';
 export class AppComponent implements OnInit {
   title = 'control-financiero-ui';
   username = 'Invitado';
+  userRole = 'Usuario';
   showTopbar = true;
   showSidebar = true;
   showUserMenu = false;
+  currentProfile: PerfilBadge | null = null;
+  menuSections: MenuSection[] = [];
   isAuthenticated = false;
+  private roleLookupInProgress = false;
+  private sessionValidationStarted = false;
   sidebarCollapsed = false;
   sidebarOpen = false; // mobile overlay open state
-  constructor(private router: Router, private themeService: ThemeService, private calendarReminders: CalendarReminderService) {}
+  calendarReminder: { title: string; date: Date; payment: boolean } | null = null;
+  private reminderToastTimer: ReturnType<typeof setTimeout> | null = null;
+  constructor(private router: Router, private themeService: ThemeService, private calendarReminders: CalendarReminderService, private http: HttpClient, private authService: AuthService) {
+    this.calendarReminders.due$.subscribe(reminder => {
+      this.calendarReminder = reminder;
+      if (this.reminderToastTimer) clearTimeout(this.reminderToastTimer);
+      this.reminderToastTimer = setTimeout(() => this.calendarReminder = null, 20_000);
+    });
+  }
 
   ngOnInit(): void {
     // initialize theme early
@@ -40,13 +77,48 @@ export class AppComponent implements OnInit {
     const storedName = localStorage.getItem('username');
     this.username = storedName?.trim() ? storedName : 'Invitado';
     this.isAuthenticated = localStorage.getItem('isLoggedIn') === 'true';
+    this.userRole = localStorage.getItem('userRole') || 'Usuario';
+    if (this.isAuthenticated && !this.sessionValidationStarted && !this.roleLookupInProgress) {
+      this.sessionValidationStarted = true;
+      this.roleLookupInProgress = true;
+      this.http.get<{ id: number; username: string; rol: string }>(`${API_BASE_URL}/auth/me`).subscribe({
+        next: (user) => {
+          this.roleLookupInProgress = false;
+          this.userRole = user.rol || 'Usuario';
+          if (user.username?.trim()) this.username = user.username;
+          if (user.id) localStorage.setItem('userId', String(user.id));
+          localStorage.setItem('username', this.username);
+          localStorage.setItem('userRole', this.userRole);
+          this.loadCurrentProfile();
+          this.loadMenu();
+        },
+        error: () => {
+          this.roleLookupInProgress = false;
+          this.sessionValidationStarted = false;
+          sessionStorage.setItem('controlFinanciero.sessionExpired', 'true');
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('username');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('userRole');
+          this.isAuthenticated = false;
+          this.router.navigateByUrl('/login', { replaceUrl: true });
+        }
+      });
+    }
   }
 
   private updateLayoutState(url: string): void {
-    this.syncUserFromStorage();
-
     const normalizedUrl = url.split('?')[0].split('#')[0];
-    const isPublicPage = normalizedUrl === '/login' || normalizedUrl === '/register' || normalizedUrl === '/';
+    const isPasswordResetPage = normalizedUrl === '/reset-password';
+    if (isPasswordResetPage) {
+      // A reset link is public; a stale client-side session must not redirect it to login.
+      this.isAuthenticated = false;
+    } else {
+      this.syncUserFromStorage();
+    }
+
+    const isPublicPage = normalizedUrl === '/login' || normalizedUrl === '/register'
+      || normalizedUrl === '/reset-password' || normalizedUrl === '/';
 
     this.showTopbar = this.isAuthenticated && !isPublicPage;
     this.showSidebar = this.isAuthenticated && !isPublicPage;
@@ -57,6 +129,49 @@ export class AppComponent implements OnInit {
 
   toggleUserMenu(): void {
     this.showUserMenu = !this.showUserMenu;
+  }
+
+  openProfile(): void {
+    this.showUserMenu = false;
+    this.sidebarOpen = false;
+    try { document.body.style.overflow = ''; } catch { }
+    void this.router.navigateByUrl('/perfil');
+  }
+
+  closeUserMenu(): void {
+    this.showUserMenu = false;
+    this.sidebarOpen = false;
+    try { document.body.style.overflow = ''; } catch { }
+  }
+
+  private loadCurrentProfile(): void {
+    this.http.get<PerfilBadge>(`${API_BASE_URL}/auth/me/profile`).subscribe({
+      next: profile => {
+        this.currentProfile = profile;
+        if (profile.username?.trim()) this.username = profile.username;
+      }
+    });
+  }
+
+  private loadMenu(): void {
+    this.http.get<MenuResponse>(`${API_BASE_URL}/auth/me/menu`).subscribe({
+      next: response => { this.menuSections = response.secciones || []; },
+      error: () => { this.menuSections = []; }
+    });
+  }
+
+  closeCalendarReminder(): void {
+    this.calendarReminder = null;
+    if (this.reminderToastTimer) clearTimeout(this.reminderToastTimer);
+  }
+
+  openCalendarReminder(): void {
+    this.closeCalendarReminder();
+    void this.router.navigate(['/calendario']);
+  }
+
+  calendarReminderTime(date: Date): string {
+    return date.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
   }
 
   // Theme helpers for template
@@ -108,12 +223,16 @@ export class AppComponent implements OnInit {
 
   logout(): void {
     this.showUserMenu = false;
+    this.authService.logout().subscribe({ error: () => undefined });
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('username');
     localStorage.removeItem('userId');
+    localStorage.removeItem('userRole');
     sessionStorage.clear();
     this.username = 'Invitado';
+    this.currentProfile = null;
     this.isAuthenticated = false;
+    this.sessionValidationStarted = false;
     this.showTopbar = false;
     this.showSidebar = false;
     this.router.navigateByUrl('/login', { replaceUrl: true });

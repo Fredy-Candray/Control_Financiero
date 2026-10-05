@@ -25,6 +25,12 @@ public class Usuario {
     @Column(nullable = false, unique = true, length = 100)
     private String correo;
 
+    @Column(length = 15, columnDefinition = "varchar(15)")
+    private String telefono;
+
+    @Column(name = "foto_perfil", columnDefinition = "varchar(max)")
+    private String fotoPerfil;
+
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 

@@ -60,3 +60,9 @@
 .recent-icon { border-radius: 9px; }
 .recent-icon.positive { color: #087c55; background: rgba(15,159,110,.1); }
 .data-notice { border-radius: 11px; }
+
+/* Keep chart and recent activity stacked on tablet and mobile. This follows
+   the desktop palette overrides above so its two-column template cannot win. */
+@media (max-width: 1100px) {
+  .dashboard-content-grid { grid-template-columns: minmax(0, 1fr); }
+}

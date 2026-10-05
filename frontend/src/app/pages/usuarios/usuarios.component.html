@@ -1,7 +1,6 @@
 <section class="page-shell users-page">
   <header class="page-intro">
     <div>
-      <p class="eyebrow">Administración</p>
       <h1>Usuarios</h1>
       <p class="page-description">Administra el acceso y los perfiles de tu equipo.</p>
     </div>
@@ -34,7 +33,7 @@
             <td><span class="role-pill" [class.admin-role]="usuario.rol === 'Administrador'">{{ usuario.rol }}</span></td>
             <td><span class="status-pill" [class.inactive]="usuario.estado === 'Inactivo'"><i></i>{{ usuario.estado }}</span></td>
             <td class="date-cell">{{ usuario.fechaAlta }}</td>
-            <td><div class="row-actions"><button type="button" class="icon-button" (click)="abrirEditar(usuario)" [attr.aria-label]="'Editar ' + usuario.nombre" title="Editar">✎</button><button *ngIf="usuario.estado === 'Activo'" type="button" class="icon-button delete-action" (click)="solicitarEliminacion(usuario)" [attr.aria-label]="'Desactivar ' + usuario.nombre" title="Desactivar usuario">⌫</button></div></td>
+            <td><div class="row-actions"><button type="button" class="icon-button" (click)="abrirVer(usuario)" [attr.aria-label]="'Ver ' + usuario.nombre" title="Ver usuario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button><button type="button" class="icon-button" (click)="abrirEditar(usuario)" [attr.aria-label]="'Editar ' + usuario.nombre" title="Editar">✎</button><button *ngIf="usuario.estado === 'Activo'" type="button" class="icon-button delete-action" (click)="solicitarEliminacion(usuario)" [attr.aria-label]="'Desactivar ' + usuario.nombre" title="Desactivar usuario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m2 0-.9 14H6.9L6 6m4 4v7m4-7v7"/></svg></button></div></td>
           </tr>
         </tbody>
       </table>
@@ -47,15 +46,51 @@
   <section class="modal-card" role="dialog" aria-modal="true" [attr.aria-label]="editandoId === null ? 'Crear usuario' : 'Editar usuario'" (click)="$event.stopPropagation()">
     <div class="modal-heading"><div><p class="eyebrow">Gestión de acceso</p><h2>{{ editandoId === null ? 'Nuevo usuario' : 'Editar usuario' }}</h2></div><button type="button" class="close-button" (click)="cancelarModal()" aria-label="Cerrar">×</button></div>
     <p class="modal-description">Completa la información del perfil.</p>
-    <form (ngSubmit)="guardar()" #userForm="ngForm">
-      <label>Nombre completo<input name="nombre" [(ngModel)]="formulario.nombre" placeholder="Ej. Andrea Rivera" required maxlength="100" /></label>
-      <label>Correo electrónico<input name="correo" type="email" [(ngModel)]="formulario.correo" placeholder="nombre@empresa.com" required maxlength="100" /></label>
-      <label>Nombre de usuario<input name="username" [(ngModel)]="formulario.username" placeholder="Ej. andrea.rivera" required maxlength="50" /></label>
-      <label>{{ editandoId === null ? 'Contraseña' : 'Nueva contraseña (opcional)' }}<input name="password" type="password" [(ngModel)]="formulario.password" [required]="editandoId === null" minlength="8" autocomplete="new-password" [placeholder]="editandoId === null ? 'Mínimo 8 caracteres' : 'Déjala vacía para conservarla'" /></label>
-      <div class="form-row"><label>Rol<select  name="rol" [(ngModel)]="formulario.rol"><option value="Usuario">Usuario</option><option value="Administrador">Administrador</option></select></label><label>Estado<select  name="estado" [(ngModel)]="formulario.estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></label></div>
+    <form (ngSubmit)="guardar(userForm)" #userForm="ngForm" novalidate>
+      <label>Nombre completo
+        <input #nameField="ngModel" name="nombre" [(ngModel)]="formulario.nombre" placeholder="Ej. Andrea Rivera" required maxlength="100" pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ .'-]*$" autocomplete="name" />
+        <small class="field-error" *ngIf="nameField.invalid && (nameField.touched || submitted)">{{ nameField.errors?.['required'] ? 'El nombre es obligatorio.' : 'Usa letras y espacios para escribir el nombre.' }}</small>
+      </label>
+      <label>Correo electrónico
+        <input #emailField="ngModel" name="correo" type="email" [(ngModel)]="formulario.correo" (ngModelChange)="errorCorreo = ''" placeholder="nombre@empresa.com" required maxlength="100" autocomplete="email" />
+        <small class="field-error" *ngIf="errorCorreo">{{ errorCorreo }}</small>
+        <small class="field-error" *ngIf="!errorCorreo && emailField.invalid && (emailField.touched || submitted)">{{ emailField.errors?.['required'] ? 'El correo es obligatorio.' : 'Ingresa un correo electrónico válido.' }}</small>
+      </label>
+      <label>Teléfono (opcional)
+        <input #phoneField="ngModel" name="telefono" type="text" inputmode="numeric" autocomplete="tel-national" placeholder="7777-7777" maxlength="9" pattern="^[0-9]{4}-[0-9]{4}$" [ngModel]="formulario.telefono" (ngModelChange)="formulario.telefono = formatearTelefono($event)" />
+        <small class="field-error" *ngIf="phoneField.invalid && (phoneField.touched || submitted)">Ingresa 8 dígitos; se mostrará como 7777-7777.</small>
+      </label>
+      <label>Nombre de usuario
+        <input #usernameField="ngModel" name="username" [(ngModel)]="formulario.username" (ngModelChange)="errorUsername = ''" placeholder="Ej. andrea.rivera" required maxlength="50" pattern="^[A-Za-z0-9._-]+$" autocomplete="username" />
+        <small class="field-error" *ngIf="errorUsername">{{ errorUsername }}</small>
+        <small class="field-error" *ngIf="!errorUsername && usernameField.invalid && (usernameField.touched || submitted)">{{ usernameField.errors?.['required'] ? 'El nombre de usuario es obligatorio.' : 'Usa solo letras, números, punto, guion o guion bajo.' }}</small>
+      </label>
+      <label>{{ editandoId === null ? 'Contraseña' : 'Nueva contraseña (opcional)' }}
+        <span class="password-input-wrap"><input #passwordField="ngModel" name="password" [type]="mostrarPassword ? 'text' : 'password'" [(ngModel)]="formulario.password" [required]="editandoId === null" minlength="8" autocomplete="new-password" [placeholder]="editandoId === null ? 'Mínimo 8 caracteres' : 'Déjala vacía para conservarla'" /><button class="password-toggle" type="button" (click)="mostrarPassword = !mostrarPassword" [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'" [attr.aria-pressed]="mostrarPassword" [title]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"><svg *ngIf="!mostrarPassword" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg *ngIf="mostrarPassword" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a15 15 0 0 1-3 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.4 0 2.7-.4 3.8-1"/></svg></button></span>
+        <small class="field-error" *ngIf="passwordField.invalid && (passwordField.touched || submitted)">{{ passwordField.errors?.['required'] ? 'La contraseña es obligatoria.' : 'La contraseña debe tener al menos 8 caracteres.' }}</small>
+      </label>
+      <div class="form-row">
+        <label>Rol<select #roleField="ngModel" name="rol" [(ngModel)]="formulario.rol" required><option value="Usuario">Usuario</option><option value="Administrador">Administrador</option></select><small class="field-error" *ngIf="roleField.invalid && (roleField.touched || submitted)">Selecciona un rol.</small></label>
+        <label>Estado<select #statusField="ngModel" name="estado" [(ngModel)]="formulario.estado" required><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select><small class="field-error" *ngIf="statusField.invalid && (statusField.touched || submitted)">Selecciona un estado.</small></label>
+      </div>
       <p class="form-error" *ngIf="errorFormulario" role="alert">{{ errorFormulario }}</p>
-      <div class="modal-actions"><button type="button" class="secondary-button" (click)="cancelarModal()">Cancelar</button><button type="submit" class="primary-button" [disabled]="userForm.invalid || guardando">{{ guardando ? 'Guardando…' : editandoId === null ? 'Crear usuario' : 'Guardar cambios' }}</button></div>
+      <div class="modal-actions"><button type="button" class="secondary-button" (click)="cancelarModal()">Cancelar</button><button type="submit" class="primary-button" [disabled]="guardando">{{ guardando ? 'Guardando…' : editandoId === null ? 'Crear usuario' : 'Guardar cambios' }}</button></div>
     </form>
+  </section>
+</div>
+
+<div class="modal-backdrop" *ngIf="usuarioSeleccionado as usuario" (click)="cerrarVer()">
+  <section class="modal-card user-details-card" role="dialog" aria-modal="true" aria-labelledby="user-details-title" (click)="$event.stopPropagation()">
+    <div class="modal-heading"><div><p class="eyebrow">Directorio de usuarios</p><h2 id="user-details-title">Datos del usuario</h2></div><button type="button" class="close-button" (click)="cerrarVer()" aria-label="Cerrar">×</button></div>
+    <div class="user-details-identity"><span class="avatar">{{ usuario.nombre.charAt(0).toUpperCase() }}</span><div><strong>{{ usuario.nombre }}</strong><span>&#64;{{ usuario.username }}</span></div></div>
+    <dl class="user-details-grid">
+      <div><dt>Correo electrónico</dt><dd>{{ usuario.correo }}</dd></div>
+      <div><dt>Teléfono</dt><dd>{{ usuario.telefono || 'No registrado' }}</dd></div>
+      <div><dt>Rol</dt><dd><span class="role-pill" [class.admin-role]="usuario.rol === 'Administrador'">{{ usuario.rol }}</span></dd></div>
+      <div><dt>Estado</dt><dd><span class="status-pill" [class.inactive]="usuario.estado === 'Inactivo'"><i></i>{{ usuario.estado }}</span></dd></div>
+      <div><dt>Fecha de alta</dt><dd>{{ usuario.fechaAlta }}</dd></div>
+    </dl>
+    <div class="modal-actions"><button type="button" class="secondary-button" (click)="cerrarVer()">Cerrar</button></div>
   </section>
 </div>
 

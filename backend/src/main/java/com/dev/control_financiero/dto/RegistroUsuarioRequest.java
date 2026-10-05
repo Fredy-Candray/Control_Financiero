@@ -16,6 +16,9 @@ public class RegistroUsuarioRequest {
     @Email(message = "El correo no es válido")
     private String correo;
 
+    @Size(max = 15)
+    private String telefono;
+
     @NotBlank(message = "El usuario es obligatorio")
     @Size(max = 50)
     private String username;

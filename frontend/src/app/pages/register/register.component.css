@@ -93,8 +93,18 @@ button {
 .register-card h1 { letter-spacing:-.04em; }
 input:focus { border-color:#0f9f6e; box-shadow:0 0 0 3px rgba(15,159,110,.14); }
 button { background:linear-gradient(110deg,#0a9a66,#12b77b); border-radius:9px; box-shadow:0 7px 16px rgba(13,145,94,.18); }
+.password-input-wrap { position:relative; display:block; width:100%; }
+.password-input-wrap input { width:100%; padding-right:48px; }
+.password-toggle { position:absolute; top:50%; right:6px; display:grid; place-items:center; width:36px; height:36px; margin:0; padding:7px; color:#657386; background:transparent; border:0; border-radius:8px; box-shadow:none; transform:translateY(-50%); cursor:pointer; }
+.password-toggle:hover { color:#0f9f6e; background:rgba(15,159,110,.08); }
+.password-toggle svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 :host-context(body.dark-theme) .register-card { color:#ededed; background:#141414; border-color:#292c2b; box-shadow:0 24px 70px rgba(0,0,0,.35); }
 :host-context(body.dark-theme) .register-card h1,:host-context(body.dark-theme) label { color:#ededed; }
 :host-context(body.dark-theme) .register-card p,:host-context(body.dark-theme) .link { color:#969a98; }
 :host-context(body.dark-theme) input { color:#ededed; background:#1b1c1c; border-color:#303332; }
+:host-context(body.dark-theme) .password-toggle { color:#a7b0b7; background:transparent; box-shadow:none; }
 :host-context(body.dark-theme) .register-shell { background:radial-gradient(ellipse at top right,rgba(18,165,99,.13),transparent 42%),#090a0a; }
+:host-context(body:not(.dark-theme)) .register-shell { background:radial-gradient(ellipse at top right,rgba(15,159,110,.1),transparent 42%),#f1f5f3; }
+:host-context(body:not(.dark-theme)) .register-card { color:#17231e; background:#fff; border:1px solid #dce6e0; }
+:host-context(body:not(.dark-theme)) .register-card h1 { color:#17231e; }
+:host-context(body:not(.dark-theme)) label { color:#33443b; }

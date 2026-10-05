@@ -1,12 +1,13 @@
 import { ApplicationConfig } from '@angular/core';
-import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { sessionCookieInterceptor } from './interceptors/session-cookie.interceptor';
 
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes),
-    provideHttpClient()
+    provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
+    provideHttpClient(withInterceptors([sessionCookieInterceptor]))
   ]
 };

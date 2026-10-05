@@ -9,7 +9,7 @@
   --bg-color: #f5f8f6;
   --surface: #ffffff;
   --card-bg: #ffffff;
-  --sidebar-bg: #111c19;
+  --sidebar-bg: #f7faf8;
   --topbar-bg: #ffffff;
   --accent: #0f9f6e;
   --accent-strong: #087c55;
@@ -49,6 +49,9 @@ button, input { font: inherit; }
 button { transition: transform .2s ease, box-shadow .2s ease; }
 button:hover { transform: translateY(-1px); }
 input, select, textarea { font: inherit; }
+/* Use the app's repeatable eye buttons instead of Edge's extra built-in reveal icon. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear { display: none; }
 input:focus, select:focus, textarea:focus { outline: 3px solid color-mix(in srgb,var(--accent) 18%,transparent); border-color: var(--accent) !important; }
 ::selection { background: color-mix(in srgb,var(--accent) 24%,transparent); }
 /* Responsive helpers for dashboard */
@@ -89,3 +92,138 @@ body.dark-theme .status-pill { color:#75d5a6; background:rgba(18,165,99,.13); }
 body.dark-theme .status-pill.inactive { color:#a0a4a6; background:#232526; }
 body.dark-theme .icon-button:hover,
 body.dark-theme .close-button:hover { color:var(--accent-strong); background:rgba(18,165,99,.12); border-color:rgba(18,165,99,.2); }
+
+/* Global light-theme sidebar overrides. Component-scoped styles cannot
+   reliably apply selectors that depend on body:not(.dark-theme). */
+body:not(.dark-theme) .app-shell .sidebar {
+  color: var(--text);
+  background: linear-gradient(180deg, #ffffff 0%, #f4f7f5 100%);
+  border-right: 1px solid var(--card-border);
+}
+body:not(.dark-theme) .app-shell .sidebar .brand { border-bottom-color: var(--card-border); }
+body:not(.dark-theme) .app-shell .sidebar .brand h2 { color: var(--text); }
+body:not(.dark-theme) .app-shell .sidebar .brand p { color: var(--muted); }
+body:not(.dark-theme) .app-shell .sidebar .nav-group-title { color: #728078; }
+body:not(.dark-theme) .app-shell .sidebar .nav-links a { color: #52615a; }
+body:not(.dark-theme) .app-shell .sidebar .nav-links a:hover { color: #17231e; background: rgba(15,159,110,.07); }
+body:not(.dark-theme) .app-shell .sidebar .nav-links a.active {
+  color: #087c55;
+  background: rgba(15,159,110,.1);
+  border-color: rgba(15,159,110,.16);
+  box-shadow: inset 3px 0 #0f9f6e;
+}
+body:not(.dark-theme) .app-shell .sidebar .sidebar-footer { border-top-color: var(--card-border); }
+body:not(.dark-theme) .app-shell .sidebar .sidebar-footer .theme-btn,
+body:not(.dark-theme) .app-shell .sidebar .sidebar-toggle-btn {
+  color: #46554e;
+  background: #ffffff;
+  border-color: var(--card-border);
+}
+body:not(.dark-theme) .app-shell .sidebar .sidebar-toggle-btn .toggle-icon,
+body:not(.dark-theme) .app-shell .sidebar .sidebar-toggle-btn .toggle-icon path {
+  color: #46554e !important;
+  fill: #46554e !important;
+}
+body:not(.dark-theme) .app-shell .sidebar .brand h2 { color: var(--text) !important; }
+body.dark-theme .app-shell .sidebar .brand h2 { color: #f4fbf6 !important; }
+
+.user-menu-dropdown .profile-menu-btn { display:block; width:100%; padding:9px 10px; text-align:left; text-decoration:none; color:var(--text); background:transparent; border:0; border-radius:8px; cursor:pointer; }
+.user-menu-dropdown .profile-menu-btn:hover { background:color-mix(in srgb,var(--surface) 88%,var(--accent) 12%); }
+.user-pill .avatar img { display:block; width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+
+/* Always expose the drawer control on narrow screens, above page content. */
+@media (max-width: 640px) {
+  .app-shell .topbar { z-index: 80; }
+  .app-shell .topbar .topbar-left .mobile-hamburger {
+    position: relative !important;
+    inset: auto !important;
+    z-index: 95 !important;
+    display: inline-flex !important;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    color: #17231e !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0;
+    box-shadow: none !important;
+  }
+  .app-shell .topbar .topbar-left .mobile-hamburger svg,
+  .app-shell .topbar .topbar-left .mobile-hamburger svg path,
+  .app-shell .topbar .topbar-left .mobile-hamburger svg line {
+    color: currentColor !important;
+    fill: currentColor;
+    stroke: currentColor;
+  }
+  body.dark-theme .app-shell .topbar .topbar-left .mobile-hamburger { color: #ffffff !important; }
+  .app-shell .topbar .topbar-left .mobile-hamburger:hover,
+  .app-shell .topbar .topbar-left .mobile-hamburger.open {
+    color: inherit !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+body.dark-theme .app-shell .topbar .topbar-left .mobile-hamburger:hover,
+body.dark-theme .app-shell .topbar .topbar-left .mobile-hamburger.open { color: #ffffff !important; }
+  .app-shell .topbar .topbar-left { min-width: 44px; min-height: 44px; }
+}
+
+/* Prevent wide data tables from expanding the mobile page itself. */
+@media (max-width: 640px) {
+  html, body { max-width: 100%; overflow-x: clip; }
+  .app-shell {
+    width: 100%;
+    max-width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: clip;
+  }
+  .app-shell .content-area {
+    flex: 1 1 auto;
+    width: 0;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: clip;
+  }
+  .app-shell .main-content { width: 100%; min-width: 0; max-width: 100%; overflow-x: clip; }
+  .users-page, .page-shell, .users-panel, .toolbar, .panel-heading { min-width: 0; max-width: 100%; }
+  .users-panel .table-scroll {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
+  }
+  .app-shell .sidebar.drawer {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .app-shell .sidebar.drawer.open { height: 100dvh; max-height: 100dvh; }
+  .app-shell .sidebar .sidebar-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    flex: 0 0 auto;
+    margin-top: auto;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: var(--sidebar-bg, #f7faf8);
+  }
+  body.dark-theme .app-shell .sidebar .sidebar-footer { background: #080909; }
+}
+
+/* At phone widths the app shell stacks vertically, so content must not use
+   the zero-width flex basis used by the row layout above. */
+@media (max-width: 480px) {
+  .app-shell .content-area { width: 100%; flex: 1 1 auto; }
+}

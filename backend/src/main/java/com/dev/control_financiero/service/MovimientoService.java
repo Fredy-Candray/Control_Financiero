@@ -33,10 +33,16 @@ public class MovimientoService {
         if (limiteCredito == null || limiteCredito.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("La tarjeta debe tener un límite de crédito válido.");
         }
+        if (saldoActual == null) {
+            saldoActual = BigDecimal.ZERO;
+        }
+        if (monto == null || monto.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("El monto debe ser mayor que cero.");
+        }
 
-        BigDecimal nuevoSaldo = saldoActual.subtract(monto);
-        if (nuevoSaldo.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("El crédito no puede quedar en negativo. Superaste el límite disponible.");
+        BigDecimal nuevoSaldo = saldoActual.add(monto);
+        if (nuevoSaldo.compareTo(limiteCredito) > 0) {
+            throw new IllegalArgumentException("El crédito no puede exceder el límite permitido.");
         }
     }
 

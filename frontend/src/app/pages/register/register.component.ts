@@ -17,6 +17,7 @@ export class RegisterComponent {
   correo = '';
   username = '';
   password = '';
+  mostrarPassword = false;
   error = '';
   success = '';
 

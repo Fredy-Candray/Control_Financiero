@@ -1,4 +1,12 @@
 <div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed">
+  <section class="calendar-reminder-toast" *ngIf="calendarReminder" role="alert" aria-live="assertive">
+    <span class="calendar-reminder-icon" aria-hidden="true">{{ calendarReminder.payment ? '▣' : '◷' }}</span>
+    <button type="button" class="calendar-reminder-copy" (click)="openCalendarReminder()">
+      <strong>{{ calendarReminder.payment ? 'Recordatorio de pago' : 'Actividad programada' }}</strong>
+      <span>{{ calendarReminder.title }} · {{ calendarReminderTime(calendarReminder.date) }}</span>
+    </button>
+    <button type="button" class="calendar-reminder-close" (click)="closeCalendarReminder()" aria-label="Cerrar recordatorio">×</button>
+  </section>
   <aside class="sidebar drawer" [class.open]="sidebarOpen" *ngIf="showSidebar">
     <button class="drawer-close" *ngIf="sidebarOpen" (click)="closeSidebarOverlay()" aria-label="Cerrar menú lateral">
       ✕
@@ -14,32 +22,19 @@
     </div>
 
     <nav class="nav-links" #navLinks>
-      <section class="nav-group">
-        <h3 class="nav-group-title">Principal</h3>
-        <a routerLink="/dashboard" routerLinkActive="active" title="Dashboard">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/><rect x="3" y="14" width="8" height="7" rx="1.5"/></svg></span>
-          <span class="nav-label">Dashboard</span>
-        </a>
-      </section>
-      <section class="nav-group">
-        <h3 class="nav-group-title">Finanzas</h3>
-        <a routerLink="/cuentas" routerLinkActive="active" title="Cuentas">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg></span>
-          <span class="nav-label">Cuentas</span>
-        </a>
-        <a routerLink="/movimientos" routerLinkActive="active" title="Movimientos">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM3 9h18M7 15h4"/></svg></span>
-          <span class="nav-label">Movimientos</span>
-        </a>        <a routerLink="/calendario" routerLinkActive="active" title="Calendario">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 17h2"/></svg></span>
-          <span class="nav-label">Calendario</span>
-        </a>
-      </section>
-      <section class="nav-group">
-        <h3 class="nav-group-title">Sistema</h3>
-        <a routerLink="/usuarios" routerLinkActive="active" title="Usuarios">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20v-1.2a6 6 0 0 1 12 0V20zM16 5.2a3.2 3.2 0 0 1 0 6.1M18 15a4.5 4.5 0 0 1 3 4.2v.8"/></svg></span>
-          <span class="nav-label">Usuarios</span>
+      <section class="nav-group" *ngFor="let section of menuSections">
+        <h3 class="nav-group-title">{{ section.titulo }}</h3>
+        <a *ngFor="let option of section.opciones" [routerLink]="option.ruta" routerLinkActive="active" [title]="option.etiqueta">
+          <span class="nav-icon" [ngSwitch]="option.icono">
+            <svg *ngSwitchCase="'dashboard'" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/><rect x="3" y="14" width="8" height="7" rx="1.5"/></svg>
+            <svg *ngSwitchCase="'cuentas'" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg>
+            <svg *ngSwitchCase="'movimientos'" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM3 9h18M7 15h4"/></svg>
+            <svg *ngSwitchCase="'calendario'" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 17h2"/></svg>
+            <svg *ngSwitchCase="'usuarios'" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20v-1.2a6 6 0 0 1 12 0V20zM16 5.2a3.2 3.2 0 0 1 0 6.1M18 15a4.5 4.5 0 0 1 3 4.2v.8"/></svg>
+            <svg *ngSwitchCase="'configuracion'" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2h-2.6v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1A1.7 1.7 0 0 0 8 15a1.7 1.7 0 0 0-1.5-1H6.3v-2.6h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.2H15v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2V14h-.2a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+            <span *ngSwitchCase="'reporte'" class="report-icon" aria-hidden="true"></span>
+          </span>
+          <span class="nav-label">{{ option.etiqueta }}</span>
         </a>
       </section>
 
@@ -108,16 +103,18 @@
           </ng-template>
         </button>
       </div>
-      <div class="user-menu">
+      <div class="user-menu" [class.menu-open]="showUserMenu">
         <div class="user-pill" (click)="toggleUserMenu()" role="button" tabindex="0" (keydown.enter)="toggleUserMenu()" (keydown.space)="toggleUserMenu()">
-          <span class="avatar">{{ username.charAt(0).toUpperCase() }}</span>
+          <span class="avatar"> <img *ngIf="currentProfile?.fotoPerfil; else avatarInitial" [src]="currentProfile?.fotoPerfil" alt="" /><ng-template #avatarInitial>{{ username.charAt(0).toUpperCase() }}</ng-template></span>
           <span>{{ username }}</span>
           <span class="user-menu-arrow">▾</span>
         </div>
         <div class="user-menu-dropdown" *ngIf="showUserMenu">
+          <a class="profile-menu-btn" routerLink="/perfil" (click)="closeUserMenu()">Perfil</a>
           <button type="button" class="logout-btn" (click)="logout()">Cerrar sesión</button>
         </div>
       </div>
+      <button class="user-menu-backdrop" *ngIf="showUserMenu" type="button" aria-label="Cerrar menú de usuario" (click)="closeUserMenu()"></button>
     </header>
 
     <main class="main-content">
@@ -126,5 +123,5 @@
   </div>
 
   <!-- Backdrop for mobile drawer -->
-  <div class="backdrop" *ngIf="sidebarOpen" (click)="closeSidebarOverlay()" aria-hidden="true"></div>
+<div class="backdrop" *ngIf="sidebarOpen" (click)="closeSidebarOverlay()" aria-hidden="true"></div>
 </div>

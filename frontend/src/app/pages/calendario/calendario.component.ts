@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { CalendarEvent, CalendarEventType, CalendarRecurrence } from '../../models/calendar-event';
+import { CalendarCategory } from '../../models/calendar-category';
 import { CalendarEventsService } from '../../services/calendar-events.service';
+import { CalendarCategoriesService } from '../../services/calendar-categories.service';
 import { CalendarReminderService } from '../../services/calendar-reminder.service';
 import { Cuenta } from '../../models/cuenta';
 import { API_BASE_URL } from '../../api.config';
@@ -34,27 +36,58 @@ export class CalendarioComponent implements OnInit {
   ];
 
   events: CalendarEvent[] = [];
+  categories: CalendarCategory[] = [];
   accounts: Cuenta[] = [];
   month = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   selectedDate = this.dateKey(new Date());
   modalOpen = false;
+  categoryModalOpen = false;
+  editingCategoryId: string | null = null;
+  categoryError = '';
+  categoryDraft = this.emptyCategoryDraft();
   editingId: string | null = null;
   notificationPermission: NotificationPermission | 'unsupported' = 'default';
   notificationMessage = '';
   formError = '';
   saving = false;
+  whatsappPhone = '';
   form = this.emptyForm();
 
   constructor(
     private eventsStore: CalendarEventsService,
+    private categoriesStore: CalendarCategoriesService,
     private reminders: CalendarReminderService,
     private http: HttpClient
   ) {}
 
   ngOnInit(): void {
+    this.categories = this.categoriesStore.list();
     this.events = this.eventsStore.list();
+    let migrated = false;
+    this.events = this.events.map(event => {
+      if (event.categoryId && this.categories.some(category => category.id === event.categoryId)) return event;
+      migrated = true;
+      return { ...event, categoryId: this.defaultCategoryId(event.type) };
+    });
+    if (migrated) this.events.forEach(event => this.eventsStore.save(event));
     this.notificationPermission = this.reminders.permission();
     this.reminders.start();
+    this.eventsStore.synchronize().subscribe({
+      next: serverEvents => {
+        this.events = serverEvents.map(event => ({
+          ...event,
+          categoryId: event.categoryId && this.categories.some(category => category.id === event.categoryId)
+            ? event.categoryId : this.defaultCategoryId(event.type)
+        }));
+        this.events.filter((event, index) => event.categoryId !== serverEvents[index]?.categoryId)
+          .forEach(event => this.eventsStore.saveRemote(event).subscribe({ error: () => undefined }));
+      },
+      error: error => this.notificationMessage = this.serverErrorMessage(error, 'No se pudo sincronizar el calendario con el servidor. Los avisos por correo y WhatsApp no estarán disponibles.')
+    });
+    this.http.get<{ telefono?: string }>(`${API_BASE_URL}/auth/me`).subscribe({
+      next: user => this.whatsappPhone = user.telefono ?? '',
+      error: () => undefined
+    });
     const userId = Number(localStorage.getItem('userId') || '1');
     this.http.get<Cuenta[]>(`${API_BASE_URL}/cuentas/usuario/${userId}`).subscribe({
       next: accounts => this.accounts = accounts.filter(account => account.activa),
@@ -103,6 +136,11 @@ export class CalendarioComponent implements OnInit {
 
   hasEvent(date: Date): boolean { return this.eventsForDate(this.dateKey(date)).length > 0; }
   hasPayment(date: Date): boolean { return this.eventsForDate(this.dateKey(date)).some(event => event.type === 'PAGO_TARJETA'); }
+  calendarDayEvents(date: Date): CalendarEvent[] { return this.eventsForDate(this.dateKey(date)).slice(0, 2); }
+  calendarDayEventCount(date: Date): number { return this.eventsForDate(this.dateKey(date)).length; }
+  categoryColor(event: CalendarEvent): string { return this.categoryForEvent(event)?.color ?? '#16a06a'; }
+  categoryName(event: CalendarEvent): string { return this.categoryForEvent(event)?.name ?? 'Actividad'; }
+  selectedCategoryColor(): string { return this.categories.find(category => category.id === this.form.categoryId)?.color ?? '#16a06a'; }
   isToday(date: Date): boolean { return this.dateKey(date) === this.dateKey(new Date()); }
   isSelected(date: Date): boolean { return this.dateKey(date) === this.selectedDate; }
   isCurrentMonth(date: Date): boolean { return date.getMonth() === this.month.getMonth(); }
@@ -114,10 +152,79 @@ export class CalendarioComponent implements OnInit {
     this.modalOpen = true;
   }
 
+  openCategoryManager(): void {
+    this.editingCategoryId = null;
+    this.categoryDraft = this.emptyCategoryDraft();
+    this.categoryError = '';
+    this.categoryModalOpen = true;
+  }
+
+  closeCategoryManager(): void {
+    this.categoryModalOpen = false;
+    this.categoryError = '';
+  }
+
+  saveCategory(): void {
+    const name = this.categoryDraft.name.trim();
+    if (!name) { this.categoryError = 'Escribe un nombre para la categoría.'; return; }
+    if (this.categories.some(category => category.name.toLocaleLowerCase() === name.toLocaleLowerCase() && category.id !== this.editingCategoryId)) {
+      this.categoryError = 'Ya existe una categoría con ese nombre.';
+      return;
+    }
+    this.categoriesStore.save({
+      id: this.editingCategoryId ?? this.createId(),
+      name,
+      color: this.categoryDraft.color
+    });
+    this.categories = this.categoriesStore.list();
+    this.editingCategoryId = null;
+    this.categoryDraft = this.emptyCategoryDraft();
+    this.categoryError = '';
+  }
+
+  editCategory(category: CalendarCategory): void {
+    this.editingCategoryId = category.id;
+    this.categoryDraft = { name: category.name, color: category.color };
+    this.categoryError = '';
+  }
+
+  cancelCategoryEdit(): void {
+    this.editingCategoryId = null;
+    this.categoryDraft = this.emptyCategoryDraft();
+    this.categoryError = '';
+  }
+
+  deleteCategory(category: CalendarCategory): void {
+    if (this.categories.length <= 1) { this.categoryError = 'Debe quedar al menos una categoría.'; return; }
+    const replacement = this.categories.find(item => item.id !== category.id)!;
+    const affected = this.events.filter(event => event.categoryId === category.id);
+    const detail = affected.length ? ` ${affected.length} evento(s) se reasignarán a “${replacement.name}”.` : '';
+    if (!window.confirm(`¿Eliminar la categoría “${category.name}”?${detail}`)) return;
+    affected.forEach(event => {
+      const updated = { ...event, categoryId: replacement.id };
+      this.eventsStore.save(updated);
+      this.eventsStore.saveRemote(updated).subscribe({ error: () => undefined });
+    });
+    this.categoriesStore.remove(category.id);
+    this.categories = this.categoriesStore.list();
+    this.events = this.eventsStore.list();
+    if (this.editingCategoryId === category.id) {
+      this.editingCategoryId = null;
+      this.categoryDraft = this.emptyCategoryDraft();
+    }
+    this.categoryError = '';
+  }
+
   openEdit(event: CalendarEvent): void {
     this.editingId = event.id;
     this.formError = '';
-    this.form = { ...event };
+    this.form = {
+      ...event,
+      categoryId: event.categoryId ?? this.defaultCategoryId(event.type),
+      notifyBrowser: event.notifyBrowser !== false,
+      notifyEmail: event.notifyEmail === true,
+      notifyWhatsapp: event.notifyWhatsapp === true
+    };
     this.modalOpen = true;
   }
 
@@ -126,6 +233,10 @@ export class CalendarioComponent implements OnInit {
   saveEvent(): void {
     if (!this.form.title.trim() || !this.form.date || !this.form.time) {
       this.formError = 'Completa el título, la fecha y la hora.';
+      return;
+    }
+    if (!this.form.categoryId || !this.categories.some(category => category.id === this.form.categoryId)) {
+      this.formError = 'Selecciona una categoría para el evento.';
       return;
     }
     if (this.form.type === 'PAGO_TARJETA' && !this.form.accountId) {
@@ -148,17 +259,54 @@ export class CalendarioComponent implements OnInit {
       completed: current?.completed ?? false,
       createdAt: current?.createdAt ?? new Date().toISOString()
     };
-    this.eventsStore.save(event);
-    this.events = this.eventsStore.list();
-    this.selectedDate = event.date;
-    this.month = new Date(Number(event.date.slice(0, 4)), Number(event.date.slice(5, 7)) - 1, 1);
-    this.closeModal();
+    if (event.notifyWhatsapp) {
+      const phone = this.whatsappPhone.trim();
+      const normalizedPhone = phone.replace(/[\s()-]/g, '');
+      if (!/^\+[1-9]\d{7,14}$/.test(normalizedPhone) && !/^\d{8}$/.test(normalizedPhone)) {
+        this.formError = 'Agrega un teléfono de 8 dígitos (7777-7777) o con código de país (+50370000000) para usar WhatsApp.';
+        return;
+      }
+      this.saving = true;
+      this.http.put(`${API_BASE_URL}/auth/me/telefono`, { telefono: phone }).subscribe({
+        next: () => this.persistEvent(event),
+        error: () => { this.saving = false; this.formError = 'No se pudo guardar el teléfono. Revisa que tenga 8 dígitos o un código de país válido.'; }
+      });
+    } else {
+      this.persistEvent(event);
+    }
+  }
+
+  private persistEvent(event: CalendarEvent): void {
+    this.saving = true;
+    this.eventsStore.saveRemote(event).subscribe({
+      next: saved => {
+        this.saving = false;
+        this.events = this.eventsStore.list();
+        this.selectedDate = saved.date;
+        this.month = new Date(Number(saved.date.slice(0, 4)), Number(saved.date.slice(5, 7)) - 1, 1);
+        this.closeModal();
+      },
+      error: error => {
+        this.saving = false;
+        this.formError = this.serverErrorMessage(error, 'No se pudo guardar la actividad en el servidor. Inténtalo de nuevo para activar sus recordatorios.');
+      }
+    });
+  }
+
+  private serverErrorMessage(error: unknown, fallback: string): string {
+    if (!(error instanceof HttpErrorResponse)) return fallback;
+    if (error.status === 401) return 'Tu sesión del servidor expiró. Vuelve a iniciar sesión y después agenda la actividad otra vez.';
+    if (error.status === 0) return 'No se pudo conectar con el servidor. Confirma que Spring Boot siga iniciado y vuelve a intentarlo.';
+    const detail = error.error?.message ?? error.error?.detail;
+    return typeof detail === 'string' && detail.trim() ? detail : fallback;
   }
 
   deleteEvent(event: CalendarEvent): void {
     if (!window.confirm(`¿Eliminar “${event.title}”?`)) return;
-    this.eventsStore.remove(event.id);
-    this.events = this.eventsStore.list();
+    this.eventsStore.removeRemote(event.id).subscribe({
+      next: () => this.events = this.eventsStore.list(),
+      error: () => this.notificationMessage = 'No se pudo eliminar la actividad del servidor.'
+    });
   }
 
   async enableNotifications(): Promise<void> {
@@ -193,7 +341,7 @@ export class CalendarioComponent implements OnInit {
     return this.reminderOptions.find(option => option.value === minutes)?.label ?? `${minutes} minutos antes`;
   }
 
-  private eventsForDate(date: string): CalendarEvent[] {
+  eventsForDate(date: string): CalendarEvent[] {
     const selected = new Date(`${date}T00:00:00`);
     const selectedDay = this.dayNumber(selected);
     return this.events.filter(event => {
@@ -253,9 +401,23 @@ export class CalendarioComponent implements OnInit {
   private emptyForm(date = this.selectedDate): CalendarEvent {
     return {
       id: '', title: '', description: '', type: 'ACTIVIDAD' as CalendarEventType,
+      categoryId: this.defaultCategoryId('ACTIVIDAD'),
       date, time: '09:00', accountId: null, amount: null,
-      recurrence: 'NONE', reminderMinutes: 30, completed: false, createdAt: ''
+      recurrence: 'NONE', reminderMinutes: 30, completed: false,
+      notifyBrowser: true, notifyEmail: true, notifyWhatsapp: false, createdAt: ''
     };
+  }
+
+  private emptyCategoryDraft(): { name: string; color: string } { return { name: '', color: '#16a06a' }; }
+
+  private defaultCategoryId(type: CalendarEventType): string {
+    const preferredId = type === 'PAGO_TARJETA' ? 'payment' : 'meeting';
+    return this.categories?.find(category => category.id === preferredId)?.id ?? this.categories?.[0]?.id ?? '';
+  }
+
+  private categoryForEvent(event: CalendarEvent): CalendarCategory | undefined {
+    return this.categories.find(category => category.id === event.categoryId)
+      ?? this.categories.find(category => category.id === this.defaultCategoryId(event.type));
   }
 
   private createId(): string {

@@ -6,11 +6,12 @@
       <p class="page-description">Organiza pagos de tarjetas y actividades importantes.</p>
     </div>
     <div class="heading-actions">
+      <button type="button" class="notification-button" (click)="openCategoryManager()"><span aria-hidden="true">●</span> Categorías</button>
       <button type="button" class="notification-button" (click)="enableNotifications()" [disabled]="notificationPermission === 'granted' || notificationPermission === 'unsupported'">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
         {{ permissionLabel() }}
       </button>
-      <button type="button" class="primary-button" (click)="openCreate()"><span aria-hidden="true">＋</span> Nueva actividad</button>
+      <button type="button" class="primary-button add-button" (click)="openCreate()"><span aria-hidden="true">＋</span> Nueva actividad</button>
     </div>
   </header>
 
@@ -20,6 +21,9 @@
   </div>
   <div class="notification-note permission-hint" *ngIf="notificationPermission === 'unsupported' && !notificationMessage">
     Los recordatorios aparecerán en el calendario. Este navegador no ofrece notificaciones del sistema.
+  </div>
+  <div class="notification-note permission-hint" *ngIf="notificationPermission === 'denied' && !notificationMessage">
+    Chrome bloqueó las notificaciones. Permítelas en los ajustes del sitio y recarga Calendario para recibir alertas en esta PC.
   </div>
 
   <div class="calendar-layout">
@@ -41,12 +45,15 @@
           [class.outside-month]="!isCurrentMonth(date)" [class.today]="isToday(date)" [class.selected]="isSelected(date)"
           (click)="selectDate(date)" [attr.aria-label]="calendarDateLabel(date)" [attr.aria-pressed]="isSelected(date)">
           <span class="day-number">{{ date.getDate() }}</span>
-          <span class="event-markers" *ngIf="hasEvent(date)" aria-hidden="true">
-            <i [class.payment-marker]="hasPayment(date)"></i><i *ngIf="events.length > 2"></i>
+          <span class="day-events" *ngIf="calendarDayEventCount(date)" aria-hidden="true">
+            <span class="calendar-event-chip" *ngFor="let event of calendarDayEvents(date)" [style.--category-color]="categoryColor(event)">
+              <time>{{ event.time }}</time><span>{{ event.title }}</span>
+            </span>
+            <small class="more-events" *ngIf="calendarDayEventCount(date) > 2">+{{ calendarDayEventCount(date) - 2 }}</small>
           </span>
         </button>
       </div>
-      <div class="calendar-legend"><span><i class="legend-activity"></i> Actividad</span><span><i class="legend-payment"></i> Pago de tarjeta</span></div>
+      <div class="calendar-legend"><span *ngFor="let category of categories"><i [style.background]="category.color"></i>{{ category.name }}</span></div>
     </section>
 
     <aside class="calendar-sidebar">
@@ -59,11 +66,11 @@
           <span aria-hidden="true">◷</span><strong>No hay actividades</strong><p>Este día está libre. Puedes agregar un pago o un recordatorio.</p>
           <button type="button" class="text-action" (click)="openCreate(selectedDate)">Agendar para este día</button>
         </div>
-        <article class="event-item" *ngFor="let event of selectedEvents" [class.payment-event]="event.type === 'PAGO_TARJETA'">
+        <article class="event-item" *ngFor="let event of selectedEvents" [style.--category-color]="categoryColor(event)">
           <span class="event-icon" aria-hidden="true">{{ event.type === 'PAGO_TARJETA' ? '$' : '◷' }}</span>
           <div class="event-content">
             <div class="event-title-row"><h3>{{ event.title }}</h3><span class="recurring-indicator" *ngIf="event.recurrence !== 'NONE'" [title]="recurrenceLabel(event.recurrence)">↻</span></div>
-            <p class="event-meta">{{ event.time }} <span *ngIf="event.accountId">· {{ accountName(event.accountId) }}</span></p>
+            <p class="event-meta"><span class="category-label">{{ categoryName(event) }}</span> · {{ event.time }} <span *ngIf="event.accountId">· {{ accountName(event.accountId) }}</span></p>
             <p class="event-description" *ngIf="event.description">{{ event.description }}</p>
             <strong class="event-amount" *ngIf="event.amount !== null">${{ event.amount | number:'1.2-2' }}</strong>
             <small class="reminder-meta">Recordatorio: {{ reminderLabel(event.reminderMinutes) }}<span *ngIf="event.recurrence !== 'NONE'"> · {{ recurrenceLabel(event.recurrence) }}</span></small>
@@ -78,7 +85,7 @@
         <button type="button" class="upcoming-item" *ngFor="let event of upcomingEvents" (click)="selectDate(eventDateTime(event))">
           <span class="upcoming-date"><strong>{{ upcomingDay(event) }}</strong><small>{{ upcomingMonth(event) }}</small></span>
           <span class="upcoming-details"><strong>{{ event.title }}</strong><small>{{ event.time }}<span *ngIf="event.accountId"> · {{ accountName(event.accountId) }}</span></small></span>
-          <span class="upcoming-kind" [class.payment-kind]="event.type === 'PAGO_TARJETA'">{{ event.type === 'PAGO_TARJETA' ? 'Pago' : 'Actividad' }}</span>
+          <span class="upcoming-kind" [style.--category-color]="categoryColor(event)">{{ categoryName(event) }}</span>
         </button>
       </section>
     </aside>
@@ -99,6 +106,11 @@
       <label>Título
         <input type="text" name="title" [(ngModel)]="form.title" maxlength="120" required placeholder="Ej. Pagar tarjeta Visa" />
       </label>
+      <label>Categoría
+        <span class="category-select-wrap"><i [style.background]="selectedCategoryColor()"></i>
+          <select name="categoryId" [(ngModel)]="form.categoryId" required><option *ngFor="let category of categories" [ngValue]="category.id">{{ category.name }}</option></select>
+        </span>
+      </label>
       <label *ngIf="form.type === 'PAGO_TARJETA'">Tarjeta
         <select name="accountId" [(ngModel)]="form.accountId" required>
           <option [ngValue]="null">Selecciona una tarjeta</option>
@@ -116,6 +128,17 @@
       <label>Notificarme
         <select name="reminderMinutes" [(ngModel)]="form.reminderMinutes"><option *ngFor="let option of reminderOptions" [ngValue]="option.value">{{ option.label }}</option></select>
       </label>
+      <fieldset class="reminder-channels">
+        <legend>Enviar recordatorio por</legend>
+        <label class="channel-option"><input type="checkbox" name="notifyBrowser" [(ngModel)]="form.notifyBrowser" /> Notificación en esta PC</label>
+        <label class="channel-option"><input type="checkbox" name="notifyEmail" [(ngModel)]="form.notifyEmail" /> Correo electrónico registrado</label>
+        <label class="channel-option"><input type="checkbox" name="notifyWhatsapp" [(ngModel)]="form.notifyWhatsapp" /> WhatsApp</label>
+        <small class="channel-hint">Correo y WhatsApp requieren que el servidor tenga configurados SMTP y Meta WhatsApp Cloud API.</small>
+        <label class="whatsapp-field" *ngIf="form.notifyWhatsapp">Teléfono WhatsApp
+          <input type="tel" name="whatsappPhone" [(ngModel)]="whatsappPhone" placeholder="7777-7777 o +50370000000" autocomplete="tel" />
+        </label>
+        <small class="channel-hint" *ngIf="form.notifyWhatsapp">Se guardará en tu perfil y se usará para estos avisos. Asegúrate de haber aceptado recibir mensajes de WhatsApp.</small>
+      </fieldset>
       <label>Notas (opcional)<textarea name="description" [(ngModel)]="form.description" rows="2" maxlength="300" placeholder="Agrega un detalle para recordar..."></textarea></label>
       <p class="form-error" *ngIf="formError" role="alert">{{ formError }}</p>
       <footer class="modal-actions"><button type="button" class="secondary-button" (click)="closeModal()">Cancelar</button><button type="submit" class="primary-button" [disabled]="eventForm.invalid || saving">{{ editingId ? 'Guardar cambios' : 'Agendar' }}</button></footer>
@@ -123,5 +146,16 @@
   </section>
 </div>
 
-
-
+<div class="modal-backdrop category-backdrop" *ngIf="categoryModalOpen" (click)="closeCategoryManager()">
+  <section class="event-modal category-modal" role="dialog" aria-modal="true" aria-label="Administrar categorías" (click)="$event.stopPropagation()">
+    <header class="modal-heading"><div><p class="eyebrow">Calendario personal</p><h2>Categorías</h2></div><button type="button" class="close-button" (click)="closeCategoryManager()" aria-label="Cerrar">×</button></header>
+    <p class="modal-description">Crea categorías y asigna un color para identificar tus actividades en el calendario.</p>
+    <form class="category-form" (ngSubmit)="saveCategory()">
+      <label>Nombre<input type="text" name="categoryName" [(ngModel)]="categoryDraft.name" maxlength="40" required placeholder="Ej. Personal" /></label>
+      <label class="color-field">Color<input type="color" name="categoryColor" [(ngModel)]="categoryDraft.color" /></label>
+      <div class="category-form-actions"><button type="button" class="secondary-button" *ngIf="editingCategoryId" (click)="cancelCategoryEdit()">Cancelar</button><button type="submit" class="primary-button">{{ editingCategoryId ? 'Guardar cambios' : 'Crear categoría' }}</button></div>
+    </form>
+    <p class="form-error" *ngIf="categoryError" role="alert">{{ categoryError }}</p>
+    <div class="category-list"><div class="category-row" *ngFor="let category of categories"><span class="category-identity"><i class="category-swatch" [style.background]="category.color"></i><strong>{{ category.name }}</strong></span><span class="category-hex">{{ category.color }}</span><span class="category-actions"><button type="button" (click)="editCategory(category)" [attr.aria-label]="'Editar ' + category.name" title="Editar">✎</button><button type="button" class="delete-action" (click)="deleteCategory(category)" [attr.aria-label]="'Eliminar ' + category.name" title="Eliminar">×</button></span></div></div>
+  </section>
+</div>

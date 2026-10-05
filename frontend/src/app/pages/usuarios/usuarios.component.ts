@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../../api.config';
 
@@ -11,6 +11,7 @@ interface UsuarioVista {
   id: number;
   nombre: string;
   correo: string;
+  telefono: string | null;
   username: string;
   rol: RolUsuario;
   estado: EstadoUsuario;
@@ -59,11 +60,11 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   cargarUsuarios(): void {
     this.cargando = true;
     this.errorCarga = '';
-    this.http.get<Array<{id:number;nombre:string;correo:string;username:string;activo:boolean;fechaCreacion:string;rol:string}>>(`${API_BASE_URL}/usuarios`)
+    this.http.get<Array<{id:number;nombre:string;correo:string;telefono:string|null;username:string;activo:boolean;fechaCreacion:string;rol:string}>>(`${API_BASE_URL}/usuarios`)
       .subscribe({
         next: (registros) => {
           this.usuarios = registros.map((u) => ({
-            id: u.id, nombre: u.nombre, correo: u.correo, username: u.username,
+            id: u.id, nombre: u.nombre, correo: u.correo, telefono: u.telefono, username: u.username,
             rol: u.rol === 'Administrador' ? 'Administrador' : 'Usuario',
             estado: u.activo ? 'Activo' : 'Inactivo',
             fechaAlta: u.fechaCreacion ? new Date(u.fechaCreacion).toLocaleDateString('es-SV') : '—'
@@ -83,9 +84,14 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   filtroEstado = 'Activo';
   modalAbierto = false;
   modalEliminarAbierto = false;
+  usuarioSeleccionado: UsuarioVista | null = null;
   editandoId: number | null = null;
   eliminandoId: number | null = null;
   errorFormulario = '';
+  errorCorreo = '';
+  errorUsername = '';
+  submitted = false;
+  mostrarPassword = false;
   formulario = this.formularioVacio();
 
   get usuariosFiltrados(): UsuarioVista[] {
@@ -103,19 +109,36 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   abrirCrear(): void {
     this.editandoId = null;
+    this.mostrarPassword = false;
     this.formulario = this.formularioVacio();
     this.errorFormulario = '';
+    this.errorCorreo = '';
+    this.errorUsername = '';
+    this.submitted = false;
     this.modalAbierto = true;
   }
 
   abrirEditar(usuario: UsuarioVista): void {
     this.editandoId = usuario.id;
-    this.formulario = { nombre: usuario.nombre, correo: usuario.correo, username: usuario.username, password: '', rol: usuario.rol, estado: usuario.estado };
+    this.mostrarPassword = false;
+    this.formulario = { nombre: usuario.nombre, correo: usuario.correo, telefono: this.formatearTelefono(usuario.telefono ?? ''), username: usuario.username, password: '', rol: usuario.rol, estado: usuario.estado };
     this.errorFormulario = '';
+    this.errorCorreo = '';
+    this.errorUsername = '';
+    this.submitted = false;
     this.modalAbierto = true;
   }
 
-  guardar(): void {
+  abrirVer(usuario: UsuarioVista): void { this.usuarioSeleccionado = usuario; }
+  cerrarVer(): void { this.usuarioSeleccionado = null; }
+
+  guardar(userForm: NgForm): void {
+    this.submitted = true;
+    userForm.control.markAllAsTouched();
+    if (userForm.invalid) {
+      this.errorFormulario = '';
+      return;
+    }
     const nombre = this.formulario.nombre.trim();
     const correo = this.formulario.correo.trim().toLocaleLowerCase();
     const username = this.formulario.username.trim();
@@ -123,13 +146,24 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       this.errorFormulario = 'Completa todos los datos requeridos. La contraseña debe tener al menos 8 caracteres.';
       return;
     }
+    if (this.formulario.telefono && this.formulario.telefono.replace(/\D/g, '').length !== 8) {
+      this.errorFormulario = 'El teléfono debe tener 8 dígitos, por ejemplo 7777-7777.';
+      return;
+    }
     const correoEnUso = this.usuarios.some((usuario) => usuario.correo.toLocaleLowerCase() === correo && usuario.id !== this.editandoId);
     if (correoEnUso) {
-      this.errorFormulario = 'Ya existe un usuario con ese correo.';
+      this.errorCorreo = 'Ya existe un usuario con ese correo.';
+      this.submitted = true;
+      return;
+    }
+    const usernameEnUso = this.usuarios.some((usuario) => usuario.username.toLocaleLowerCase() === username.toLocaleLowerCase() && usuario.id !== this.editandoId);
+    if (usernameEnUso) {
+      this.errorUsername = 'Ya existe un usuario con ese nombre de usuario.';
+      this.submitted = true;
       return;
     }
 
-    const payload: Record<string, unknown> = { nombre, correo, username, rol: this.formulario.rol, activo: this.formulario.estado === 'Activo' };
+    const payload: Record<string, unknown> = { nombre, correo, telefono: this.formulario.telefono, username, rol: this.formulario.rol, activo: this.formulario.estado === 'Activo' };
     if (this.formulario.password) payload['password'] = this.formulario.password;
     this.guardando = true;
     this.errorFormulario = '';
@@ -141,6 +175,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
         this.guardando = false;
         this.modalAbierto = false;
         this.mostrarNotificacion('exito', this.editandoId === null ? 'Usuario creado y guardado en la base de datos.' : 'Cambios guardados en la base de datos.');
+        this.submitted = false;
         this.cargarUsuarios();
       },
       error: (error) => {
@@ -149,6 +184,13 @@ export class UsuariosComponent implements OnInit, OnDestroy {
         this.mostrarNotificacion('error', this.errorFormulario);
       }
     });
+  }
+
+  formatearTelefono(valor: string): string {
+    let digitos = (valor ?? '').replace(/\D/g, '');
+    if (valor?.trim().startsWith('+503') && digitos.length === 11) digitos = digitos.slice(3);
+    digitos = digitos.slice(0, 8);
+    return digitos.length > 4 ? `${digitos.slice(0, 4)}-${digitos.slice(4)}` : digitos;
   }
 
   solicitarEliminacion(usuario: UsuarioVista): void {
@@ -180,7 +222,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   cancelarModal(): void { this.modalAbierto = false; }
   cancelarEliminacion(): void { this.modalEliminarAbierto = false; this.eliminandoId = null; }
 
-  private formularioVacio(): { nombre: string; correo: string; username: string; password: string; rol: RolUsuario; estado: EstadoUsuario } {
-    return { nombre: '', correo: '', username: '', password: '', rol: 'Usuario', estado: 'Activo' };
+  private formularioVacio(): { nombre: string; correo: string; telefono: string; username: string; password: string; rol: RolUsuario; estado: EstadoUsuario } {
+    return { nombre: '', correo: '', telefono: '', username: '', password: '', rol: 'Usuario', estado: 'Activo' };
   }
 }
