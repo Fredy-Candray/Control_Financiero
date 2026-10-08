@@ -13,17 +13,18 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, map } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { API_BASE_URL } from './api.config';
+import { AuthService } from './services/auth.service';
 
 const authGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  const isLoggedIn = inject(AuthService).isAuthenticated();
 
   return isLoggedIn ? true : router.createUrlTree(['/login']);
 };
 
 const guestGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  const isLoggedIn = inject(AuthService).isAuthenticated();
 
   return isLoggedIn ? router.createUrlTree(['/dashboard']) : true;
 };
@@ -35,7 +36,8 @@ interface MenuResponse {
 
 const menuPermissionGuard: CanActivateChildFn = (route) => {
   const router = inject(Router);
-  if (localStorage.getItem('isLoggedIn') !== 'true') return router.createUrlTree(['/login']);
+  const auth = inject(AuthService);
+  if (!auth.isAuthenticated()) return router.createUrlTree(['/login']);
 
   const requestedRoute = `/${route.routeConfig?.path || ''}`;
   return inject(HttpClient).get<MenuResponse>(`${API_BASE_URL}/auth/me/menu`).pipe(
@@ -44,10 +46,7 @@ const menuPermissionGuard: CanActivateChildFn = (route) => {
     }),
     catchError((error) => {
       if (error?.status === 401 || error?.status === 403) {
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('username');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('userRole');
+        auth.clearSession();
         return of(router.createUrlTree(['/login']));
       }
       return of(router.createUrlTree(['/dashboard']));

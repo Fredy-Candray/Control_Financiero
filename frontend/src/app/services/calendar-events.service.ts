@@ -4,13 +4,14 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, from, of } from 'rxjs';
 import { concatMap, switchMap, tap, toArray } from 'rxjs/operators';
 import { API_BASE_URL } from '../api.config';
+import { readAuthSessionValue } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class CalendarEventsService {
   constructor(private readonly http: HttpClient) {}
 
   private key(): string {
-    const userId = localStorage.getItem('userId') || '1';
+    const userId = readAuthSessionValue('userId') || '1';
     return `controlFinanciero.calendar.events.${userId}`;
   }
 

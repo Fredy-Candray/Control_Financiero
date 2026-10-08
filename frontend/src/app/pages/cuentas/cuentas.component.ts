@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Cuenta } from '../../models/cuenta';
 import { API_BASE_URL } from '../../api.config';
+import { readAuthSessionValue } from '../../services/auth.service';
 
 @Component({
   selector: 'app-cuentas',
@@ -39,7 +40,7 @@ export class CuentasComponent implements OnInit {
 
   cargarCuentas(): void {
     this.cargando = true;
-    const usuarioId = Number(localStorage.getItem('userId') || '1');
+    const usuarioId = Number(readAuthSessionValue('userId') || '1');
     this.http.get<Cuenta[]>(`${API_BASE_URL}/cuentas/usuario/${usuarioId}`).subscribe({
       next: (data) => {
         this.cuentas = data;
@@ -56,7 +57,7 @@ export class CuentasComponent implements OnInit {
   onSubmit(): void {
     if (!this.nombre.trim() || this.saldoActual < 0 || (this.tipo === 'CREDITO' && this.limiteCredito <= 0)) return;
     this.guardando = true;
-    const usuarioId = Number(localStorage.getItem('userId') || '1');
+    const usuarioId = Number(readAuthSessionValue('userId') || '1');
 
     const payload: any = {
       nombre: this.nombre,
@@ -88,7 +89,7 @@ export class CuentasComponent implements OnInit {
   }
 
   cargarMovimientos(): void {
-    const usuarioId = Number(localStorage.getItem('userId') || '1');
+    const usuarioId = Number(readAuthSessionValue('userId') || '1');
     this.http.get<any[]>(`${API_BASE_URL}/movimientos/usuario/${usuarioId}`).subscribe({
       next: (data) => this.movimientos = data
     });
@@ -133,7 +134,7 @@ export class CuentasComponent implements OnInit {
   guardarCuenta(cuenta: Cuenta): void {
     if (!this.cuentaEditandoId || !this.editNombre.trim() || this.editDisponible < 0) return;
     if (cuenta.tipo === 'CREDITO' && (this.editLimite <= 0 || this.editDisponible > this.editLimite)) return;
-    const usuarioId = Number(localStorage.getItem('userId') || '1');
+    const usuarioId = Number(readAuthSessionValue('userId') || '1');
     this.guardando = true;
     this.error = '';
     const payload: any = {

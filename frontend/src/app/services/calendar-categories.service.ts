@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CalendarCategory } from '../models/calendar-category';
+import { readAuthSessionValue } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class CalendarCategoriesService {
@@ -11,7 +12,7 @@ export class CalendarCategoriesService {
   ];
 
   private key(): string {
-    return `controlFinanciero.calendar.categories.${localStorage.getItem('userId') || '1'}`;
+    return `controlFinanciero.calendar.categories.${readAuthSessionValue('userId') || '1'}`;
   }
 
   list(): CalendarCategory[] {

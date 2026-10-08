@@ -117,7 +117,7 @@
       <button class="user-menu-backdrop" *ngIf="showUserMenu" type="button" aria-label="Cerrar menú de usuario" (click)="closeUserMenu()"></button>
     </header>
 
-    <main class="main-content">
+    <main class="main-content" [class.public-page]="!showTopbar">
       <router-outlet></router-outlet>
     </main>
   </div>

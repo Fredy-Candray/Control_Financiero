@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { CalendarEvent } from '../models/calendar-event';
 import { CalendarEventsService } from './calendar-events.service';
+import { readAuthSessionValue } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class CalendarReminderService {
@@ -41,9 +42,9 @@ export class CalendarReminderService {
   }
 
   private checkReminders(): void {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
+    if (readAuthSessionValue('isLoggedIn') !== 'true') return;
     const now = new Date();
-    const userId = localStorage.getItem('userId') || '1';
+    const userId = readAuthSessionValue('userId') || '1';
     // Versioned so reminders that an older build marked as delivered despite
     // Windows hiding its notification can be surfaced by the in-app alert.
     const seenKey = `controlFinanciero.calendar.notified.v2.${userId}`;

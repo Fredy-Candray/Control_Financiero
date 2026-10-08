@@ -74,10 +74,10 @@ export class AppComponent implements OnInit {
   }
 
   private syncUserFromStorage(): void {
-    const storedName = localStorage.getItem('username');
+    const storedName = this.authService.getValue('username');
     this.username = storedName?.trim() ? storedName : 'Invitado';
-    this.isAuthenticated = localStorage.getItem('isLoggedIn') === 'true';
-    this.userRole = localStorage.getItem('userRole') || 'Usuario';
+    this.isAuthenticated = this.authService.isAuthenticated();
+    this.userRole = this.authService.getValue('userRole') || 'Usuario';
     if (this.isAuthenticated && !this.sessionValidationStarted && !this.roleLookupInProgress) {
       this.sessionValidationStarted = true;
       this.roleLookupInProgress = true;
@@ -86,9 +86,11 @@ export class AppComponent implements OnInit {
           this.roleLookupInProgress = false;
           this.userRole = user.rol || 'Usuario';
           if (user.username?.trim()) this.username = user.username;
-          if (user.id) localStorage.setItem('userId', String(user.id));
-          localStorage.setItem('username', this.username);
-          localStorage.setItem('userRole', this.userRole);
+          const persistent = localStorage.getItem('isLoggedIn') === 'true';
+          const storage = persistent ? localStorage : sessionStorage;
+          if (user.id) storage.setItem('userId', String(user.id));
+          storage.setItem('username', this.username);
+          storage.setItem('userRole', this.userRole);
           this.loadCurrentProfile();
           this.loadMenu();
         },
@@ -96,10 +98,7 @@ export class AppComponent implements OnInit {
           this.roleLookupInProgress = false;
           this.sessionValidationStarted = false;
           sessionStorage.setItem('controlFinanciero.sessionExpired', 'true');
-          localStorage.removeItem('isLoggedIn');
-          localStorage.removeItem('username');
-          localStorage.removeItem('userId');
-          localStorage.removeItem('userRole');
+          this.authService.clearSession();
           this.isAuthenticated = false;
           this.router.navigateByUrl('/login', { replaceUrl: true });
         }
@@ -224,10 +223,7 @@ export class AppComponent implements OnInit {
   logout(): void {
     this.showUserMenu = false;
     this.authService.logout().subscribe({ error: () => undefined });
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('username');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userRole');
+    this.authService.clearSession();
     sessionStorage.clear();
     this.username = 'Invitado';
     this.currentProfile = null;

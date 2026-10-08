@@ -1,13 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
@@ -24,14 +25,17 @@ export class LoginComponent {
   mostrarNuevaPassword = false;
   mostrarConfirmarPassword = false;
   mostrarPassword = false;
+  rememberMe = false;
   error = '';
   private errorTimer?: number;
 
   constructor(
     private router: Router,
     private route: ActivatedRoute,
-    private authService: AuthService
+    private authService: AuthService,
+    private themeService: ThemeService
   ) {
+    this.themeService.initTheme();
     this.route.queryParamMap.subscribe(params => {
       const token = params.get('token');
       this.recoveryToken = token || '';
@@ -47,6 +51,14 @@ export class LoginComponent {
     }
   }
 
+  toggleTheme(): void {
+    this.themeService.toggle();
+  }
+
+  isDarkTheme(): boolean {
+    return this.themeService.isDark();
+  }
+
   abrirRecuperacion(): void {
     this.recoveryMode = 'forgot';
     this.clearRecoveryNotice();
@@ -54,10 +66,7 @@ export class LoginComponent {
 
   volverAlLogin(): void {
     if (this.router.url.startsWith('/reset-password')) {
-      localStorage.removeItem('isLoggedIn');
-      localStorage.removeItem('username');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('userRole');
+      this.authService.clearSession();
     }
     this.recoveryMode = 'login';
     this.clearRecoveryNotice();
@@ -113,12 +122,10 @@ export class LoginComponent {
 
   onSubmit(): void {
     this.clearError();
-    this.authService.login(this.username, this.password).subscribe({
+    this.authService.login(this.username, this.password, this.rememberMe).subscribe({
       next: (response) => {
         if (response?.success) {
-          localStorage.setItem('isLoggedIn', 'true');
-          localStorage.setItem('username', response.username || this.username);
-          localStorage.setItem('userId', response.userId?.toString() || '1');
+          this.authService.saveSession(response, this.username, this.rememberMe);
           this.router.navigate(['/dashboard']);
         } else {
           this.showError('Usuario o contraseña incorrecta');

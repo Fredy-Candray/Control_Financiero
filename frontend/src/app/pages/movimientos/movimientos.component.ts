@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Cuenta } from '../../models/cuenta';
 import { API_BASE_URL } from '../../api.config';
+import { readAuthSessionValue } from '../../services/auth.service';
 
 @Component({
   selector: 'app-movimientos',
@@ -40,7 +41,7 @@ export class MovimientosComponent implements OnInit {
 
   cargarMovimientos(): void {
     this.cargando = true;
-    const usuarioId = Number(localStorage.getItem('userId') || '1');
+    const usuarioId = Number(readAuthSessionValue('userId') || '1');
     this.http.get<any[]>(`${API_BASE_URL}/movimientos/usuario/${usuarioId}`).subscribe({
       next: (data) => {
         this.movimientos = [...data].sort((a, b) => {
@@ -59,7 +60,7 @@ export class MovimientosComponent implements OnInit {
   }
 
   cargarCuentas(): void {
-    const usuarioId = Number(localStorage.getItem('userId') || '1');
+    const usuarioId = Number(readAuthSessionValue('userId') || '1');
     this.http.get<Cuenta[]>(`${API_BASE_URL}/cuentas/usuario/${usuarioId}`).subscribe({
       next: (data) => {
         this.cuentas = data;
@@ -75,7 +76,7 @@ export class MovimientosComponent implements OnInit {
 
   onSubmit(): void {
     if (!this.puedeGuardar) return;
-    const usuarioId = Number(localStorage.getItem('userId') || '1');
+    const usuarioId = Number(readAuthSessionValue('userId') || '1');
     this.error = '';
     this.success = '';
     this.guardando = true;

@@ -9,6 +9,7 @@ import { CalendarCategoriesService } from '../../services/calendar-categories.se
 import { CalendarReminderService } from '../../services/calendar-reminder.service';
 import { Cuenta } from '../../models/cuenta';
 import { API_BASE_URL } from '../../api.config';
+import { readAuthSessionValue } from '../../services/auth.service';
 
 
 @Component({
@@ -88,7 +89,7 @@ export class CalendarioComponent implements OnInit {
       next: user => this.whatsappPhone = user.telefono ?? '',
       error: () => undefined
     });
-    const userId = Number(localStorage.getItem('userId') || '1');
+    const userId = Number(readAuthSessionValue('userId') || '1');
     this.http.get<Cuenta[]>(`${API_BASE_URL}/cuentas/usuario/${userId}`).subscribe({
       next: accounts => this.accounts = accounts.filter(account => account.activa),
       error: () => this.accounts = []

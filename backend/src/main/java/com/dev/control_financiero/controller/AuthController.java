@@ -20,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.Map;
@@ -50,11 +52,18 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest request, HttpServletRequest servletRequest) {
+    public LoginResponse login(@RequestBody LoginRequest request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
         LoginResponse response = usuarioService.login(request);
         HttpSession session = servletRequest.getSession(true);
         session.setAttribute("userId", response.getUserId());
         session.setAttribute("userRole", response.getRol());
+        boolean rememberMe = Boolean.TRUE.equals(request.getRememberMe());
+        if (rememberMe) session.setMaxInactiveInterval(-1);
+        Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
+        sessionCookie.setHttpOnly(true);
+        sessionCookie.setPath("/");
+        sessionCookie.setMaxAge(rememberMe ? Integer.MAX_VALUE : -1);
+        servletResponse.addCookie(sessionCookie);
         return response;
     }
 
@@ -107,9 +116,13 @@ public class AuthController {
 
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void logout(HttpServletRequest request) {
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
         HttpSession session = request.getSession(false);
         if (session != null) session.invalidate();
+        Cookie sessionCookie = new Cookie("JSESSIONID", "");
+        sessionCookie.setPath("/");
+        sessionCookie.setMaxAge(0);
+        response.addCookie(sessionCookie);
     }
 
     private Long usuarioId(HttpServletRequest request) {

@@ -321,6 +321,7 @@ body:not(.dark-theme) .sidebar-toggle-btn { color: var(--toggle-icon-light, #374
 .user-pill:hover { background: color-mix(in srgb,var(--surface) 88%,var(--accent) 12%); }
 .avatar { width: 32px; height: 32px; border-radius: 9px; background: rgba(15,159,110,.12); color: var(--accent-strong); }
 .main-content { padding: clamp(22px,3vw,38px); }
+.main-content.public-page { padding: 0; overflow: hidden; }
 .user-menu-dropdown { padding: 5px; }
 .logout-btn { width: 100%; padding: 9px 10px; text-align: left; color: var(--text); background: transparent; border: 0; border-radius: 8px; cursor: pointer; }
 .logout-btn:hover { background: color-mix(in srgb,var(--surface) 88%,var(--accent) 12%); }

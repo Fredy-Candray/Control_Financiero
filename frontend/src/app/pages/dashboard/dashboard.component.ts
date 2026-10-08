@@ -5,6 +5,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { ThemeService } from '../../services/theme.service';
 import { ResumenDashboard } from '../../models/resumen-dashboard';
 import { MovimientoDashboard } from '../../models/movimiento-dashboard';
+import { readAuthSessionValue } from '../../services/auth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -21,7 +22,7 @@ export class DashboardComponent implements OnInit {
   movimientos: MovimientoDashboard[] = [];
   loading = true;
   error = '';
-  nombreUsuario = localStorage.getItem('username') || 'Bienvenido';
+  nombreUsuario = readAuthSessionValue('username') || 'Bienvenido';
 
   constructor(private dashboardService: DashboardService, private themeService: ThemeService) {}
 
@@ -35,7 +36,7 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loading = true;
-    const usuarioId = Number(localStorage.getItem('userId') || '1');
+    const usuarioId = Number(readAuthSessionValue('userId') || '1');
 
     this.dashboardService.obtenerResumen(usuarioId).subscribe({
       next: (data) => {
