@@ -261,6 +261,8 @@ body:not(.dark-theme) .sidebar-toggle-btn { color: var(--toggle-icon-light, #374
 .user-menu-arrow { font-size: 0.8rem; opacity: 0.8; }
 .user-menu-dropdown { position: absolute; top: calc(100% + 8px); right: 0; background: var(--surface, white); border: 1px solid var(--card-border, #e2e8f0); border-radius: 12px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12); min-width: 140px; z-index: 20; }
 .nav-icon .report-icon { display:block; width:20px; height:20px; background:currentColor; mask:url('/assets/icons/reporte-flaticon.png') center / contain no-repeat; -webkit-mask:url('/assets/icons/reporte-flaticon.png') center / contain no-repeat; }
+.nav-icon .account-icon { display:block; width:20px; height:20px; background:currentColor; mask:url('/assets/icons/cuenta-bancaria-flaticon.png') center / contain no-repeat; -webkit-mask:url('/assets/icons/cuenta-bancaria-flaticon.png') center / contain no-repeat; }
+@media print { .sidebar,.topbar,.calendar-reminder-toast { display:none!important; } .app-shell,.main-content { display:block!important; margin:0!important; padding:0!important; width:100%!important; overflow:visible!important; } }
 .avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.12); color: var(--text, white); display: grid; place-items: center; font-size: 0.95rem; }
 .main-content { flex: 1; padding: 24px; position: relative; overflow: hidden; max-width: 100%; width: 100%; }
 
@@ -309,7 +311,12 @@ body:not(.dark-theme) .sidebar-toggle-btn { color: var(--toggle-icon-light, #374
 .nav-links a { min-height: 44px; padding: 10px 12px; border-radius: 9px; color: #a6b6ad; font-size: .85rem; }
 .nav-links a span:first-child { width: 22px; font-size: .96rem; }
 .nav-links a .nav-icon { display:inline-flex; align-items:center; justify-content:center; }
-.nav-links a .nav-icon svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.nav-icon .menu-asset-icon { display:block; width:18px; height:18px; background:currentColor; mask-position:center; mask-size:contain; mask-repeat:no-repeat; -webkit-mask-position:center; -webkit-mask-size:contain; -webkit-mask-repeat:no-repeat; }
+.nav-icon .dashboard-icon { mask-image:url('/assets/icons/dashboard.svg'); -webkit-mask-image:url('/assets/icons/dashboard.svg'); }
+.nav-icon .movimientos-icon { mask-image:url('/assets/icons/movimientos-vecteezy.svg'); -webkit-mask-image:url('/assets/icons/movimientos-vecteezy.svg'); }
+.nav-icon .calendario-icon { mask-image:url('/assets/icons/calendario.svg'); -webkit-mask-image:url('/assets/icons/calendario.svg'); }
+.nav-icon .usuarios-icon { mask-image:url('/assets/icons/usuarios.svg'); -webkit-mask-image:url('/assets/icons/usuarios.svg'); }
+.nav-icon .configuracion-icon { mask-image:url('/assets/icons/configuracion.svg'); -webkit-mask-image:url('/assets/icons/configuracion.svg'); }
 .nav-links a:hover { color: #f5fbf7; background: rgba(255,255,255,.055); }
 .nav-links a.active { color: #f4fbf6; background: rgba(24,170,110,.15); border-color: rgba(64,204,143,.12); box-shadow: inset 3px 0 #35c98a; }
 .sidebar-collapsed .nav-group-title { display: none; }

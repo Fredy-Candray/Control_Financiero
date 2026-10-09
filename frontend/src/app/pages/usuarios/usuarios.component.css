@@ -55,6 +55,9 @@
 .user-details-card { max-width:560px; }
 .user-details-identity { display:flex; align-items:center; gap:13px; margin:22px 0 18px; padding-bottom:18px; border-bottom:1px solid var(--card-border); }
 .user-details-identity .avatar { width:48px; height:48px; font-size:1.1rem; }
+.user-details-identity .avatar { overflow:hidden; }
+.user-details-identity .avatar img { display:block; width:100%; height:100%; object-fit:cover; }
+.user-details-identity small { color:var(--muted); font-size:.72rem; }
 .user-details-identity div { display:flex; flex-direction:column; gap:4px; min-width:0; }
 .user-details-identity strong { color:var(--text); font-size:1rem; }
 .user-details-identity div span { color:var(--muted); font-size:.8rem; }
@@ -64,3 +67,7 @@
 .user-details-grid dd { margin:0; color:var(--text); font-size:.87rem; overflow-wrap:anywhere; }
 .user-details-card .modal-actions { margin-top:22px; }
 @media (max-width:480px) { .user-details-grid { grid-template-columns:1fr; gap:12px; } }
+
+/* Mobile layout: keep long values and controls within their containers. */
+@media(max-width:800px){:host,.page-shell,.users-page,.users-panel,.summary-grid,.summary-card,.summary-card>div,.page-intro>div,.toolbar,.toolbar>*,.table-scroll,.modal-card,.modal-card form>*,.user-details-grid>div{min-width:0;max-width:100%}.page-intro,.toolbar,.panel-heading{flex-wrap:wrap}.table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}.summary-card span,.summary-card strong,.user-details-grid dd,.temporary-notice{overflow-wrap:anywhere}.modal-backdrop{padding:12px;overflow-y:auto}.modal-card{max-height:calc(100dvh - 24px)}.modal-card input,.modal-card select{min-width:0;max-width:100%}.modal-actions{flex-wrap:wrap}.modal-actions button{flex:1 1 110px}}
+@media(max-width:480px){.summary-grid{grid-template-columns:minmax(0,1fr)}.page-intro>.add-button{width:100%;align-self:stretch}}

@@ -82,7 +82,7 @@
 <div class="modal-backdrop" *ngIf="usuarioSeleccionado as usuario" (click)="cerrarVer()">
   <section class="modal-card user-details-card" role="dialog" aria-modal="true" aria-labelledby="user-details-title" (click)="$event.stopPropagation()">
     <div class="modal-heading"><div><p class="eyebrow">Directorio de usuarios</p><h2 id="user-details-title">Datos del usuario</h2></div><button type="button" class="close-button" (click)="cerrarVer()" aria-label="Cerrar">×</button></div>
-    <div class="user-details-identity"><span class="avatar">{{ usuario.nombre.charAt(0).toUpperCase() }}</span><div><strong>{{ usuario.nombre }}</strong><span>&#64;{{ usuario.username }}</span></div></div>
+    <div class="user-details-identity"><span class="avatar"><img *ngIf="usuario.fotoPerfil; else inicialUsuario" [src]="usuario.fotoPerfil" [alt]="'Foto de perfil de ' + usuario.nombre" (error)="usuario.fotoPerfil = null" /><ng-template #inicialUsuario>{{ usuario.nombre.charAt(0).toUpperCase() }}</ng-template></span><div><strong>{{ usuario.nombre }}</strong><span>&#64;{{ usuario.username }}</span><small *ngIf="cargandoFoto" role="status">Cargando foto…</small></div></div>
     <dl class="user-details-grid">
       <div><dt>Correo electrónico</dt><dd>{{ usuario.correo }}</dd></div>
       <div><dt>Teléfono</dt><dd>{{ usuario.telefono || 'No registrado' }}</dd></div>

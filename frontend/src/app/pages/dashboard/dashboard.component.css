@@ -66,3 +66,7 @@
 @media (max-width: 1100px) {
   .dashboard-content-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Mobile layout: keep long values and controls within their containers. */
+@media(max-width:800px){:host,.finance-dashboard,.dashboard-content-grid,.dashboard-welcome>div,.panel-heading>div,.recent-row>*{min-width:0;max-width:100%}.metric-card>strong,.metric-card>small,.recent-info strong,.recent-info small,.recent-amount,.balance-value,.balance-label{white-space:normal;overflow-wrap:anywhere;overflow:visible;text-overflow:clip}.recent-row{grid-template-columns:30px minmax(0,1fr);align-items:start}.recent-amount{grid-column:2;text-align:left}.balance-chart{height:auto;min-height:212px}.balance-column{min-width:0}.metric-icon,.panel-icon{flex-shrink:0}}
+@media(max-width:480px){.metric-grid{grid-template-columns:minmax(0,1fr)!important}.metric-card>strong{font-size:1.5rem!important}}

@@ -404,7 +404,7 @@ export class CalendarioComponent implements OnInit {
       id: '', title: '', description: '', type: 'ACTIVIDAD' as CalendarEventType,
       categoryId: this.defaultCategoryId('ACTIVIDAD'),
       date, time: '09:00', accountId: null, amount: null,
-      recurrence: 'NONE', reminderMinutes: 30, completed: false,
+      recurrence: 'NONE', reminderMinutes: 0, completed: false,
       notifyBrowser: true, notifyEmail: true, notifyWhatsapp: false, createdAt: ''
     };
   }

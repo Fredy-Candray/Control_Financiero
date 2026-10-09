@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../../api.config';
+import { Subscription } from 'rxjs';
 
 type RolUsuario = 'Administrador' | 'Usuario';
 type EstadoUsuario = 'Activo' | 'Inactivo';
@@ -16,6 +17,7 @@ interface UsuarioVista {
   rol: RolUsuario;
   estado: EstadoUsuario;
   fechaAlta: string;
+  fotoPerfil?: string | null;
 }
 
 @Component({
@@ -34,12 +36,15 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   notificacion: { tipo: 'exito' | 'error'; mensaje: string } | null = null;
   errorOperacion = '';
   private temporizadorNotificacion?: number;
+  private consultaFoto?: Subscription;
+  cargandoFoto = false;
 
   constructor(private readonly http: HttpClient) {}
 
   ngOnInit(): void { this.cargarUsuarios(); }
 
   ngOnDestroy(): void {
+    this.consultaFoto?.unsubscribe();
     if (this.temporizadorNotificacion !== undefined) window.clearTimeout(this.temporizadorNotificacion);
   }
 
@@ -129,8 +134,26 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.modalAbierto = true;
   }
 
-  abrirVer(usuario: UsuarioVista): void { this.usuarioSeleccionado = usuario; }
-  cerrarVer(): void { this.usuarioSeleccionado = null; }
+  abrirVer(usuario: UsuarioVista): void {
+    this.consultaFoto?.unsubscribe();
+    const seleccionado = { ...usuario };
+    this.usuarioSeleccionado = seleccionado;
+    this.cargandoFoto = true;
+    this.consultaFoto = this.http.get<{ fotoPerfil: string | null }>(`${API_BASE_URL}/usuarios/${usuario.id}`).subscribe({
+      next: datos => {
+        if (this.usuarioSeleccionado === seleccionado) {
+          seleccionado.fotoPerfil = datos.fotoPerfil;
+          this.cargandoFoto = false;
+        }
+      },
+      error: () => { if (this.usuarioSeleccionado === seleccionado) this.cargandoFoto = false; }
+    });
+  }
+  cerrarVer(): void {
+    this.consultaFoto?.unsubscribe();
+    this.usuarioSeleccionado = null;
+    this.cargandoFoto = false;
+  }
 
   guardar(userForm: NgForm): void {
     this.submitted = true;

@@ -227,3 +227,16 @@ body.dark-theme .app-shell .topbar .topbar-left .mobile-hamburger.open { color: 
 @media (max-width: 480px) {
   .app-shell .content-area { width: 100%; flex: 1 1 auto; }
 }
+
+/* Mobile content must shrink to the viewport instead of hiding overflow. */
+@media (max-width: 800px) {
+  .app-shell .content-area { width:100%; min-width:0; max-width:100%; }
+  .app-shell .main-content { min-width:0; max-width:100%; }
+  .main-content > :not(router-outlet) { display:block; width:100%; min-width:0; max-width:100%; }
+  .main-content :where(h1,h2,h3,p,label,legend) { overflow-wrap:anywhere; }
+  .main-content :where(input,select,textarea,fieldset) { min-width:0; min-inline-size:0; }
+  .app-shell .user-menu { min-width:0; max-width:calc(100% - 56px); }
+  .app-shell .user-pill { min-width:0; max-width:100%; }
+  .app-shell .user-pill > span:nth-child(2) { min-width:0; overflow-wrap:anywhere; }
+  .app-shell .user-pill .avatar,.app-shell .user-menu-arrow { flex-shrink:0; }
+}

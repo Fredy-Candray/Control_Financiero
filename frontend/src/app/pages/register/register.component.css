@@ -150,3 +150,7 @@ input.invalid { border-color:#e5484d; box-shadow:0 0 0 3px rgba(229,72,77,.11); 
 :host-context(body:not(.dark-theme)) .register-card h1 { color:#17231e; }
 :host-context(body:not(.dark-theme)) label { color:#33443b; }
 :host-context(body.dark-theme) .register-toast { color:#ffb4ba; background:#33191c; border-color:#673036; }
+
+/* Mobile layout: keep long values and controls within their containers. */
+@media(max-width:800px),(max-height:720px){:host{display:block;min-width:0}.register-shell,.register-shell.validation-visible{height:auto;min-height:100dvh;overflow:visible;padding-top:30px;padding-bottom:30px}.register-card{min-width:0;max-width:100%}.register-card form,.register-card label{min-width:0}.register-card input{min-width:0;max-width:100%}.register-card p,.register-card small,.toast-copy{overflow-wrap:anywhere}}
+@media(max-width:800px){.register-toast{right:16px;width:min(350px,calc(100% - 32px))}}

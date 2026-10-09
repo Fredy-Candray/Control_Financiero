@@ -26,7 +26,21 @@ public class MenuDataInitializer implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (menuRepository.count() > 0) return;
+        if (menuRepository.count() > 0) {
+            var menus = menuRepository.findAllByOrderByOrdenAscIdAsc();
+            boolean existe = menus.stream().flatMap(menu -> menu.getOpciones().stream())
+                    .anyMatch(opcion -> "/reporte".equals(opcion.getRuta()) || "/reportes".equals(opcion.getRuta()));
+            if (!existe) {
+                Menu finanzas = menus.stream().filter(menu -> "Finanzas".equals(menu.getTitulo())).findFirst()
+                        .orElseGet(() -> crearSeccion("Finanzas", 2));
+                int orden = finanzas.getOpciones().stream().mapToInt(OpcionMenu::getOrden).max().orElse(0) + 1;
+                agregar(finanzas, "Reportes", "/reporte", "reporte", orden,
+                        rolRepository.findByNombre("Administrador").orElseThrow(),
+                        rolRepository.findByNombre("Usuario").orElseThrow());
+                menuRepository.save(finanzas);
+            }
+            return;
+        }
         Rol admin = rolRepository.findByNombre("Administrador").orElseThrow();
         Rol usuario = rolRepository.findByNombre("Usuario").orElseThrow();
 
@@ -37,6 +51,7 @@ public class MenuDataInitializer implements ApplicationRunner {
         agregar(finanzas, "Cuentas", "/cuentas", "cuentas", 1, admin, usuario);
         agregar(finanzas, "Movimientos", "/movimientos", "movimientos", 2, admin, usuario);
         agregar(finanzas, "Calendario", "/calendario", "calendario", 3, admin, usuario);
+        agregar(finanzas, "Reportes", "/reporte", "reporte", 4, admin, usuario);
 
         Menu sistema = crearSeccion("Sistema", 3);
         agregar(sistema, "Usuarios", "/usuarios", "usuarios", 1, admin);

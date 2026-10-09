@@ -102,3 +102,7 @@ input::placeholder { color: #9ca9b9; }
 :host-context(body.dark-theme) .account-type-label,:host-context(body.dark-theme) .account-balance-label,:host-context(body.dark-theme) .credit-usage-heading,:host-context(body.dark-theme) .credit-details,:host-context(body.dark-theme) .legacy-credit-details,:host-context(body.dark-theme) .account-footer { color:#929796; }
 :host-context(body.dark-theme) .credit-usage-heading strong,:host-context(body.dark-theme) .credit-details strong,:host-context(body.dark-theme) .legacy-credit-details strong { color:#d9f4e3; }
 :host-context(body.dark-theme) .account-edit-button { color:#8ce5b9; background:rgba(75,211,155,.09); border-color:rgba(75,211,155,.2); }
+
+/* Mobile layout: keep long values and controls within their containers. */
+@media(max-width:800px){:host,.page-shell,.page-intro>div,.account-card,.accounts-grid,.form-card,form,label,.input-prefix{min-width:0;max-width:100%}.page-intro{flex-wrap:wrap}.account-card h2,.account-balance,.credit-details strong,.credit-usage-heading strong{overflow-wrap:anywhere;white-space:normal}.input-prefix input{min-width:0}.edit-actions{flex-wrap:wrap}.account-edit-backdrop{padding:12px}.edit-card-form{max-height:calc(100dvh - 24px)}}
+@media(max-width:480px){.account-card{padding:18px}.credit-details,.credit-usage-heading{flex-wrap:wrap}.edit-actions button{flex:1 1 120px}}

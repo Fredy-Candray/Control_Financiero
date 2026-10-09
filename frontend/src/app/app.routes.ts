@@ -68,6 +68,8 @@ export const routes: Routes = [
       { path: 'cuentas', component: CuentasComponent },
       { path: 'movimientos', component: MovimientosComponent },
       { path: 'calendario', component: CalendarioComponent },
+      { path: 'reporte', loadComponent: () => import('./pages/reportes/reportes.component').then(m => m.ReportesComponent) },
+      { path: 'reportes', loadComponent: () => import('./pages/reportes/reportes.component').then(m => m.ReportesComponent) },
       { path: 'perfil', component: PerfilComponent },
       { path: 'usuarios', component: UsuariosComponent },
       { path: 'administrar-menu', component: AdministrarMenuComponent }
