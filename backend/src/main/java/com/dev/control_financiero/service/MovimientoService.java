@@ -40,9 +40,8 @@ public class MovimientoService {
             throw new IllegalArgumentException("El monto debe ser mayor que cero.");
         }
 
-        BigDecimal nuevoSaldo = saldoActual.add(monto);
-        if (nuevoSaldo.compareTo(limiteCredito) > 0) {
-            throw new IllegalArgumentException("El crédito no puede exceder el límite permitido.");
+        if (saldoActual.compareTo(limiteCredito) > 0 || saldoActual.compareTo(monto) < 0) {
+            throw new IllegalArgumentException("La compra supera el crédito disponible.");
         }
     }
 
@@ -58,11 +57,20 @@ public class MovimientoService {
         if (request.getCuentaOrigenId() == null) {
             throw new IllegalArgumentException("Selecciona una cuenta de origen.");
         }
+        // Lock both accounts in ID order to prevent lost updates and opposite-transfer deadlocks.
+        Long first = request.getCuentaDestinoId() == null ? request.getCuentaOrigenId()
+                : Math.min(request.getCuentaOrigenId(), request.getCuentaDestinoId());
+        cuentaRepository.findLockedById(first).orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
+        if (request.getCuentaDestinoId() != null && !request.getCuentaDestinoId().equals(first)) {
+            cuentaRepository.findLockedById(Math.max(request.getCuentaOrigenId(), request.getCuentaDestinoId()))
+                    .orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
+        }
         cuentaOrigen = cuentaRepository.findById(request.getCuentaOrigenId())
                 .orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
         if (!cuentaOrigen.getUsuario().getId().equals(usuario.getId())) {
             throw new IllegalArgumentException("La cuenta de origen no pertenece a este usuario.");
         }
+        if (!Boolean.TRUE.equals(cuentaOrigen.getActiva())) throw new IllegalArgumentException("La cuenta está inactiva.");
         if (request.getMonto() == null || request.getMonto().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("El monto debe ser mayor que cero.");
         }
@@ -78,6 +86,7 @@ public class MovimientoService {
             if (cuentaDestino.getId().equals(cuentaOrigen.getId())) {
                 throw new IllegalArgumentException("El origen y el destino deben ser cuentas diferentes.");
             }
+            if (!Boolean.TRUE.equals(cuentaDestino.getActiva())) throw new IllegalArgumentException("La cuenta destino está inactiva.");
         }
 
         Categoria categoria = null;
@@ -196,7 +205,8 @@ public class MovimientoService {
                 .tipo(request.getTipo())
                 .monto(request.getMonto())
                 .descripcion(request.getDescripcion())
-                .fechaMovimiento(LocalDateTime.now())
+                .fechaMovimiento(request.getFechaMovimiento() == null
+                        ? LocalDateTime.now(java.time.ZoneId.of("America/El_Salvador")) : request.getFechaMovimiento())
                 .cuentaOrigen(cuentaOrigen)
                 .categoria(categoria)
                 .usuario(usuario)

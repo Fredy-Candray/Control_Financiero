@@ -17,7 +17,8 @@ public class CuentaController {
     private final CuentaService cuentaService;
 
     @PostMapping
-    public Cuenta crearCuenta(@Valid @RequestBody CrearCuentaRequest request) {
+    public Cuenta crearCuenta(@Valid @RequestBody CrearCuentaRequest request, jakarta.servlet.http.HttpServletRequest servletRequest) {
+        request.setUsuarioId((Long) servletRequest.getSession(false).getAttribute("userId"));
         return cuentaService.crearCuenta(request);
     }
 

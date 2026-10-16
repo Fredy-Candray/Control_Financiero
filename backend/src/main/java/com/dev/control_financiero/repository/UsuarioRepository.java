@@ -8,6 +8,9 @@ import java.util.Optional;
 import java.util.List;
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select u from Usuario u where u.id = :id")
+    java.util.Optional<Usuario> findLockedById(@org.springframework.data.repository.query.Param("id") Long id);
 
     List<Usuario> findAllByOrderByIdAsc();
 

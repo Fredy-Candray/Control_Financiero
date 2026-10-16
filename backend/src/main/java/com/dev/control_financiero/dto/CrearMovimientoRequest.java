@@ -21,6 +21,8 @@ public class CrearMovimientoRequest {
 
     private String descripcion;
 
+    private java.time.LocalDateTime fechaMovimiento;
+
     @NotNull(message = "La cuenta de origen es obligatoria")
     private Long cuentaOrigenId;
 

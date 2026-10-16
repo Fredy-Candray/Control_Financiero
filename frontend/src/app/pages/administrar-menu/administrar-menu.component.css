@@ -1,5 +1,5 @@
-:host { display:block; }
-.menu-admin-page { display:flex; flex-direction:column; gap:18px; width:100%; max-width:1500px; margin:0 auto; color:var(--text); }
+:host { display:block;  width:100%; min-width:0; }
+.menu-admin-page { display:flex; flex-direction:column; gap:18px;   margin:0 auto; color:var(--text);  width:100%; min-width:0; box-sizing:border-box; }
 .menu-admin-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; }
 .menu-admin-heading p { margin:0 0 7px; color:var(--muted); font-size:.78rem; }
 .menu-admin-heading h1 { margin:0; font-size:clamp(1.5rem,2.5vw,2rem); letter-spacing:-.035em; }

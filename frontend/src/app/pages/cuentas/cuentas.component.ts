@@ -30,12 +30,25 @@ export class CuentasComponent implements OnInit {
   editLimite = 0;
   editDisponible = 0;
   editActiva = true;
+  banco = '';
+  ultimosCuatro = '';
+  editBanco = '';
+  editUltimosCuatro = '';
+  gmail: { configured: boolean; connected: boolean; enabled: boolean; correo: string | null; importSince: string | null; lastSync: string | null; lastError: string | null } | null = null;
+  gmailHistory: { id: number; gmailMessageId: string; estado: string; comercio: string | null; monto: number | null; ultimosCuatro: string | null; fechaCompra: string | null; detalle: string }[] = [];
+  gmailBusy = false;
+  gmailError = '';
 
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
     this.cargarCuentas();
     this.cargarMovimientos();
+    this.cargarGmail();
+    const result = new URLSearchParams(window.location.search).get('gmail');
+    if (result === 'connected') this.success = 'Gmail conectado. Activa la importación para comenzar con compras posteriores.';
+    if (result === 'error') this.gmailError = 'No se pudo conectar Gmail. Revisa las credenciales y vuelve a autorizar.';
+    if (result === 'cancelled') this.gmailError = 'La autorización de Gmail fue cancelada.';
   }
 
   cargarCuentas(): void {
@@ -43,7 +56,13 @@ export class CuentasComponent implements OnInit {
     const usuarioId = Number(readAuthSessionValue('userId') || '1');
     this.http.get<Cuenta[]>(`${API_BASE_URL}/cuentas/usuario/${usuarioId}`).subscribe({
       next: (data) => {
-        this.cuentas = data;
+        const orden = ['tarjeta economia', 'visa', 'mastercard', 'tarjeta débito', 'pay', 'efectivo'];
+        const prioridad = (cuenta: Cuenta): number => {
+          const nombre = cuenta.nombre.trim().toLocaleLowerCase('es');
+          const posicion = orden.indexOf(nombre);
+          return posicion < 0 ? orden.length : posicion;
+        };
+        this.cuentas = [...data].sort((a, b) => prioridad(a) - prioridad(b));
         this.cargando = false;
         this.error = '';
       },
@@ -55,7 +74,7 @@ export class CuentasComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (!this.nombre.trim() || this.saldoActual < 0 || (this.tipo === 'CREDITO' && this.limiteCredito <= 0)) return;
+    if (!this.nombre.trim() || this.saldoActual < 0 || (this.tipo === 'CREDITO' && (this.limiteCredito <= 0 || this.saldoActual > this.limiteCredito))) return;
     this.guardando = true;
     const usuarioId = Number(readAuthSessionValue('userId') || '1');
 
@@ -63,12 +82,13 @@ export class CuentasComponent implements OnInit {
       nombre: this.nombre,
       tipo: this.tipo,
       saldoActual: this.saldoActual,
-      usuarioId
+      usuarioId,
+      banco: this.tipo === 'EFECTIVO' ? '' : this.banco,
+      ultimosCuatro: this.tipo === 'EFECTIVO' ? '' : this.ultimosCuatro
     };
 
     if (this.tipo === 'CREDITO') {
       payload.limiteCredito = this.limiteCredito;
-      payload.saldoActual = this.limiteCredito;
     }
 
     this.http.post(`${API_BASE_URL}/cuentas`, payload).subscribe({
@@ -79,6 +99,8 @@ export class CuentasComponent implements OnInit {
         this.tipo = 'EFECTIVO';
         this.saldoActual = 0;
         this.limiteCredito = 0;
+        this.banco = '';
+        this.ultimosCuatro = '';
         this.cargarCuentas();
       },
       error: () => {
@@ -123,6 +145,8 @@ export class CuentasComponent implements OnInit {
     this.editLimite = Number(cuenta.limiteCredito ?? 0);
     this.editDisponible = Number(cuenta.saldoActual ?? 0);
     this.editActiva = cuenta.activa;
+    this.editBanco = cuenta.banco || '';
+    this.editUltimosCuatro = cuenta.ultimosCuatro || '';
     this.error = '';
     this.success = '';
   }
@@ -140,7 +164,9 @@ export class CuentasComponent implements OnInit {
     const payload: any = {
       nombre: this.editNombre.trim(),
       saldoActual: this.editDisponible,
-      activa: this.editActiva
+      activa: this.editActiva,
+      banco: this.editBanco,
+      ultimosCuatro: this.editUltimosCuatro
     };
     if (cuenta.tipo === 'CREDITO') payload.limiteCredito = this.editLimite;
     this.http.put(`${API_BASE_URL}/cuentas/${this.cuentaEditandoId}/usuario/${usuarioId}`, payload).subscribe({
@@ -154,6 +180,59 @@ export class CuentasComponent implements OnInit {
         this.guardando = false;
         this.error = err?.error?.message || 'No se pudo actualizar la cuenta.';
       }
+    });
+  }
+
+  prepararTarjetaBac(): void {
+    this.nombre = 'BAC VISA · 3923';
+    this.tipo = 'CREDITO';
+    this.limiteCredito = 1500;
+    this.saldoActual = 1500;
+    this.banco = 'BAC';
+    this.ultimosCuatro = '3923';
+    document.getElementById('add-account-title')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  get tarjetaBacConfigurada(): boolean { return this.cuentas.some(c => c.banco === 'BAC' && c.ultimosCuatro === '3923'); }
+
+  cargarGmail(): void {
+    this.http.get<NonNullable<CuentasComponent['gmail']>>(`${API_BASE_URL}/gmail-bac`).subscribe({ next: data => this.gmail = data, error: () => this.gmailError = 'No se pudo consultar la conexión a Gmail.' });
+    this.http.get<CuentasComponent['gmailHistory']>(`${API_BASE_URL}/gmail-bac/history`).subscribe({ next: data => this.gmailHistory = data, error: () => this.gmailError = 'No se pudo cargar el historial de importación.' });
+  }
+
+  conectarGmail(): void {
+    this.gmailBusy = true;
+    this.gmailError = '';
+    this.http.post<{ url: string }>(`${API_BASE_URL}/gmail-bac/connect`, {}).subscribe({
+      next: data => window.location.assign(data.url),
+      error: () => { this.gmailBusy = false; this.gmailError = 'No se pudo iniciar la conexión. Revisa la configuración de Google del servidor.'; }
+    });
+  }
+
+  cambiarImportacion(): void {
+    this.gmailBusy = true;
+    this.gmailError = '';
+    this.http.put<NonNullable<CuentasComponent['gmail']>>(`${API_BASE_URL}/gmail-bac/enabled`, { enabled: !this.gmail?.enabled }).subscribe({
+      next: data => { this.gmail = data; this.gmailBusy = false; this.cargarGmail(); },
+      error: () => { this.gmailBusy = false; this.gmailError = 'Configura una tarjeta BAC activa y conecta Gmail antes de iniciar.'; }
+    });
+  }
+
+  sincronizarGmail(): void {
+    this.gmailBusy = true;
+    this.gmailError = '';
+    this.http.post<NonNullable<CuentasComponent['gmail']>>(`${API_BASE_URL}/gmail-bac/sync`, {}).subscribe({
+      next: data => { this.gmail = data; this.gmailBusy = false; this.cargarCuentas(); this.cargarMovimientos(); this.cargarGmail(); },
+      error: () => { this.gmailBusy = false; this.gmailError = 'No se pudo sincronizar. Los mensajes se reintentarán automáticamente.'; }
+    });
+  }
+
+  desconectarGmail(): void {
+    this.gmailBusy = true;
+    this.gmailError = '';
+    this.http.delete<NonNullable<CuentasComponent['gmail']>>(`${API_BASE_URL}/gmail-bac`).subscribe({
+      next: data => { this.gmail = data; this.gmailBusy = false; },
+      error: () => { this.gmailBusy = false; this.gmailError = 'No se pudo desconectar Gmail.'; }
     });
   }
 }

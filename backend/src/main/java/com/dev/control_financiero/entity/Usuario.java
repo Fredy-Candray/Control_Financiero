@@ -31,6 +31,12 @@ public class Usuario {
     @Column(name = "foto_perfil", columnDefinition = "varchar(max)")
     private String fotoPerfil;
 
+    @Column(name = "foto_portada", columnDefinition = "varchar(max)")
+    private String fotoPortada;
+
+    @Column(name = "foto_portada_original", columnDefinition = "varchar(max)")
+    private String fotoPortadaOriginal;
+
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 

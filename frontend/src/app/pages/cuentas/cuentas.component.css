@@ -1,4 +1,5 @@
-.page-shell { display: flex; flex-direction: column; gap: 24px; max-width: 1320px; margin: 0 auto; }
+:host { display:block; width:100%; min-width:0; }
+.page-shell { display: flex; flex-direction: column; gap: 24px;  margin: 0 auto;  width:100%; min-width:0; box-sizing:border-box; }
 .page-intro { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
 .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .page-intro h1 { margin: 0; color: var(--text); font-size: clamp(1.8rem, 3vw, 2.35rem); letter-spacing: -.045em; line-height: 1.08; }
@@ -71,7 +72,7 @@ input::placeholder { color: #9ca9b9; }
 @media (max-width: 640px) { .account-card { min-height: 245px; }.account-card.card-credit { min-height: 275px; }.edit-card-form form { grid-template-columns: 1fr; } }
 
 /* Apex-inspired account cards */
-.page-shell { max-width: 1480px; gap: 20px; }
+.page-shell {  gap: 20px;  width:100%; min-width:0; box-sizing:border-box; }
 .page-intro h1 { font-size: clamp(1.65rem,2.5vw,2.05rem); }
 .page-badge { padding: 8px 12px; color: #087c55; background: rgba(15,159,110,.08); border-color: rgba(15,159,110,.16); border-radius: 10px; }
 .account-card { color: #1c2b23; border: 1px solid #e1eae4; border-radius: 14px; background: linear-gradient(145deg,#fff 0%,#f5faf7 100%); box-shadow: var(--shadow-card); }
@@ -106,3 +107,12 @@ input::placeholder { color: #9ca9b9; }
 /* Mobile layout: keep long values and controls within their containers. */
 @media(max-width:800px){:host,.page-shell,.page-intro>div,.account-card,.accounts-grid,.form-card,form,label,.input-prefix{min-width:0;max-width:100%}.page-intro{flex-wrap:wrap}.account-card h2,.account-balance,.credit-details strong,.credit-usage-heading strong{overflow-wrap:anywhere;white-space:normal}.input-prefix input{min-width:0}.edit-actions{flex-wrap:wrap}.account-edit-backdrop{padding:12px}.edit-card-form{max-height:calc(100dvh - 24px)}}
 @media(max-width:480px){.account-card{padding:18px}.credit-details,.credit-usage-heading{flex-wrap:wrap}.edit-actions button{flex:1 1 120px}}
+
+.gmail-actions { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0 22px; }
+.gmail-actions button { min-height:40px; padding:9px 13px; border-radius:9px; cursor:pointer; font:inherit; }
+.gmail-history { width:100%; overflow-x:auto; }
+.gmail-history table { width:100%; border-collapse:collapse; font-size:.8rem; }
+.gmail-history th,.gmail-history td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--card-border); }
+.gmail-history td:last-child { min-width:200px; }
+.gmail-card h3 { margin:12px 0; font-size:1rem; }
+@media(max-width:640px) { .gmail-actions button { flex:1 1 150px; } }

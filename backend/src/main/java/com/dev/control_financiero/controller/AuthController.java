@@ -6,6 +6,7 @@ import com.dev.control_financiero.dto.RegistroUsuarioRequest;
 import com.dev.control_financiero.dto.UsuarioResponse;
 import com.dev.control_financiero.dto.TelefonoRequest;
 import com.dev.control_financiero.dto.FotoPerfilRequest;
+import com.dev.control_financiero.dto.FotoPortadaRequest;
 import com.dev.control_financiero.dto.PerfilUsuarioResponse;
 import com.dev.control_financiero.dto.ActualizarPerfilRequest;
 import com.dev.control_financiero.dto.MenuResponse;
@@ -61,6 +62,8 @@ public class AuthController {
         if (rememberMe) session.setMaxInactiveInterval(-1);
         Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
         sessionCookie.setHttpOnly(true);
+        sessionCookie.setSecure(servletRequest.isSecure());
+        sessionCookie.setAttribute("SameSite", "Lax");
         sessionCookie.setPath("/");
         sessionCookie.setMaxAge(rememberMe ? Integer.MAX_VALUE : -1);
         servletResponse.addCookie(sessionCookie);
@@ -107,6 +110,11 @@ public class AuthController {
     @PutMapping("/me/foto")
     public PerfilUsuarioResponse actualizarFotoPerfil(@Valid @RequestBody FotoPerfilRequest body, HttpServletRequest request) {
         return usuarioService.actualizarFotoPerfil(usuarioId(request), body.fotoPerfil());
+    }
+
+    @PutMapping("/me/portada")
+    public PerfilUsuarioResponse actualizarFotoPortada(@Valid @RequestBody FotoPortadaRequest body, HttpServletRequest request) {
+        return usuarioService.actualizarFotoPortada(usuarioId(request), body.fotoPortada(), body.fotoPortadaOriginal());
     }
 
     @DeleteMapping("/me/foto")

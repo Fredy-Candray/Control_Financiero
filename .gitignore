@@ -1,1 +1,13 @@
- 
+# Local credentials and environment
+.env
+.env.*
+!.env.example
+application-local.properties
+*.clixml
+
+# Generated reports, temporary files and local tools
+/output/
+/tmp/
+
+# Local editor settings
+/.idea/

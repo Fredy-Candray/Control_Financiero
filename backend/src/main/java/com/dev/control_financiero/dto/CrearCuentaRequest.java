@@ -12,6 +12,11 @@ import java.math.BigDecimal;
 @Data
 public class CrearCuentaRequest {
 
+    @jakarta.validation.constraints.Pattern(regexp = "BAC|", message = "Banco no válido")
+    private String banco;
+    @jakarta.validation.constraints.Pattern(regexp = "[0-9]{4}|", message = "Ingresa los últimos cuatro dígitos")
+    private String ultimosCuatro;
+
     @NotBlank
     private String nombre;
 

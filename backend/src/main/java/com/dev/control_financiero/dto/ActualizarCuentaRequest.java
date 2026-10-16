@@ -10,6 +10,10 @@ import java.math.BigDecimal;
 
 @Data
 public class ActualizarCuentaRequest {
+    @jakarta.validation.constraints.Pattern(regexp = "BAC|")
+    private String banco;
+    @jakarta.validation.constraints.Pattern(regexp = "[0-9]{4}|")
+    private String ultimosCuatro;
     @NotBlank
     private String nombre;
 

@@ -13,11 +13,11 @@
     </button>
     <div class="brand">
       <div class="brand-logo">
-        <img src="assets/logo.png" alt="Logo Control Financiero" />
+        <img src="assets/cofi-logo.png" alt="Logo COFI" />
       </div>
       <div class="brand-text">
-        <h2>Control Financiero</h2>
-        <p>Gestión de finanzas</p>
+        <h2>COFI</h2>
+        <p>Control Financiero</p>
       </div>
     </div>
 
@@ -38,6 +38,7 @@
         </a>
       </section>
 
+    </nav>
       <div class="sidebar-toggle-wrapper" #toggleWrapper>
         <button
           type="button"
@@ -63,7 +64,6 @@
         </button>
         <span class="toggle-tooltip" aria-hidden="true">{{ !sidebarCollapsed ? 'Colapsar menú lateral' : 'Expandir sidebar' }}</span>
       </div>
-    </nav>
     <div class="sidebar-footer">
       <button class="theme-btn" (click)="toggleTheme()" [attr.aria-pressed]="isDark()" title="Alternar tema">
         <svg *ngIf="isDark()" class="icon icon-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">

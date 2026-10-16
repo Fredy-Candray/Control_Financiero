@@ -17,7 +17,8 @@ public class MovimientoController {
 
     @PostMapping
     public MovimientoResponse crearMovimiento(
-            @Valid @RequestBody CrearMovimientoRequest request) {
+            @Valid @RequestBody CrearMovimientoRequest request, jakarta.servlet.http.HttpServletRequest servletRequest) {
+        request.setUsuarioId((Long) servletRequest.getSession(false).getAttribute("userId"));
 
         return movimientoService.crearMovimiento(request);
     }

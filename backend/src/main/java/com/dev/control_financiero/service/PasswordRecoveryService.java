@@ -70,7 +70,7 @@ public class PasswordRecoveryService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(emailFrom);
         message.setTo(usuario.getCorreo());
-        message.setSubject("Restablecer contraseña - Control Financiero");
+        message.setSubject("Restablecer contraseña - COFI");
         message.setText("Hola " + usuario.getNombre() + ",\n\n"
                 + "Recibimos una solicitud para cambiar la contraseña de tu cuenta. "
                 + "Abre este enlace para elegir una nueva contraseña (vence en 30 minutos):\n\n"

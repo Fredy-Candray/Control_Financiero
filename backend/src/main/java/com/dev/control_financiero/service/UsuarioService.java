@@ -115,6 +115,25 @@ public class UsuarioService {
     }
 
     @Transactional
+    public PerfilUsuarioResponse actualizarFotoPortada(Long id, String fotoPortada, String fotoPortadaOriginal) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el usuario."));
+        if (fotoPortada == null || !(fotoPortada.startsWith("data:image/jpeg;base64,")
+                || fotoPortada.startsWith("data:image/png;base64,")
+                || fotoPortada.startsWith("data:image/webp;base64,"))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La foto debe ser JPG, PNG o WebP.");
+        }
+        if (fotoPortadaOriginal != null && !(fotoPortadaOriginal.startsWith("data:image/jpeg;base64,")
+                || fotoPortadaOriginal.startsWith("data:image/png;base64,")
+                || fotoPortadaOriginal.startsWith("data:image/webp;base64,"))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen original debe ser JPG, PNG o WebP.");
+        }
+        usuario.setFotoPortada(fotoPortada);
+        usuario.setFotoPortadaOriginal(fotoPortadaOriginal);
+        return perfil(usuarioRepository.save(usuario));
+    }
+
+    @Transactional
     public PerfilUsuarioResponse actualizarPerfil(Long id, ActualizarPerfilRequest request) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el usuario."));
@@ -247,7 +266,7 @@ public class UsuarioService {
     private PerfilUsuarioResponse perfil(Usuario usuario) {
         return new PerfilUsuarioResponse(usuario.getId(), usuario.getNombre(), usuario.getCorreo(), usuario.getTelefono(),
                 usuario.getUsername(), usuario.getActivo(), usuario.getFechaCreacion(),
-                usuario.getRol() == null ? "Usuario" : usuario.getRol().getNombre(), usuario.getFotoPerfil());
+                usuario.getRol() == null ? "Usuario" : usuario.getRol().getNombre(), usuario.getFotoPerfil(), usuario.getFotoPortada(), usuario.getFotoPortadaOriginal());
     }
 
     private String normalizarTelefono(String telefono) {

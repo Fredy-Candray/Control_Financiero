@@ -4,6 +4,12 @@
     <div class="welcome-mark" aria-hidden="true">✦</div>
   </header>
 
+  <aside class="sync-status" aria-label="Estado de sincronización de movimientos">
+    <div><strong role="status">{{ estadoSincronizacion }}</strong><p>Última revisión exitosa: {{ sincronizacion?.lastSync ? (sincronizacion?.lastSync | date:'dd/MM/yyyy HH:mm:ss':'-0600') : 'Todavía sin revisiones' }}</p></div>
+    <p *ngIf="sincronizacion?.lastError && !errorSincronizacion">No se pudieron procesar los correos en la última revisión. Consulta el detalle en Cuentas.</p>
+    <a href="/cuentas">Ver conexión</a>
+  </aside>
+
   <div *ngIf="loading" class="state-panel">Preparando tu resumen financiero…</div>
   <div *ngIf="error" class="state-panel error" role="alert">{{ error }}</div>
 
@@ -11,21 +17,27 @@
     <div *ngIf="resumen.tarjetasSinLimite" class="data-notice" role="status">
       <span>!</span><p><strong>{{ resumen.tarjetasSinLimite }} tarjeta(s) necesitan configuración.</strong> El crédito disponible no se puede calcular y el saldo de deuda solo refleja los cargos y pagos registrados. Ingresa límite y saldo disponible actual en Cuentas para cuadrarlo con tu estado de cuenta.</p>
     </div>
+    <div class="month-filter">
+      <label for="dashboard-month">Mes de ingresos y gastos</label>
+      <input id="dashboard-month" type="month" [value]="mesSeleccionado" (change)="cambiarMes(monthInput.value)" #monthInput>
+      <span>{{ periodoLabel | titlecase }}</span>
+    </div>
+    <p *ngIf="errorMovimientos" class="state-panel error" role="alert">{{ errorMovimientos }}</p>
     <div class="metric-grid">
       <article class="metric-card net-worth">
-        <div class="metric-top"><span class="metric-icon">◎</span><span class="metric-caption">Posición neta</span></div>
-        <strong>${{ getPatrimonioTotal() | number:'1.2-2' }}</strong>
-        <small>Saldo líquido menos deuda de tarjetas</small>
+        <div class="metric-top"><span class="metric-icon">◎</span><span class="metric-caption">Dinero disponible</span></div>
+        <strong>${{ getTotalSaldo() | number:'1.2-2' }}</strong>
+        <small>Dinero en efectivo, PAY y débito</small>
       </article>
       <article class="metric-card income-card">
         <div class="metric-top"><span class="metric-icon">↙</span><span class="metric-caption">Ingresos del mes</span></div>
-        <strong>${{ getIngresoMensual() | number:'1.2-2' }}</strong>
-        <small>Ingresos registrados este mes</small>
+        <strong>{{ cargandoMovimientos ? 'Cargando…' : errorMovimientos ? 'No disponible' : ('$' + (getIngresoMensual() | number:'1.2-2')) }}</strong>
+        <small>Ingresos de {{ periodoLabel }}</small>
       </article>
       <article class="metric-card spending-card">
         <div class="metric-top"><span class="metric-icon">↗</span><span class="metric-caption">Gastos del mes</span></div>
-        <strong>${{ getGastoMensual() | number:'1.2-2' }}</strong>
-        <small>Gastos registrados este mes</small>
+        <strong>{{ cargandoMovimientos ? 'Cargando…' : errorMovimientos ? 'No disponible' : ('$' + (getGastoMensual() | number:'1.2-2')) }}</strong>
+        <small>Gastos de {{ periodoLabel }}</small>
       </article>
       <article class="metric-card debt-card">
         <div class="metric-top"><span class="metric-icon">▤</span><span class="metric-caption">Deuda de tarjetas</span></div>

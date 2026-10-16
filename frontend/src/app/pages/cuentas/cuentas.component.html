@@ -29,6 +29,7 @@
       </div>
       <p class="account-type-label">{{ etiquetaTipo(cuenta.tipo) }}</p>
       <h2>{{ cuenta.nombre }}</h2>
+      <small *ngIf="cuenta.banco && cuenta.ultimosCuatro">{{ cuenta.banco }} · •••• {{ cuenta.ultimosCuatro }} · USD</small>
       <div class="account-balance-label">{{ cuenta.tipo === 'CREDITO' ? 'Crédito disponible' : 'Saldo actual' }}</div>
       <strong class="account-balance" *ngIf="cuenta.tipo !== 'CREDITO' || cuenta.limiteCredito != null">${{ cuenta.saldoActual | number:'1.2-2' }}</strong>
       <ng-container *ngIf="cuenta.tipo === 'CREDITO'">
@@ -67,6 +68,10 @@
       <label>Estado de la cuenta
         <select  name="editActiva" [(ngModel)]="editActiva"><option [ngValue]="true">Activa</option><option [ngValue]="false">Inactiva</option></select>
       </label>
+      <ng-container *ngIf="cuenta.tipo !== 'EFECTIVO'">
+        <label>Banco para alertas<select name="editBanco" [(ngModel)]="editBanco" (ngModelChange)="!editBanco && (editUltimosCuatro = '')"><option value="">Sin vinculación</option><option value="BAC">BAC Credomatic</option></select></label>
+        <label *ngIf="editBanco">Últimos cuatro dígitos<input name="editUltimosCuatro" [(ngModel)]="editUltimosCuatro" pattern="[0-9]{4}" minlength="4" maxlength="4" inputmode="numeric" required /></label>
+      </ng-container>
       <div class="edit-actions"><button type="button" class="secondary-button" (click)="cancelarEdicion()">Cancelar</button><button type="submit" class="primary-button" [disabled]="editForm.invalid || guardando || (cuenta.tipo === 'CREDITO' && (editLimite <= 0 || editDisponible > editLimite))">{{ guardando ? 'Guardando…' : 'Guardar cambios' }}</button></div>
     </form>
     </section>
@@ -74,7 +79,7 @@
 
   <div class="form-card account-form-card">
     <div class="section-heading">
-      <div><p class="eyebrow">Personaliza tu espacio</p><h2>Agregar cuenta o tarjeta</h2></div>
+      <div><p class="eyebrow">Personaliza tu espacio</p><h2 id="add-account-title">Agregar cuenta o tarjeta</h2></div>
       <span class="section-symbol">＋</span>
     </div>
     <form (ngSubmit)="onSubmit()" #form="ngForm">
@@ -85,16 +90,38 @@
         <select  name="tipo" [(ngModel)]="tipo">
           <option value="EFECTIVO">Efectivo</option>
           <option value="DEBITO">Débito</option>
-          <option value="CREDITO">Tarjeta de crédito</option>
+          <option value="CREDITO">Crédito</option>
         </select>
       </label>
       <label *ngIf="tipo === 'CREDITO'">Límite de crédito
         <div class="input-prefix"><span>$</span><input  type="number" name="limiteCredito" [(ngModel)]="limiteCredito" step="0.01" min="1" placeholder="0.00" required /></div>
       </label>
-      <label *ngIf="tipo !== 'CREDITO'">Saldo inicial
+      <label>{{ tipo === 'CREDITO' ? 'Crédito disponible inicial' : 'Saldo inicial' }}
         <div class="input-prefix"><span>$</span><input  type="number" name="saldoActual" [(ngModel)]="saldoActual" step="0.01" min="0" placeholder="0.00" required /></div>
       </label>
-      <button type="submit" class="primary-button" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Agregar cuenta' }}</button>
+      <ng-container *ngIf="tipo !== 'EFECTIVO'">
+        <label>Banco para alertas<select name="banco" [(ngModel)]="banco" (ngModelChange)="!banco && (ultimosCuatro = '')"><option value="">Sin vinculación</option><option value="BAC">BAC Credomatic</option></select></label>
+        <label *ngIf="banco">Últimos cuatro dígitos<input name="ultimosCuatro" [(ngModel)]="ultimosCuatro" pattern="[0-9]{4}" minlength="4" maxlength="4" inputmode="numeric" required /></label>
+      </ng-container>
+      <button type="submit" class="primary-button" [disabled]="form.invalid || guardando || (tipo === 'CREDITO' && saldoActual > limiteCredito)">{{ guardando ? 'Guardando…' : 'Agregar cuenta' }}</button>
     </form>
   </div>
+
+  <section class="form-card gmail-card" aria-labelledby="gmail-title">
+    <div class="section-heading"><div><p class="eyebrow">BAC Credomatic · PAY · USD</p><h2 id="gmail-title">Movimientos automáticos desde Gmail</h2></div><span class="account-status" [class.inactive]="!gmail?.enabled"><i></i>{{ gmail?.enabled ? 'Importación activa' : 'Importación detenida' }}</span></div>
+    <p class="form-hint">Las compras aprobadas de BAC descuentan el disponible de la tarjeta asociada. PAY registra abonos y salidas a terceros cuando está configurado; Pay → tu débito es TRANSFERENCIA, sin ingreso ni gasto. Los avisos de pagos, devoluciones u otras operaciones sin una regla verificada quedan PENDIENTES y no afectan saldos. Solo se procesan avisos posteriores al inicio indicado, respetando los saldos iniciales confirmados.</p>
+    <p class="form-hint" *ngIf="gmail && !gmail.configured">Falta configurar el acceso de Google en el servidor. La importación permanecerá detenida hasta conectar Gmail.</p>
+    <p class="form-hint" *ngIf="gmail?.correo">Correo: {{ gmail?.correo }} · Inicio: {{ gmail?.importSince ? (gmail?.importSince | date:'dd/MM/yyyy HH:mm') : 'Pendiente de activar' }} · Última sincronización: {{ gmail?.lastSync ? (gmail?.lastSync | date:'dd/MM/yyyy HH:mm') : 'Sin sincronizaciones' }}</p>
+    <p *ngIf="gmailError || gmail?.lastError" class="state-card error" role="alert">{{ gmailError || gmail?.lastError }}</p>
+    <div class="gmail-actions">
+      <button type="button" class="secondary-button" *ngIf="!tarjetaBacConfigurada" (click)="prepararTarjetaBac()">Preparar tarjeta BAC 3923 · $1,500</button>
+      <button type="button" class="primary-button" (click)="conectarGmail()" [disabled]="gmailBusy || !gmail?.configured">{{ gmail?.connected ? 'Reconectar Gmail' : 'Conectar Gmail' }}</button>
+      <button type="button" class="secondary-button" *ngIf="gmail?.connected" (click)="cambiarImportacion()" [disabled]="gmailBusy">{{ gmail?.enabled ? 'Pausar importación' : 'Activar importación automática' }}</button>
+      <button type="button" class="secondary-button" *ngIf="gmail?.enabled" (click)="sincronizarGmail()" [disabled]="gmailBusy">{{ gmailBusy ? 'Sincronizando…' : 'Sincronizar ahora' }}</button>
+      <button type="button" class="secondary-button" *ngIf="gmail?.connected" (click)="desconectarGmail()" [disabled]="gmailBusy">Desconectar Gmail</button>
+    </div>
+    <h3>Últimos avisos procesados</h3>
+    <p class="form-hint" *ngIf="!gmailHistory.length">Todavía no hay avisos procesados.</p>
+    <div class="gmail-history" *ngIf="gmailHistory.length"><table><thead><tr><th>Fecha</th><th>Cuenta / tarjeta</th><th>Operación</th><th>Monto</th><th>Estado</th><th>Detalle</th><th>Aviso</th></tr></thead><tbody><tr *ngFor="let item of gmailHistory"><td>{{ item.fechaCompra ? (item.fechaCompra | date:'dd/MM/yyyy HH:mm') : '—' }}</td><td>{{ item.ultimosCuatro || '—' }}</td><td>{{ item.comercio || '—' }}</td><td>{{ item.monto === null ? '—' : (item.monto | currency:'USD') }}</td><td>{{ item.estado }}</td><td>{{ item.detalle }}</td><td><a *ngIf="item.gmailMessageId" [href]="'https://mail.google.com/mail/u/0/#all/' + item.gmailMessageId" target="_blank" rel="noopener noreferrer">Ver correo</a></td></tr></tbody></table></div>
+  </section>
 </section>

@@ -1,4 +1,5 @@
-.page-shell { display: flex; flex-direction: column; gap: 25px; max-width: 1320px; margin: 0 auto; }
+:host { display:block; width:100%; min-width:0; }
+.page-shell { display: flex; flex-direction: column; gap: 25px;  margin: 0 auto;  width:100%; min-width:0; box-sizing:border-box; }
 .page-intro { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
 .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .page-intro h1 { margin: 0; color: var(--text); font-size: clamp(1.8rem, 3vw, 2.35rem); letter-spacing: -.045em; line-height: 1.08; }
@@ -34,7 +35,7 @@ input,select { width: 100%; min-height: 44px; padding: 10px 12px; color: var(--t
 @media (max-width: 640px) { .page-intro { align-items: flex-start; }.form-card { padding: 18px; }form { grid-template-columns: 1fr; }.description-field { grid-column:auto; }.primary-button { width: 100%; }.movement-row { font-size: .77rem; } }
 
 /* Apex-inspired movement history */
-.page-shell { max-width: 1480px; gap: 20px; }
+.page-shell {  gap: 20px;  width:100%; min-width:0; box-sizing:border-box; }
 .page-intro h1 { font-size: clamp(1.65rem,2.5vw,2.05rem); }
 .page-badge { padding: 8px 12px; color: #087c55; background: rgba(15,159,110,.08); border-color: rgba(15,159,110,.16); border-radius: 10px; }
 .form-card,.movement-table-wrap { border-radius: 13px; box-shadow: var(--shadow-card); }

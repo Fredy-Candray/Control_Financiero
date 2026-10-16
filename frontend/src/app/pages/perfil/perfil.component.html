@@ -1,6 +1,14 @@
 <section class="profile-page" *ngIf="profile as user; else profileLoading">
   <header class="profile-header-card">
-    <div class="profile-cover"></div>
+    <div class="profile-cover">
+      <button *ngIf="user.fotoPortada" class="profile-cover-preview" type="button" (click)="openProfileImage('cover')" aria-label="Ampliar imagen de portada" title="Ampliar imagen de portada">
+        <img class="profile-cover-image" [src]="user.fotoPortada" alt="Portada de {{ user.nombre }}" />
+      </button>
+      <input #coverInput type="file" accept="image/*" (change)="onPhotoSelected($event, 'cover')" hidden />
+      <button *ngIf="activeTab === 'edit'" class="cover-edit-button" type="button" (click)="coverInput.click()" [disabled]="busy" aria-label="Editar imagen de portada" title="Editar imagen de portada">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 20l4-1L21 6a2.1 2.1 0 0 0-3-3L5 16l-1 4Z"/></svg>
+      </button>
+    </div>
     <div class="profile-hero">
       <div class="profile-avatar-wrap">
         <button *ngIf="user.fotoPerfil; else initials" class="profile-avatar profile-avatar-clickable" type="button" (click)="openProfileImage()" aria-label="Ampliar foto de perfil" title="Ampliar foto de perfil">
@@ -19,24 +27,18 @@
         <strong>{{ user.rol }}</strong>
         <div class="identity-meta"><span>✉ {{ user.correo }}</span><span *ngIf="user.telefono">☎ {{ user.telefono }}</span></div>
       </div>
-      <button *ngIf="activeTab === 'overview'" class="edit-profile-button" type="button" (click)="selectTab('edit')"><span aria-hidden="true">✎</span> Editar perfil</button>
+      <button *ngIf="activeTab === 'overview'" class="edit-profile-button" type="button" (click)="selectTab('edit')" aria-label="Editar perfil" title="Editar perfil">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 20l4-1L21 6a2.1 2.1 0 0 0-3-3L5 16l-1 4Z"/></svg>
+      </button>
     </div>
     <nav class="profile-tabs" aria-label="Secciones del perfil">
       <button type="button" [class.active]="activeTab === 'overview'" (click)="selectTab('overview')">Resumen</button>
-      <button type="button" [class.active]="activeTab === 'edit'" (click)="selectTab('edit')">Editar perfil</button>
     </nav>
   </header>
 
   <p class="profile-alert" *ngIf="errorMessage" role="alert">{{ errorMessage }}</p>
 
   <div class="overview-grid" *ngIf="activeTab === 'overview'">
-    <section class="profile-panel about-panel">
-      <h2>Sobre el perfil</h2>
-      <p>Información de tu cuenta en Control Financiero.</p>
-      <div class="about-summary"><span class="about-mark">{{ user.nombre.charAt(0).toUpperCase() }}</span><div><strong>{{ user.nombre }}</strong><small>{{ user.rol }} · &#64;{{ user.username }}</small></div></div>
-      <div class="account-status"><span class="status-dot" [class.inactive]="!user.activo"></span>{{ user.activo ? 'Cuenta activa' : 'Cuenta inactiva' }}</div>
-    </section>
-
     <section class="profile-panel details-panel">
       <h2>Detalles</h2>
       <p>Datos personales y de acceso</p>
@@ -48,6 +50,18 @@
         <div><dt>Rol</dt><dd>{{ user.rol }}</dd></div>
         <div><dt>Miembro desde</dt><dd>{{ createdDate() }}</dd></div>
       </dl>
+    </section>
+
+    <section class="profile-panel about-panel">
+      <h2>Cuentas activas</h2>
+      <p class="accounts-message" *ngIf="accountsLoading" role="status">Cargando cuentas…</p>
+      <p class="accounts-message" *ngIf="accountsError" role="alert">{{ accountsError }}</p>
+      <ng-container *ngIf="!accountsLoading && !accountsError">
+        <p class="accounts-message" *ngIf="activeAccounts.length === 0">Sin cuentas activas</p>
+        <ul class="active-accounts-list" *ngIf="activeAccounts.length > 0" aria-label="Cuentas financieras activas">
+          <li *ngFor="let account of activeAccounts"><span class="status-dot" aria-hidden="true"></span><span>{{ account.nombre }}</span></li>
+        </ul>
+      </ng-container>
     </section>
   </div>
 
@@ -63,8 +77,8 @@
   </section>
 </section>
 
-<div class="profile-image-backdrop" *ngIf="expandedProfileImage" role="dialog" aria-modal="true" aria-label="Foto de perfil ampliada" (click)="closeProfileImage()">
-  <img class="profile-image-expanded" [src]="expandedProfileImage" alt="Foto de perfil ampliada" />
+<div class="profile-image-backdrop" *ngIf="expandedProfileImage" role="dialog" aria-modal="true" [attr.aria-label]="expandedImageLabel" (click)="closeProfileImage()">
+  <img class="profile-image-expanded" [src]="expandedProfileImage" [alt]="expandedImageLabel" />
 </div>
 
 <ng-template #profileLoading>
@@ -73,13 +87,13 @@
 </ng-template>
 
 <div class="photo-editor-backdrop" *ngIf="photoEditorSource" (click)="cancelPhotoCrop()">
-  <section class="photo-editor-dialog" role="dialog" aria-modal="true" aria-label="Ajustar foto de perfil" (click)="$event.stopPropagation()">
-    <h2>Ajustar foto</h2>
+  <section class="photo-editor-dialog" role="dialog" aria-modal="true" [attr.aria-label]="photoTarget === 'cover' ? 'Ajustar imagen de portada' : 'Ajustar foto de perfil'" (click)="$event.stopPropagation()">
+    <h2>{{ photoTarget === 'cover' ? 'Ajustar portada' : 'Ajustar foto' }}</h2>
     <p>Arrastra la imagen para centrarla y usa el control para acercar o alejar.</p>
-    <div class="photo-crop-frame" (pointerdown)="startPhotoCrop($event)" (pointermove)="movePhotoCrop($event)" (pointerup)="stopPhotoCrop()" (pointercancel)="stopPhotoCrop()">
-      <img [src]="photoEditorSource" [style.transform]="photoCropTransform()" alt="Vista previa para recortar" draggable="false" />
+    <div class="photo-crop-frame" [class.cover-crop-frame]="photoTarget === 'cover'" [style.width.px]="cropFrameWidth" [style.height.px]="cropFrameHeight" (pointerdown)="startPhotoCrop($event)" (pointermove)="movePhotoCrop($event)" (pointerup)="stopPhotoCrop()" (pointercancel)="stopPhotoCrop()">
+      <img [src]="photoEditorSource" [style.width.px]="photoCropWidth()" [style.height.px]="photoCropHeight()" [style.transform]="photoCropTransform()" alt="Vista previa para recortar" draggable="false" />
     </div>
     <label class="photo-zoom-control">Zoom <input type="range" min="1" max="3" step="0.05" [value]="photoZoom" (input)="setPhotoZoom($event)" /></label>
-    <div class="photo-editor-actions"><button type="button" class="secondary-button" (click)="cancelPhotoCrop()">Cancelar</button><button type="button" class="primary-button" (click)="applyPhotoCrop()">Usar esta foto</button></div>
+    <div class="photo-editor-actions"><button type="button" class="secondary-button" (click)="cancelPhotoCrop()">Cancelar</button><button type="button" class="primary-button" (click)="applyPhotoCrop()">{{ photoTarget === 'cover' ? 'Usar esta portada' : 'Usar esta foto' }}</button></div>
   </section>
 </div>

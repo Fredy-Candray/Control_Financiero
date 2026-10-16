@@ -125,7 +125,7 @@ public class CalendarNotificationScheduler {
                 + "Este es un recordatorio de tu actividad: " + event.getTitulo() + ".\n"
                 + "Fecha: " + occurrence.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) + "\n"
                 + (event.getDescripcion() == null || event.getDescripcion().isBlank() ? "" : "Notas: " + event.getDescripcion() + "\n")
-                + "\nControl Financiero";
+                + "\nCOFI";
     }
 
     private void record(EventoCalendario event, LocalDateTime occurrence, String channel) {

@@ -1,7 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { timer, of } from 'rxjs';
+import { catchError, exhaustMap } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 
-import { DashboardService } from '../../services/dashboard.service';
+import { DashboardService, EstadoSincronizacion } from '../../services/dashboard.service';
 import { ThemeService } from '../../services/theme.service';
 import { ResumenDashboard } from '../../models/resumen-dashboard';
 import { MovimientoDashboard } from '../../models/movimiento-dashboard';
@@ -15,11 +18,32 @@ import { readAuthSessionValue } from '../../services/auth.service';
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  sincronizacion: EstadoSincronizacion | null = null;
+  consultandoSincronizacion = true;
+  errorSincronizacion = false;
+
+  get estadoSincronizacion(): string {
+    if (this.consultandoSincronizacion) return 'Consultando estado…';
+    if (this.errorSincronizacion) return 'No se pudo consultar la sincronización';
+    const estado = this.sincronizacion;
+    if (!estado?.configured) return 'Sincronización sin configurar';
+    if (!estado.connected) return 'Gmail desconectado';
+    if (estado.lastError) return 'Error al revisar los correos';
+    if (!estado.enabled) return 'Sincronización pausada';
+    if (!estado.lastSync) return 'Esperando la primera revisión';
+    if (Date.now() - new Date(estado.lastSync).getTime() > 180_000) return 'Sin revisión reciente';
+    return 'Sincronización activa';
+  }
 
   themeToggle = false;
 
   resumen?: ResumenDashboard;
   movimientos: MovimientoDashboard[] = [];
+  movimientosDelHistorial: MovimientoDashboard[] = [];
+  mesSeleccionado = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  cargandoMovimientos = true;
+  errorMovimientos = '';
   loading = true;
   error = '';
   nombreUsuario = readAuthSessionValue('username') || 'Bienvenido';
@@ -35,6 +59,14 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    timer(0, 60_000).pipe(
+      exhaustMap(() => this.dashboardService.obtenerEstadoSincronizacion().pipe(catchError(() => of(null)))),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(estado => {
+      this.consultandoSincronizacion = false;
+      this.errorSincronizacion = estado === null;
+      if (estado) this.sincronizacion = estado;
+    });
     this.loading = true;
     const usuarioId = Number(readAuthSessionValue('userId') || '1');
 
@@ -53,6 +85,8 @@ export class DashboardComponent implements OnInit {
 
     this.dashboardService.obtenerMovimientosRecientes(usuarioId).subscribe({
       next: (data) => {
+        this.movimientosDelHistorial = data;
+        this.cargandoMovimientos = false;
         const ordenados = [...data].sort((a, b) => {
           const fechaA = new Date(a.fechaMovimiento ?? '1970-01-01T00:00:00Z').getTime();
           const fechaB = new Date(b.fechaMovimiento ?? '1970-01-01T00:00:00Z').getTime();
@@ -62,6 +96,8 @@ export class DashboardComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error obteniendo movimientos', err);
+        this.cargandoMovimientos = false;
+        this.errorMovimientos = 'No se pudieron cargar los ingresos y gastos del período. Recarga para intentarlo otra vez.';
       }
     });
   }
@@ -93,9 +129,8 @@ export class DashboardComponent implements OnInit {
       return 0;
     }
 
-    if (this.resumen.ingresosMes !== undefined) return this.resumen.ingresosMes;
-    return this.movimientos
-      .filter((movimiento) => movimiento.tipo === 'INGRESO' && this.esMesActual(movimiento.fechaMovimiento))
+    return this.movimientosDelHistorial
+      .filter((movimiento) => movimiento.tipo === 'INGRESO' && this.esMesSeleccionado(movimiento.fechaMovimiento))
       .reduce((total, movimiento) => total + Number(movimiento.monto), 0);
   }
 
@@ -104,9 +139,8 @@ export class DashboardComponent implements OnInit {
       return 0;
     }
 
-    if (this.resumen.gastosMes !== undefined) return this.resumen.gastosMes;
-    return this.movimientos
-      .filter((movimiento) => movimiento.tipo === 'GASTO' && this.esMesActual(movimiento.fechaMovimiento))
+    return this.movimientosDelHistorial
+      .filter((movimiento) => movimiento.tipo === 'GASTO' && this.esMesSeleccionado(movimiento.fechaMovimiento))
       .reduce((total, movimiento) => total + Number(movimiento.monto), 0);
   }
 
@@ -126,11 +160,17 @@ export class DashboardComponent implements OnInit {
     return this.resumen.patrimonioDisponible ?? (this.resumen.efectivo + this.resumen.debito - this.resumen.deudaTarjetas);
   }
 
-  private esMesActual(fecha?: string): boolean {
+  private esMesSeleccionado(fecha?: string): boolean {
     if (!fecha) return false;
-    const date = new Date(fecha);
-    const now = new Date();
-    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    return fecha.slice(0, 7) === this.mesSeleccionado;
+  }
+
+  cambiarMes(valor: string): void {
+    if (/^\d{4}-(0[1-9]|1[0-2])$/.test(valor)) this.mesSeleccionado = valor;
+  }
+
+  get periodoLabel(): string {
+    return new Date(`${this.mesSeleccionado}-01T12:00:00`).toLocaleDateString('es-SV', { month: 'long', year: 'numeric' });
   }
 
   get fechaHoy(): string {

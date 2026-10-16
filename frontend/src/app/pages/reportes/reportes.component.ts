@@ -62,6 +62,7 @@ export class ReportesComponent implements OnInit {
   deuda(c: Cuenta): number { return Math.max(0, (centavos(c.limiteCredito ?? 0) - centavos(c.saldoActual)) / 100); }
   get deudaTotal(): number { return this.cuentasSeleccionadas.reduce((s, c) => s + (c.tipo === 'CREDITO' ? centavos(this.deuda(c)) : 0), 0) / 100; }
   get patrimonio(): number { return this.cuentasSeleccionadas.reduce((s, c) => s + (c.tipo === 'CREDITO' ? -centavos(this.deuda(c)) : centavos(c.saldoActual)), 0) / 100; }
+  get dineroDisponible(): number { return this.cuentasSeleccionadas.filter(c => c.tipo === 'EFECTIVO' || c.tipo === 'DEBITO').reduce((s, c) => s + centavos(c.saldoActual), 0) / 100; }
   get flujo(): { entradas: number; salidas: number; neto: number } { return flujoEfectivo(this.datos, this.cuentas, this.filtros.cuentaId); }
   get categoriasIngreso() { return agruparCategorias(this.datos, 'INGRESO'); }
   get categoriasGasto() { return agruparCategorias(this.datos, 'GASTO'); }
@@ -175,11 +176,18 @@ export class ReportesComponent implements OnInit {
     this.descargandoPdf = true;
     this.errorPdf = '';
     try {
-      const { crearReportePdf } = await import('./reportes-pdf');
+      const { crearReportePdf, cargarLogoReportePdf } = await import('./reportes-pdf');
+      const logoPdf = await cargarLogoReportePdf();
+      const { fechaPdf } = await import('./reportes-pdf-datos');
       const dinero = (valor: number) => new Intl.NumberFormat('es-SV', { style: 'currency', currency: 'USD' }).format(Number(valor));
       const secciones: import('./reportes-pdf').SeccionPdf[] = [];
       const tabla = (titulo: string, columnas: string[], filas: string[][], nota?: string) => secciones.push({ titulo, columnas, filas, nota });
       const vista = this.tabs.find(t => t.id === this.tab)?.nombre || 'Resumen';
+      const finAnterior = new Date(this.filtros.desde + 'T12:00:00'); finAnterior.setDate(finAnterior.getDate() - 1);
+      const inicioAnterior = new Date(finAnterior);
+      const diasPeriodo = Math.round((new Date(this.filtros.hasta + 'T12:00:00').getTime() - new Date(this.filtros.desde + 'T12:00:00').getTime()) / 86400000) + 1;
+      inicioAnterior.setDate(inicioAnterior.getDate() - diasPeriodo + 1);
+      const historialAnteriorDisponible = this.anteriores.length > 0 && this.movimientos.some(m => (m.fechaMovimiento?.slice(0, 10) || '9999') <= this.fechaLocal(inicioAnterior));
       tabla('Resumen financiero', ['Ingresos', 'Gastos', 'Balance del período', 'Deuda actual', 'Patrimonio actual'], [[dinero(this.ingresos), dinero(this.gastos), dinero(this.balance), dinero(this.deudaTotal), dinero(this.patrimonio)]], 'Las transferencias y pagos de tarjeta se excluyen del balance. Deuda y patrimonio actuales corresponden al saldo de hoy.');
       if (['resumen', 'ingresos', 'gastos', 'comparativos', 'flujo', 'metas', 'patrimonio', 'deudas'].includes(this.tab)) {
         tabla('Evolución mensual', ['Mes', 'Ingresos', 'Gastos', 'Balance', 'Flujo neto', 'Patrimonio al cierre', 'Deuda al cierre'], this.meses.map(m => [m.mes, dinero(m.ingresos), dinero(m.gastos), dinero(m.balance), dinero(m.flujo), dinero(m.patrimonio), dinero(m.deuda)]), 'Patrimonio y deuda históricos se reconstruyen desde los saldos actuales y el historial completo. El primer y último mes pueden ser parciales.');
@@ -200,10 +208,14 @@ export class ReportesComponent implements OnInit {
       }), 'El interés es una estimación simple, no un cargo registrado por el banco.');
       if (this.tab === 'comparativos') {
         tabla('Comparación de períodos', ['Período', 'Ingresos', 'Gastos', 'Balance'], this.comparaciones.map(c => [c.periodo, dinero(c.ingresos), dinero(c.gastos), dinero(c.balance)]));
-        tabla('Variación frente al período anterior', ['Indicador', 'Anterior', 'Actual', 'Variación absoluta', 'Variación porcentual'], ['INGRESO', 'GASTO'].map(tipo => [this.etiqueta(tipo), dinero(this.anterior(tipo)), dinero(sumar(this.datos, tipo)), dinero(this.diferencia(tipo)), this.variacion(tipo)]));
       }
-      if (['resumen', 'ingresos', 'gastos', 'cuentas', 'flujo'].includes(this.tab)) tabla('Detalle completo de movimientos', ['Fecha', 'Tipo', 'Descripción', 'Categoría', 'Origen', 'Destino', 'Monto'], this.listado.map(m => [m.fechaMovimiento?.replace('T', ' ').slice(0, 16) || '—', this.etiqueta(m.tipo), m.descripcion || '—', m.categoria || 'Sin categoría', m.cuentaOrigen || '—', m.cuentaDestino || '—', dinero(m.monto)]));
-      const doc = crearReportePdf(`Reporte: ${vista}`, [`Período: ${this.filtros.desde} a ${this.filtros.hasta} · Moneda: USD`, `Cuenta: ${this.cuentas.find(c => c.id === this.filtros.cuentaId)?.nombre || 'Todas'} · Tipo: ${this.filtros.tipo} · Categoría: ${this.filtros.categoria || 'Todas'}`], secciones);
+      if (['resumen', 'ingresos', 'gastos', 'cuentas', 'flujo'].includes(this.tab)) tabla('Detalle completo de movimientos', ['Fecha', 'Tipo', 'Descripción', 'Categoría', 'Origen', 'Destino', 'Monto'], this.listado.map(m => [m.fechaMovimiento ? fechaPdf(m.fechaMovimiento) + ' ' + m.fechaMovimiento.slice(11, 16) : '-', this.etiqueta(m.tipo), m.descripcion || '-', m.categoria || 'Sin categoría', m.cuentaOrigen || '-', m.cuentaDestino || '-', dinero(m.monto)]));
+      const doc = crearReportePdf(`Informe financiero: ${vista}`, [`Cuenta: ${this.cuentas.find(c => c.id === this.filtros.cuentaId)?.nombre || 'Todas'} | Tipo: ${this.filtros.tipo} | Categoría: ${this.filtros.categoria || 'Todas'}`], secciones, {
+        vista: this.tab, desde: this.filtros.desde, hasta: this.filtros.hasta, generado: new Date(),
+        ingresos: this.ingresos, gastos: this.gastos, balance: this.balance, patrimonio: this.patrimonio,
+        deuda: this.deudaTotal, dineroDisponible: this.dineroDisponible, flujo: this.flujo, movimientos: this.datos, meses: this.meses, cuentas: this.cuentas,
+        anterior: historialAnteriorDisponible ? { ingresos: this.anterior('INGRESO'), gastos: this.anterior('GASTO'), desde: this.fechaLocal(inicioAnterior), hasta: this.fechaLocal(finAnterior) } : undefined
+      }, logoPdf);
       doc.save(`reporte-${this.tab}-${this.filtros.desde}-${this.filtros.hasta}.pdf`);
     } catch {
       this.errorPdf = 'No se pudo generar el PDF. Vuelve a intentar la descarga.';

@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { from, of } from 'rxjs';
+import { catchError, concatMap, map, toArray } from 'rxjs/operators';
 import { CalendarEvent, CalendarEventType, CalendarRecurrence } from '../../models/calendar-event';
 import { CalendarCategory } from '../../models/calendar-category';
 import { CalendarEventsService } from '../../services/calendar-events.service';
@@ -51,6 +53,10 @@ export class CalendarioComponent implements OnInit {
   notificationMessage = '';
   formError = '';
   saving = false;
+  selectionMode = false;
+  deletingSelected = false;
+  selectedEventIds = new Set<string>();
+  selectionMessage = '';
   whatsappPhone = '';
   form = this.emptyForm();
 
@@ -132,8 +138,73 @@ export class CalendarioComponent implements OnInit {
 
   previousMonth(): void { this.month = new Date(this.month.getFullYear(), this.month.getMonth() - 1, 1); }
   nextMonth(): void { this.month = new Date(this.month.getFullYear(), this.month.getMonth() + 1, 1); }
-  goToToday(): void { const today = new Date(); this.month = new Date(today.getFullYear(), today.getMonth(), 1); this.selectedDate = this.dateKey(today); }
-  selectDate(date: Date): void { this.selectedDate = this.dateKey(date); }
+  goToToday(): void { if (this.deletingSelected) return; const today = new Date(); this.month = new Date(today.getFullYear(), today.getMonth(), 1); this.selectDate(today); }
+  selectDate(date: Date): void {
+    if (this.deletingSelected) return;
+    this.cancelSelection();
+    this.selectedDate = this.dateKey(date);
+  }
+
+  get selectedActivities(): CalendarEvent[] {
+    return this.selectedEvents.filter(event => this.selectedEventIds.has(event.id));
+  }
+
+  get allActivitiesSelected(): boolean {
+    return this.selectedEvents.length > 0 && this.selectedActivities.length === this.selectedEvents.length;
+  }
+
+  startSelection(): void {
+    if (this.selectedEvents.length <= 2) return;
+    this.selectedEventIds.clear();
+    this.selectionMessage = '';
+    this.selectionMode = true;
+  }
+
+  cancelSelection(): void {
+    if (this.deletingSelected) return;
+    this.selectionMode = false;
+    this.selectedEventIds.clear();
+    this.selectionMessage = '';
+  }
+
+  toggleEventSelection(id: string): void {
+    if (this.deletingSelected) return;
+    if (this.selectedEventIds.has(id)) this.selectedEventIds.delete(id);
+    else this.selectedEventIds.add(id);
+  }
+
+  toggleAllActivities(): void {
+    if (this.deletingSelected) return;
+    this.selectedEventIds = this.allActivitiesSelected ? new Set() : new Set(this.selectedEvents.map(event => event.id));
+  }
+
+  deleteSelectedActivities(): void {
+    const selected = this.selectedActivities;
+    if (this.deletingSelected || !selected.length) return;
+    const recurring = selected.some(event => event.recurrence !== 'NONE')
+      ? ' Las actividades que se repiten se eliminarán con todas sus repeticiones.' : '';
+    if (!window.confirm(`¿Eliminar ${selected.length} actividad(es) seleccionada(s)?${recurring}`)) return;
+    this.deletingSelected = true;
+    this.selectionMessage = '';
+    from(selected).pipe(
+      concatMap(event => this.eventsStore.removeRemote(event.id).pipe(
+        map(() => ({ id: event.id, deleted: true })),
+        catchError(() => of({ id: event.id, deleted: false }))
+      )),
+      toArray()
+    ).subscribe(results => {
+      this.events = this.eventsStore.list();
+      this.deletingSelected = false;
+      const failed = results.filter(result => !result.deleted);
+      if (failed.length) {
+        this.selectedEventIds = new Set(failed.map(result => result.id));
+        this.selectionMessage = `Se eliminaron ${results.length - failed.length} actividades. No se pudieron eliminar ${failed.length}; siguen seleccionadas para volver a intentarlo.`;
+      } else {
+        this.cancelSelection();
+        this.selectionMessage = `Se eliminaron ${results.length} actividades.`;
+      }
+    });
+  }
 
   hasEvent(date: Date): boolean { return this.eventsForDate(this.dateKey(date)).length > 0; }
   hasPayment(date: Date): boolean { return this.eventsForDate(this.dateKey(date)).some(event => event.type === 'PAGO_TARJETA'); }
@@ -283,6 +354,7 @@ export class CalendarioComponent implements OnInit {
       next: saved => {
         this.saving = false;
         this.events = this.eventsStore.list();
+        this.cancelSelection();
         this.selectedDate = saved.date;
         this.month = new Date(Number(saved.date.slice(0, 4)), Number(saved.date.slice(5, 7)) - 1, 1);
         this.closeModal();
@@ -385,7 +457,7 @@ export class CalendarioComponent implements OnInit {
   }
 
   private toDateTime(event: CalendarEvent): Date {
-    return new Date(`${event.date}T${event.time}:00`);
+    return new Date(`${event.date}T${event.time}`);
   }
 
   private dayNumber(date: Date): number {

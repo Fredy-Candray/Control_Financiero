@@ -60,14 +60,27 @@
       <section class="events-card selected-day-card">
         <header class="events-heading">
           <div><p class="eyebrow">Agenda del día</p><h2>{{ selectedDateLabel }}</h2></div>
-          <button type="button" class="add-day-button" (click)="openCreate(selectedDate)" aria-label="Agregar actividad este día">＋</button>
+          <button type="button" class="add-day-button" [disabled]="deletingSelected" (click)="openCreate(selectedDate)" aria-label="Agregar actividad este día">＋</button>
         </header>
+        <div class="agenda-selection" *ngIf="selectedEvents.length > 2 || selectionMode">
+          <button type="button" class="selection-button secondary-button" *ngIf="!selectionMode" (click)="startSelection()">Seleccionar actividades</button>
+          <ng-container *ngIf="selectionMode">
+            <label class="select-all"><input type="checkbox" [checked]="allActivitiesSelected" [indeterminate]="selectedActivities.length > 0 && !allActivitiesSelected" [disabled]="deletingSelected" (change)="toggleAllActivities()"> Seleccionar todas</label>
+            <span class="selection-count" role="status">{{ selectedActivities.length }} seleccionadas</span>
+            <div class="selection-actions">
+              <button type="button" class="selection-button bulk-delete" [disabled]="!selectedActivities.length || deletingSelected" (click)="deleteSelectedActivities()">{{ deletingSelected ? 'Eliminando…' : 'Eliminar seleccionadas' }}</button>
+              <button type="button" class="selection-button secondary-button" [disabled]="deletingSelected" (click)="cancelSelection()">Cancelar</button>
+            </div>
+          </ng-container>
+        </div>
+        <p class="selection-message" *ngIf="selectionMessage" role="status">{{ selectionMessage }}</p>
         <div class="empty-day" *ngIf="!selectedEvents.length">
           <span aria-hidden="true">◷</span><strong>No hay actividades</strong><p>Este día está libre. Puedes agregar un pago o un recordatorio.</p>
           <button type="button" class="text-action" (click)="openCreate(selectedDate)">Agendar para este día</button>
         </div>
         <article class="event-item" *ngFor="let event of selectedEvents" [style.--category-color]="categoryColor(event)">
-          <span class="event-icon" aria-hidden="true">{{ event.type === 'PAGO_TARJETA' ? '$' : '◷' }}</span>
+          <label class="event-selector" *ngIf="selectionMode"><input type="checkbox" [checked]="selectedEventIds.has(event.id)" [disabled]="deletingSelected" (change)="toggleEventSelection(event.id)" [attr.aria-label]="'Seleccionar ' + event.title"></label>
+          <span class="event-icon" *ngIf="!selectionMode" aria-hidden="true">{{ event.type === 'PAGO_TARJETA' ? '$' : '◷' }}</span>
           <div class="event-content">
             <div class="event-title-row"><h3>{{ event.title }}</h3><span class="recurring-indicator" *ngIf="event.recurrence !== 'NONE'" [title]="recurrenceLabel(event.recurrence)">↻</span></div>
             <p class="event-meta"><span class="category-label">{{ categoryName(event) }}</span> · {{ event.time }} <span *ngIf="event.accountId">· {{ accountName(event.accountId) }}</span></p>
@@ -75,7 +88,7 @@
             <strong class="event-amount" *ngIf="event.amount !== null">${{ event.amount | number:'1.2-2' }}</strong>
             <small class="reminder-meta">Recordatorio: {{ reminderLabel(event.reminderMinutes) }}<span *ngIf="event.recurrence !== 'NONE'"> · {{ recurrenceLabel(event.recurrence) }}</span></small>
           </div>
-          <div class="event-actions"><button type="button" (click)="openEdit(event)" [attr.aria-label]="'Editar ' + event.title" title="Editar">✎</button><button type="button" class="delete-action" (click)="deleteEvent(event)" [attr.aria-label]="'Eliminar ' + event.title" title="Eliminar">×</button></div>
+          <div class="event-actions" *ngIf="!selectionMode"><button type="button" (click)="openEdit(event)" [attr.aria-label]="'Editar ' + event.title" title="Editar">✎</button><button type="button" class="delete-action" (click)="deleteEvent(event)" [attr.aria-label]="'Eliminar ' + event.title" title="Eliminar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" /></svg></button></div>
         </article>
       </section>
 

@@ -23,6 +23,15 @@ public class Cuenta {
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    @Column(length = 30)
+    private String banco;
+
+    @Column(length = 4)
+    private String ultimosCuatro;
+
+    @Column(length = 3)
+    private String moneda;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TipoCuenta tipo;
