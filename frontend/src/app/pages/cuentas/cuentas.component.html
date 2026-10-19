@@ -108,13 +108,13 @@
   </div>
 
   <section class="form-card gmail-card" aria-labelledby="gmail-title">
-    <div class="section-heading"><div><p class="eyebrow">BAC Credomatic · PAY · USD</p><h2 id="gmail-title">Movimientos automáticos desde Gmail</h2></div><span class="account-status" [class.inactive]="!gmail?.enabled"><i></i>{{ gmail?.enabled ? 'Importación activa' : 'Importación detenida' }}</span></div>
-    <p class="form-hint">Las compras aprobadas de BAC descuentan el disponible de la tarjeta asociada. PAY registra abonos y salidas a terceros cuando está configurado; Pay → tu débito es TRANSFERENCIA, sin ingreso ni gasto. Los avisos de pagos, devoluciones u otras operaciones sin una regla verificada quedan PENDIENTES y no afectan saldos. Solo se procesan avisos posteriores al inicio indicado, respetando los saldos iniciales confirmados.</p>
+    <div class="section-heading"><div><p class="eyebrow">Integración opcional</p><h2 id="gmail-title">Movimientos automáticos desde Gmail</h2></div><span class="account-status" [class.inactive]="!gmail?.enabled"><i></i>{{ gmail?.enabled ? 'Importación activa' : (gmail?.connected ? 'Importación pausada' : 'Sin conectar') }}</span></div>
+    <p class="form-hint">Conecta tu Gmail para importar avisos compatibles y asociarlos a tus cuentas. Es opcional: también puedes registrar movimientos manualmente.</p>
+    <p class="form-hint">Formatos compatibles actualmente: BAC Credomatic y PAY en USD. Otros bancos requieren agregar su formato de avisos. Cada cuenta utiliza el saldo y límite que tú configures.</p>
     <p class="form-hint" *ngIf="gmail && !gmail.configured">Falta configurar el acceso de Google en el servidor. La importación permanecerá detenida hasta conectar Gmail.</p>
     <p class="form-hint" *ngIf="gmail?.correo">Correo: {{ gmail?.correo }} · Inicio: {{ gmail?.importSince ? (gmail?.importSince | date:'dd/MM/yyyy HH:mm') : 'Pendiente de activar' }} · Última sincronización: {{ gmail?.lastSync ? (gmail?.lastSync | date:'dd/MM/yyyy HH:mm') : 'Sin sincronizaciones' }}</p>
     <p *ngIf="gmailError || gmail?.lastError" class="state-card error" role="alert">{{ gmailError || gmail?.lastError }}</p>
     <div class="gmail-actions">
-      <button type="button" class="secondary-button" *ngIf="!tarjetaBacConfigurada" (click)="prepararTarjetaBac()">Preparar tarjeta BAC 3923 · $1,500</button>
       <button type="button" class="primary-button" (click)="conectarGmail()" [disabled]="gmailBusy || !gmail?.configured">{{ gmail?.connected ? 'Reconectar Gmail' : 'Conectar Gmail' }}</button>
       <button type="button" class="secondary-button" *ngIf="gmail?.connected" (click)="cambiarImportacion()" [disabled]="gmailBusy">{{ gmail?.enabled ? 'Pausar importación' : 'Activar importación automática' }}</button>
       <button type="button" class="secondary-button" *ngIf="gmail?.enabled" (click)="sincronizarGmail()" [disabled]="gmailBusy">{{ gmailBusy ? 'Sincronizando…' : 'Sincronizar ahora' }}</button>

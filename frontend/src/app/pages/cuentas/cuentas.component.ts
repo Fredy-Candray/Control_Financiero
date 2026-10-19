@@ -183,18 +183,6 @@ export class CuentasComponent implements OnInit {
     });
   }
 
-  prepararTarjetaBac(): void {
-    this.nombre = 'BAC VISA · 3923';
-    this.tipo = 'CREDITO';
-    this.limiteCredito = 1500;
-    this.saldoActual = 1500;
-    this.banco = 'BAC';
-    this.ultimosCuatro = '3923';
-    document.getElementById('add-account-title')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-
-  get tarjetaBacConfigurada(): boolean { return this.cuentas.some(c => c.banco === 'BAC' && c.ultimosCuatro === '3923'); }
-
   cargarGmail(): void {
     this.http.get<NonNullable<CuentasComponent['gmail']>>(`${API_BASE_URL}/gmail-bac`).subscribe({ next: data => this.gmail = data, error: () => this.gmailError = 'No se pudo consultar la conexión a Gmail.' });
     this.http.get<CuentasComponent['gmailHistory']>(`${API_BASE_URL}/gmail-bac/history`).subscribe({ next: data => this.gmailHistory = data, error: () => this.gmailError = 'No se pudo cargar el historial de importación.' });
