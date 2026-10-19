@@ -7,6 +7,7 @@ import { CalendarReminderService } from './services/calendar-reminder.service';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from './api.config';
 import { AuthService } from './services/auth.service';
+import { EmailMovementNotificationService, EmailMovementNotice } from './services/email-movement-notification.service';
 
 interface PerfilBadge {
   username: string;
@@ -52,7 +53,14 @@ export class AppComponent implements OnInit {
   sidebarOpen = false; // mobile overlay open state
   calendarReminder: { title: string; date: Date; payment: boolean } | null = null;
   private reminderToastTimer: ReturnType<typeof setTimeout> | null = null;
-  constructor(private router: Router, private themeService: ThemeService, private calendarReminders: CalendarReminderService, private http: HttpClient, private authService: AuthService) {
+  emailMovement: EmailMovementNotice | null = null;
+  emailQueue: EmailMovementNotice[] = [];
+  private emailToastTimer: ReturnType<typeof setTimeout> | null = null;
+  constructor(private router: Router, private themeService: ThemeService, private calendarReminders: CalendarReminderService, private http: HttpClient, private authService: AuthService, private emailNotices: EmailMovementNotificationService) {
+    this.emailNotices.registered$.subscribe(notice => {
+      this.emailQueue.push(notice);
+      if (!this.emailMovement) this.nextEmailNotice();
+    });
     this.calendarReminders.due$.subscribe(reminder => {
       this.calendarReminder = reminder;
       if (this.reminderToastTimer) clearTimeout(this.reminderToastTimer);
@@ -93,6 +101,7 @@ export class AppComponent implements OnInit {
           storage.setItem('userRole', this.userRole);
           this.loadCurrentProfile();
           this.loadMenu();
+          this.emailNotices.start();
         },
         error: () => {
           this.roleLookupInProgress = false;
@@ -100,6 +109,7 @@ export class AppComponent implements OnInit {
           sessionStorage.setItem('controlFinanciero.sessionExpired', 'true');
           this.authService.clearSession();
           this.isAuthenticated = false;
+          this.clearEmailNotices();
           this.router.navigateByUrl('/login', { replaceUrl: true });
         }
       });
@@ -123,6 +133,7 @@ export class AppComponent implements OnInit {
     this.showSidebar = this.isAuthenticated && !isPublicPage;
     if (!this.showSidebar) {
       this.sidebarCollapsed = false;
+      this.clearEmailNotices();
     }
   }
 
@@ -162,6 +173,24 @@ export class AppComponent implements OnInit {
   closeCalendarReminder(): void {
     this.calendarReminder = null;
     if (this.reminderToastTimer) clearTimeout(this.reminderToastTimer);
+  }
+
+  nextEmailNotice(): void {
+    if (this.emailToastTimer) clearTimeout(this.emailToastTimer);
+    this.emailMovement = this.emailQueue.shift() || null;
+    if (this.emailMovement) this.emailToastTimer = setTimeout(() => this.nextEmailNotice(), 20_000);
+  }
+
+  openEmailMovement(): void {
+    this.nextEmailNotice();
+    void this.router.navigate(['/movimientos']);
+  }
+
+  private clearEmailNotices(): void {
+    this.emailNotices.stop();
+    if (this.emailToastTimer) clearTimeout(this.emailToastTimer);
+    this.emailMovement = null;
+    this.emailQueue = [];
   }
 
   openCalendarReminder(): void {
@@ -221,6 +250,7 @@ export class AppComponent implements OnInit {
   }
 
   logout(): void {
+    this.clearEmailNotices();
     this.showUserMenu = false;
     this.authService.logout().subscribe({ error: () => undefined });
     this.authService.clearSession();

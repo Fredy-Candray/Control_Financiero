@@ -5,6 +5,7 @@
 }
 
 .sidebar {
+  box-sizing: border-box;
   width: 220px;
   background: var(--sidebar-bg, lch(29.49% 34.89 284.52));
   color: var(--text, white);
@@ -20,6 +21,7 @@
   height: 100vh;
   z-index: 10;
 }
+
 
 /* compact mobile sidebar */
 @media (max-width: 640px) {
@@ -371,3 +373,27 @@ body:not(.dark-theme) .sidebar-toggle-btn .toggle-icon, body:not(.dark-theme) .s
 .calendar-reminder-close { flex:none; padding:2px 6px; color:var(--muted,#9ca3af); background:transparent; border:0; font-size:1.25rem; cursor:pointer; }
 @keyframes calendar-reminder-enter { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
 @media (max-width:600px) { .calendar-reminder-toast { top:12px; right:12px; } }
+
+/* Reserve space for branding and theme controls, even on short laptop screens. */
+.sidebar { max-height:100vh; max-height:100dvh; min-height:0; overflow:visible; }
+.sidebar > .brand,.sidebar > .sidebar-footer { flex:0 0 auto; }
+.sidebar > .nav-links { flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; scrollbar-width:thin; }
+.sidebar > .nav-links > .nav-group { flex-shrink:0; }
+@media (min-width:801px),(max-width:640px) {
+  .sidebar { height:100vh; height:100dvh; }
+}
+.notification-stack {
+  position: fixed;
+  z-index: 2000;
+  top: 18px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100dvh - 36px);
+  overflow-y: auto;
+}
+.notification-stack .calendar-reminder-toast { position: static; flex-shrink: 0; }
+@media (max-width: 600px) {
+  .notification-stack { top: 12px; right: 12px; max-height: calc(100dvh - 24px); }
+}

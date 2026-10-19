@@ -1,4 +1,14 @@
 <div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed">
+  <div class="notification-stack">
+  <section class="calendar-reminder-toast" *ngIf="emailMovement" role="status" aria-live="polite">
+    <span class="calendar-reminder-icon" aria-hidden="true">✓</span>
+    <button type="button" class="calendar-reminder-copy" (click)="openEmailMovement()">
+      <strong>Movimiento registrado desde el correo</strong>
+      <span>{{ emailMovement.monto | currency:'USD':'symbol':'1.2-2' }} · {{ emailMovement.descripcion || 'Movimiento bancario' }}</span>
+      <span *ngIf="emailQueue.length">Más movimientos por mostrar: {{ emailQueue.length }}</span>
+    </button>
+    <button type="button" class="calendar-reminder-close" (click)="nextEmailNotice()" aria-label="Cerrar aviso de movimiento">×</button>
+  </section>
   <section class="calendar-reminder-toast" *ngIf="calendarReminder" role="alert" aria-live="assertive">
     <span class="calendar-reminder-icon" aria-hidden="true">{{ calendarReminder.payment ? '▣' : '◷' }}</span>
     <button type="button" class="calendar-reminder-copy" (click)="openCalendarReminder()">
@@ -7,6 +17,7 @@
     </button>
     <button type="button" class="calendar-reminder-close" (click)="closeCalendarReminder()" aria-label="Cerrar recordatorio">×</button>
   </section>
+  </div>
   <aside class="sidebar drawer" [class.open]="sidebarOpen" *ngIf="showSidebar">
     <button class="drawer-close" *ngIf="sidebarOpen" (click)="closeSidebarOverlay()" aria-label="Cerrar menú lateral">
       ✕
@@ -65,7 +76,7 @@
         <span class="toggle-tooltip" aria-hidden="true">{{ !sidebarCollapsed ? 'Colapsar menú lateral' : 'Expandir sidebar' }}</span>
       </div>
     <div class="sidebar-footer">
-      <button class="theme-btn" (click)="toggleTheme()" [attr.aria-pressed]="isDark()" title="Alternar tema">
+      <button class="theme-btn" (click)="toggleTheme()" [attr.aria-pressed]="isDark()" [attr.aria-label]="isDark() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'" title="Alternar tema">
         <svg *ngIf="isDark()" class="icon icon-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
           <path fill="currentColor" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         </svg>

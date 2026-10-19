@@ -33,6 +33,15 @@ public class GmailBacController {
         return new Status(client.configured()&&cipher.configured(),c.getRefreshTokenEncrypted()!=null,c.isEnabled(),c.getCorreo(),cutoff,c.getLastSync(),c.getLastError());
     }
     @GetMapping("/history") public List<BankEmailImport> history(HttpServletRequest request) { return imports.findTop50ByUsuarioIdOrderByIdDesc(user(request)); }
+    public record Notifications(Long cursor, List<BankEmailImportRepository.MovementNotice> movements) {}
+    @GetMapping("/notifications") public Notifications notifications(@RequestParam(required=false) Long after, HttpServletRequest request) {
+        Long userId=user(request);
+        // The first request establishes a baseline; old imports are not new alerts.
+        if(after==null) return new Notifications(imports.notificationCursor(userId),List.of());
+        if(after<0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Cursor inválido.");
+        var notices=imports.notifications(userId,after,org.springframework.data.domain.PageRequest.of(0,50));
+        return new Notifications(notices.isEmpty()?after:notices.get(notices.size()-1).getId(),notices);
+    }
     @PostMapping("/connect") public Map<String,String> connect(HttpServletRequest request) throws Exception {
         user(request);
         if(!client.configured() || !cipher.configured()) throw new ResponseStatusException(HttpStatus.CONFLICT,"Configura las credenciales de Google y la clave de cifrado en el servidor.");
