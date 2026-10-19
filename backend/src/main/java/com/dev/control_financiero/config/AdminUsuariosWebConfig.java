@@ -15,7 +15,9 @@ public class AdminUsuariosWebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(financialSessionInterceptor)
-                .addPathPatterns("/api/cuentas/**", "/api/movimientos/**", "/api/dashboard/**", "/api/gmail-bac/**", "/api/categorias/**");
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/health", "/api/auth/login", "/api/auth/registro",
+                        "/api/auth/password/forgot", "/api/auth/password/reset", "/api/auth/logout");
         registry.addInterceptor(adminUsuariosInterceptor)
                 .addPathPatterns("/api/usuarios", "/api/usuarios/**", "/api/menu-admin", "/api/menu-admin/**");
     }

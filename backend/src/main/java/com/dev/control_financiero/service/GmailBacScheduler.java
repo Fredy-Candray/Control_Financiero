@@ -21,12 +21,14 @@ public class GmailBacScheduler {
     private final UsuarioRepository users;
     private final PayTransferImporter pay;
     @Value("${app.gmail.events-since:}") private String eventsSince="";
+    @Value("${app.gmail.import-enabled:true}") private boolean importEnabled=true;
 
     @Scheduled(fixedDelayString="${app.gmail.poll-ms:60000}") public void poll() {
-        if(!gmail.configured() || !cipher.configured()) return;
+        if(!importEnabled || !gmail.configured() || !cipher.configured()) return;
         for(var connection:connections.findByEnabledTrue()) sync(connection.getUsuarioId());
     }
     public synchronized void sync(Long userId) {
+        if(!importEnabled) return;
         var c=connections.findByUsuarioId(userId).orElse(null);
         if(!users.findById(userId).map(u->Boolean.TRUE.equals(u.getActivo())).orElse(false)) return;
         if(c==null || !c.isEnabled() || c.getImportSince()==null || c.getRefreshTokenEncrypted()==null) return;

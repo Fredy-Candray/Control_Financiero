@@ -55,10 +55,10 @@ public class UsuarioService {
 
     public LoginResponse login(LoginRequest request) {
         Usuario usuario = usuarioRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos."));
 
         if (Boolean.FALSE.equals(usuario.getActivo())) {
-            throw new RuntimeException("La cuenta de usuario está inactiva");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos.");
         }
         String storedPassword = usuario.getPassword();
         boolean isEncoded = storedPassword != null && (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$"));
@@ -66,7 +66,7 @@ public class UsuarioService {
                 ? passwordEncoder.matches(request.getPassword(), storedPassword)
                 : storedPassword != null && storedPassword.equals(request.getPassword());
         if (!validPassword) {
-            throw new RuntimeException("Contraseña incorrecta");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos.");
         }
         if (!isEncoded) {
             usuario.setPassword(passwordEncoder.encode(request.getPassword()));

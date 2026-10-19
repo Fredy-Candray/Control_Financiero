@@ -6,6 +6,7 @@ import com.dev.control_financiero.entity.EventoCalendario;
 import com.dev.control_financiero.entity.Usuario;
 import com.dev.control_financiero.repository.EventoCalendarioRepository;
 import com.dev.control_financiero.repository.UsuarioRepository;
+import com.dev.control_financiero.repository.CuentaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,9 @@ import java.util.List;
 public class EventoCalendarioService {
     private final EventoCalendarioRepository eventos;
     private final UsuarioRepository usuarios;
+    private final CuentaRepository cuentas;
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public List<EventoCalendarioResponse> listar(Long usuarioId) {
@@ -30,8 +34,15 @@ public class EventoCalendarioService {
     public EventoCalendarioResponse guardar(Long usuarioId, EventoCalendarioRequest request) {
         Usuario usuario = usuarios.findById(usuarioId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el usuario."));
-        EventoCalendario event = eventos.findById(request.id())
-                .filter(existing -> existing.getUsuario().getId().equals(usuarioId))
+        var existing = eventos.findById(request.id());
+        if (existing.isPresent() && !existing.get().getUsuario().getId().equals(usuarioId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la actividad.");
+        }
+        if (request.accountId() != null && cuentas.findById(request.accountId())
+                .filter(account -> account.getUsuario().getId().equals(usuarioId)).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La cuenta no pertenece a este usuario.");
+        }
+        EventoCalendario event = existing
                 .orElseGet(() -> EventoCalendario.builder().id(request.id()).usuario(usuario).fechaCreacion(LocalDateTime.now()).build());
         event.setTitulo(request.title().trim());
         event.setDescripcion(request.description() == null ? "" : request.description().trim());
@@ -47,7 +58,10 @@ public class EventoCalendarioService {
         event.setNotificarCorreo(Boolean.TRUE.equals(request.notifyEmail()));
         event.setNotificarNavegador(!Boolean.FALSE.equals(request.notifyBrowser()));
         event.setNotificarWhatsapp(Boolean.TRUE.equals(request.notifyWhatsapp()));
-        return respuesta(eventos.save(event));
+        // Persist new assigned IDs instead of merge: a concurrent insert must not
+        // overwrite an activity owned by another user.
+        if(existing.isEmpty()) entityManager.persist(event);
+        return respuesta(event);
     }
 
     @Transactional

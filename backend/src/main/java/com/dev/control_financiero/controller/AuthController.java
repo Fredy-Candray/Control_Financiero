@@ -35,6 +35,8 @@ public class AuthController {
     private final UsuarioService usuarioService;
     private final PasswordRecoveryService passwordRecoveryService;
     private final MenuService menuService;
+    @org.springframework.beans.factory.annotation.Value("${app.registration.enabled:true}")
+    private boolean registrationEnabled = true;
 
     @PostMapping("/password/forgot")
     public Map<String, String> solicitarRecuperacion(@Valid @RequestBody SolicitarRecuperacionRequest request) {
@@ -49,23 +51,25 @@ public class AuthController {
 
     @PostMapping("/registro")
     public Usuario registrar(@Valid @RequestBody RegistroUsuarioRequest request) {
+        if (!registrationEnabled) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El registro público está deshabilitado.");
         return usuarioService.registrar(request);
     }
 
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
+    public LoginResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
         LoginResponse response = usuarioService.login(request);
         HttpSession session = servletRequest.getSession(true);
+        servletRequest.changeSessionId();
         session.setAttribute("userId", response.getUserId());
         session.setAttribute("userRole", response.getRol());
         boolean rememberMe = Boolean.TRUE.equals(request.getRememberMe());
-        if (rememberMe) session.setMaxInactiveInterval(-1);
+        session.setMaxInactiveInterval(rememberMe ? 30 * 24 * 60 * 60 : 30 * 60);
         Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
         sessionCookie.setHttpOnly(true);
         sessionCookie.setSecure(servletRequest.isSecure());
         sessionCookie.setAttribute("SameSite", "Lax");
         sessionCookie.setPath("/");
-        sessionCookie.setMaxAge(rememberMe ? Integer.MAX_VALUE : -1);
+        sessionCookie.setMaxAge(rememberMe ? 30 * 24 * 60 * 60 : -1);
         servletResponse.addCookie(sessionCookie);
         return response;
     }

@@ -42,6 +42,7 @@ public class SecurityConfig {
     }
 
     @Bean
+    @org.springframework.context.annotation.Profile("!migration")
         public SecurityFilterChain securityFilterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
 
         http
