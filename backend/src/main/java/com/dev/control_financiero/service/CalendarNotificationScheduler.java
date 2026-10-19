@@ -8,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -28,11 +26,9 @@ public class CalendarNotificationScheduler {
     private static final List<String> RECURRENCES = List.of("NONE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY");
     private final EventoCalendarioRepository events;
     private final EntregaRecordatorioRepository deliveries;
-    private final ObjectProvider<JavaMailSender> mailSenderProvider;
+    private final NotificationEmailService email;
     private final ObjectProvider<RestClient.Builder> restClientBuilderProvider;
 
-    @Value("${app.notifications.email-from:}") private String emailFrom;
-    @Value("${spring.mail.host:}") private String mailHost;
     @Value("${app.whatsapp.graph-version:}") private String graphVersion;
     @Value("${app.whatsapp.phone-number-id:}") private String whatsappPhoneId;
     @Value("${app.whatsapp.access-token:}") private String whatsappToken;
@@ -58,25 +54,18 @@ public class CalendarNotificationScheduler {
 
     private void sendEmail(EventoCalendario event, LocalDateTime occurrence) {
         if (deliveries.existsByEventoIdAndOcurrenciaAndCanal(event.getId(), occurrence, "EMAIL")) return;
-        JavaMailSender sender = mailSenderProvider.getIfAvailable();
         String to = event.getUsuario().getCorreo();
-        if (sender == null || blank(mailHost) || blank(emailFrom) || blank(to)) {
-            log.warn("No se envió correo para el evento {}: configuración incompleta (sender={}, MAIL_HOST={}, MAIL_FROM={}, correoUsuario={}).",
-                    event.getId(), sender != null, !blank(mailHost), !blank(emailFrom), !blank(to));
+        if (!email.configured() || blank(to)) {
+            log.warn("No se envió correo para el evento {}: envío no configurado o destino no válido.",event.getId());
             return;
         }
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(emailFrom);
-        message.setTo(to);
-        message.setSubject("Recordatorio: " + event.getTitulo());
-        message.setText(emailBody(event, occurrence));
         try {
-            sender.send(message);
+            email.send(to,"Recordatorio: " + event.getTitulo(),emailBody(event, occurrence));
             record(event, occurrence, "EMAIL");
             log.info("Recordatorio por correo enviado para el evento {} a {}.", event.getId(), maskEmail(to));
         } catch (Exception e) {
-            log.warn("No se pudo enviar el recordatorio por correo para el evento {} (destino {}). {}: {}",
-                    event.getId(), maskEmail(to), e.getClass().getSimpleName(), e.getMessage());
+            log.warn("No se pudo enviar el recordatorio por correo para el evento {}. {}",
+                    event.getId(), e.getClass().getSimpleName());
         }
     }
 

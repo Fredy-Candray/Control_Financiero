@@ -6,10 +6,7 @@ import com.dev.control_financiero.repository.PasswordResetTokenRepository;
 import com.dev.control_financiero.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,10 +34,8 @@ public class PasswordRecoveryService {
     private final UsuarioRepository usuarios;
     private final PasswordResetTokenRepository tokens;
     private final PasswordEncoder passwordEncoder;
-    private final ObjectProvider<JavaMailSender> mailSenderProvider;
+    private final NotificationEmailService email;
 
-    @Value("${app.notifications.email-from:}") private String emailFrom;
-    @Value("${spring.mail.host:}") private String mailHost;
     @Value("${app.password-reset.frontend-url:http://localhost:4200/reset-password}") private String resetUrl;
 
     @Transactional
@@ -49,9 +44,8 @@ public class PasswordRecoveryService {
         if (encontrado.isEmpty() || !Boolean.TRUE.equals(encontrado.get().getActivo())) return GENERIC_RESPONSE;
 
         Usuario usuario = encontrado.get();
-        JavaMailSender sender = mailSenderProvider.getIfAvailable();
-        if (sender == null || blank(mailHost) || blank(emailFrom)) {
-            log.warn("No se envió enlace de recuperación: falta la configuración SMTP o MAIL_FROM.");
+        if (!email.configured()) {
+            log.warn("No se envió enlace de recuperación: el envío de correo no está configurado.");
             return GENERIC_RESPONSE;
         }
 
@@ -67,20 +61,16 @@ public class PasswordRecoveryService {
 
         String separator = resetUrl.contains("?") ? "&" : "?";
         String link = resetUrl + separator + "token=" + token;
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(emailFrom);
-        message.setTo(usuario.getCorreo());
-        message.setSubject("Restablecer contraseña - COFI");
-        message.setText("Hola " + usuario.getNombre() + ",\n\n"
+        String body="Hola " + usuario.getNombre() + ",\n\n"
                 + "Recibimos una solicitud para cambiar la contraseña de tu cuenta. "
                 + "Abre este enlace para elegir una nueva contraseña (vence en 30 minutos):\n\n"
-                + link + "\n\nSi no solicitaste este cambio, ignora este correo.");
+                + link + "\n\nSi no solicitaste este cambio, ignora este correo.";
         try {
-            sender.send(message);
+            email.send(usuario.getCorreo(),"Restablecer contraseña - COFI",body);
             log.info("Se envió correo de recuperación de contraseña a un usuario registrado.");
         } catch (Exception ex) {
             tokens.deleteAllByUsuario_IdAndUsedAtIsNull(usuario.getId());
-            log.error("No se pudo enviar el correo de recuperación: {}: {}", ex.getClass().getSimpleName(), ex.getMessage());
+            log.error("No se pudo enviar el correo de recuperación: {}", ex.getClass().getSimpleName());
         }
         return GENERIC_RESPONSE;
     }
@@ -110,5 +100,4 @@ public class PasswordRecoveryService {
         }
     }
 
-    private boolean blank(String value) { return value == null || value.isBlank(); }
 }

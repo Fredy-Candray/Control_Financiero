@@ -58,6 +58,15 @@ con su refresh token, pero una reconexión necesita ese callback registrado.
 No transferir SMTP sin autorización independiente: enviar notificaciones por correo
 y leer avisos bancarios son configuraciones distintas.
 
+Railway Free/Trial bloquea SMTP. Para conservar los recordatorios por correo y la
+recuperación de contraseña sin cambiar de plan, `MAIL_PROVIDER=gmail-api` utiliza
+HTTPS y un permiso independiente `gmail.send` de la cuenta remitente.
+`MAIL_FROM` identifica esa cuenta; `GMAIL_SENDER_REFRESH_TOKEN` contiene su refresh
+token cifrado con `GmailTokenCipher`. No usar el token de lectura bancaria para enviar.
+El consentimiento del remitente se obtiene con PKCE, verificando su dirección de
+correo antes de guardar el permiso cifrado. No se almacena su contraseña de Gmail.
+El entorno local conserva `MAIL_PROVIDER=smtp` por defecto.
+
 El plan gratuito o de prueba de Railway depende de sus cuotas. No activar planes
 pagados automáticamente; comprobar disponibilidad antes de depender de él de forma
 permanente. Preparar respaldos periódicos para el uso continuado.
