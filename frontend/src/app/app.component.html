@@ -116,7 +116,7 @@
       </div>
       <div class="user-menu" [class.menu-open]="showUserMenu">
         <div class="user-pill" (click)="toggleUserMenu()" role="button" tabindex="0" (keydown.enter)="toggleUserMenu()" (keydown.space)="toggleUserMenu()">
-          <span class="avatar"> <img *ngIf="currentProfile?.fotoPerfil; else avatarInitial" [src]="currentProfile?.fotoPerfil" alt="" /><ng-template #avatarInitial>{{ username.charAt(0).toUpperCase() }}</ng-template></span>
+          <span class="avatar"> <img *ngIf="currentProfile?.fotoPerfil; else avatarInitial" [src]="currentProfile?.fotoPerfil" width="32" height="32" alt="" /><ng-template #avatarInitial>{{ username.charAt(0).toUpperCase() }}</ng-template></span>
           <span>{{ username }}</span>
           <span class="user-menu-arrow">▾</span>
         </div>
