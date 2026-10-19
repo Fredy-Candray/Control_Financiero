@@ -3,6 +3,7 @@ package com.dev.control_financiero.entity;
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
+import org.hibernate.Length;
 
 import java.time.LocalDateTime;
 
@@ -28,13 +29,13 @@ public class Usuario {
     @Column(length = 15, columnDefinition = "varchar(15)")
     private String telefono;
 
-    @Column(name = "foto_perfil", columnDefinition = "varchar(max)")
+    @Column(name = "foto_perfil", length = Length.LONG32)
     private String fotoPerfil;
 
-    @Column(name = "foto_portada", columnDefinition = "varchar(max)")
+    @Column(name = "foto_portada", length = Length.LONG32)
     private String fotoPortada;
 
-    @Column(name = "foto_portada_original", columnDefinition = "varchar(max)")
+    @Column(name = "foto_portada_original", length = Length.LONG32)
     private String fotoPortadaOriginal;
 
     @Column(nullable = false, unique = true, length = 50)

@@ -1,0 +1,19 @@
+# Allowlist: no .git, local config, database backups, generated reports or tokens.
+**
+!Dockerfile
+!frontend/
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/angular.json
+!frontend/tsconfig*.json
+!frontend/src/
+!frontend/src/**
+!backend/
+!backend/pom.xml
+!backend/src/
+!backend/src/main/
+!backend/src/main/**
+**/application-local.properties
+**/.env*
+**/*.pem
+**/*.key
