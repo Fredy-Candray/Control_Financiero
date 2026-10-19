@@ -33,6 +33,18 @@ Railway proporciona `PORT` y `RAILWAY_PUBLIC_DOMAIN`. El healthcheck es
 No copiar `application-local.properties`, `.env`, tokens ni contraseñas locales.
 La lista permitida de `.dockerignore` evita incluirlos en el contexto Docker.
 
+## Ajustes del servicio en Railway
+
+Configurar en Settings (la plataforma ya no admite Config as Code para nuevos
+servicios; no depender de `railway.toml`):
+
+- Builder: Dockerfile; Dockerfile path: `Dockerfile`.
+- Directorio raíz: raíz del repositorio.
+- Healthcheck path: `/api/health`; timeout: 180 segundos.
+- Restart policy: On Failure, con 3 reintentos.
+- Réplicas: 1; no contratar regiones ni recursos adicionales.
+- Dominio HTTPS gratuito generado por Railway, apuntando al puerto 8080.
+
 El perfil de prueba deshabilita Gmail, PAY y el envío de correos/WhatsApp aunque
 existan las variables habituales. Para correo real se requiere otro despliegue,
 revisión de seguridad y una migración planificada que evite importaciones duplicadas.
