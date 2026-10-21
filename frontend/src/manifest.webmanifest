@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "COFI · Control Financiero",
+  "short_name": "COFI",
+  "description": "Tus cuentas, tarjetas y movimientos en un solo lugar.",
+  "lang": "es",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#082b50",
+  "theme_color": "#082b50",
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/assets/icons/cofi-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/cofi-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/cofi-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

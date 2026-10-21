@@ -8,6 +8,7 @@ import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from './api.config';
 import { AuthService } from './services/auth.service';
 import { EmailMovementNotificationService, EmailMovementNotice } from './services/email-movement-notification.service';
+import { InstallAppComponent } from './components/install-app/install-app.component';
 
 interface PerfilBadge {
   username: string;
@@ -33,7 +34,7 @@ interface MenuResponse {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, InstallAppComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })

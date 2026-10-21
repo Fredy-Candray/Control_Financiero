@@ -26,6 +26,8 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
+              "src/manifest.webmanifest",
+              "src/cofi-sw.js",
               "src/favicon.ico",
               "src/assets"
             ],
