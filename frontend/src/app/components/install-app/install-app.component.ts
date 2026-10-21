@@ -37,7 +37,7 @@ interface InstallPrompt extends Event {
   `]
 })
 export class InstallAppComponent {
-  installed = window.matchMedia('(display-mode: standalone)').matches || !!(navigator as Navigator & { standalone?: boolean }).standalone;
+  installed = /COFIAndroid\//.test(navigator.userAgent) || window.matchMedia('(display-mode: standalone)').matches || !!(navigator as Navigator & { standalone?: boolean }).standalone;
   ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   showHelp = false;
   promptEvent: InstallPrompt | null = null;
