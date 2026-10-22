@@ -58,6 +58,10 @@ export class CalendarioComponent implements OnInit {
   selectedEventIds = new Set<string>();
   selectionMessage = '';
   whatsappPhone = '';
+  whatsappStatus: { enabled: boolean; configured: boolean; mode: string; missing: string[] } | null = null;
+  whatsappPreview: { phone: string; message: string; sent: boolean } | null = null;
+  whatsappPreviewError = '';
+  whatsappPreviewBusy = false;
   form = this.emptyForm();
 
   constructor(
@@ -68,6 +72,10 @@ export class CalendarioComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.http.get<NonNullable<CalendarioComponent['whatsappStatus']>>(`${API_BASE_URL}/calendario/whatsapp/estado`).subscribe({
+      next: status => this.whatsappStatus = status,
+      error: () => this.whatsappStatus = null
+    });
     this.categories = this.categoriesStore.list();
     this.events = this.eventsStore.list();
     let migrated = false;
@@ -221,6 +229,8 @@ export class CalendarioComponent implements OnInit {
     this.editingId = null;
     this.formError = '';
     this.form = this.emptyForm(date);
+    this.whatsappPreview = null;
+    this.whatsappPreviewError = '';
     this.modalOpen = true;
   }
 
@@ -297,10 +307,34 @@ export class CalendarioComponent implements OnInit {
       notifyEmail: event.notifyEmail === true,
       notifyWhatsapp: event.notifyWhatsapp === true
     };
+    this.whatsappPreview = null;
+    this.whatsappPreviewError = '';
     this.modalOpen = true;
   }
 
-  closeModal(): void { this.modalOpen = false; this.formError = ''; }
+  closeModal(): void { this.modalOpen = false; this.formError = ''; this.whatsappPreview = null; this.whatsappPreviewError = ''; }
+
+  get whatsappStatusLabel(): string {
+    if (!this.whatsappStatus) return 'No se pudo consultar la configuración. No se garantiza el envío.';
+    if (!this.whatsappStatus.enabled) return 'Modo preparación: no se enviarán mensajes. Puedes revisar una vista previa local.';
+    return this.whatsappStatus.configured ? 'Envío habilitado en el servidor.' : 'Falta configurar la integración: no se enviarán mensajes.';
+  }
+
+  previewWhatsApp(): void {
+    this.whatsappPreview = null;
+    this.whatsappPreviewError = '';
+    if (!this.form.title.trim() || !this.form.date || !this.form.time || !this.whatsappPhone.trim()) {
+      this.whatsappPreviewError = 'Completa título, fecha, hora y teléfono para generar la vista previa.';
+      return;
+    }
+    this.whatsappPreviewBusy = true;
+    this.http.post<NonNullable<CalendarioComponent['whatsappPreview']>>(`${API_BASE_URL}/calendario/whatsapp/vista-previa`, {
+      title: this.form.title.trim(), date: this.form.date, time: this.form.time, phone: this.whatsappPhone.trim()
+    }).subscribe({
+      next: preview => { this.whatsappPreview = preview; this.whatsappPreviewBusy = false; },
+      error: error => { this.whatsappPreviewBusy = false; this.whatsappPreviewError = this.serverErrorMessage(error, 'No se pudo generar la vista previa. Revisa el teléfono y la conexión al servidor local.'); }
+    });
+  }
 
   saveEvent(): void {
     if (!this.form.title.trim() || !this.form.date || !this.form.time) {

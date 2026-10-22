@@ -6,17 +6,14 @@ import com.dev.control_financiero.repository.EntregaRecordatorioRepository;
 import com.dev.control_financiero.repository.EventoCalendarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -27,16 +24,12 @@ public class CalendarNotificationScheduler {
     private final EventoCalendarioRepository events;
     private final EntregaRecordatorioRepository deliveries;
     private final NotificationEmailService email;
-    private final ObjectProvider<RestClient.Builder> restClientBuilderProvider;
-
-    @Value("${app.whatsapp.graph-version:}") private String graphVersion;
-    @Value("${app.whatsapp.phone-number-id:}") private String whatsappPhoneId;
-    @Value("${app.whatsapp.access-token:}") private String whatsappToken;
-    @Value("${app.whatsapp.template:calendar_reminder}") private String whatsappTemplate;
-    @Value("${app.whatsapp.template-language:es}") private String whatsappLanguage;
+    private final WhatsAppReminderGateway whatsapp;
+    @Value("${app.notifications.delivery-enabled:true}") private boolean deliveryEnabled = true;
 
     @Scheduled(fixedDelayString = "${app.notifications.poll-ms:60000}")
     public void deliverDueReminders() {
+        if (!deliveryEnabled) return;
         LocalDateTime now = LocalDateTime.now(ZONE);
         for (EventoCalendario event : events.findReadyForReminderDelivery()) {
             try {
@@ -71,41 +64,11 @@ public class CalendarNotificationScheduler {
 
     private void sendWhatsApp(EventoCalendario event, LocalDateTime occurrence) {
         if (deliveries.existsByEventoIdAndOcurrenciaAndCanal(event.getId(), occurrence, "WHATSAPP")) return;
-        String phone = event.getUsuario().getTelefono();
-        if (blank(phone) || blank(graphVersion) || blank(whatsappPhoneId) || blank(whatsappToken) || blank(whatsappTemplate)) return;
-        RestClient.Builder restClientBuilder = restClientBuilderProvider.getIfAvailable();
-        if (restClientBuilder == null) {
-            log.warn("No se pudo enviar WhatsApp para el evento {}: el cliente HTTP no está disponible.", event.getId());
-            return;
-        }
-        String destination = phone.startsWith("+")
-                ? phone.replaceAll("[\\s()-]", "")
-                : "+503" + phone.replaceAll("\\D", "");
-        Map<String, Object> body = Map.of(
-                "messaging_product", "whatsapp",
-                "to", destination,
-                "type", "template",
-                "template", Map.of(
-                        "name", whatsappTemplate,
-                        "language", Map.of("code", whatsappLanguage),
-                        "components", List.of(Map.of("type", "body", "parameters", List.of(
-                                Map.of("type", "text", "text", event.getTitulo()),
-                                Map.of("type", "text", "text", event.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))),
-                                Map.of("type", "text", "text", event.getHora().format(DateTimeFormatter.ofPattern("HH:mm")))
-                        )))
-                )
-        );
+        if (event.getUsuario() == null || blank(event.getUsuario().getTelefono())) return;
         try {
-            restClientBuilder.build()
-                    .post()
-                    .uri("https://graph.facebook.com/{version}/{phoneId}/messages", graphVersion, whatsappPhoneId)
-                    .headers(headers -> headers.setBearerAuth(whatsappToken))
-                    .body(body)
-                    .retrieve()
-                    .toBodilessEntity();
-            record(event, occurrence, "WHATSAPP");
+            if (whatsapp.send(event.getUsuario().getTelefono(), event.getTitulo(), occurrence)) record(event, occurrence, "WHATSAPP");
         } catch (Exception e) {
-            log.warn("No se pudo enviar el recordatorio por WhatsApp para el evento {}.", event.getId(), e);
+            log.warn("No se pudo enviar el recordatorio por WhatsApp para el evento {}. {}", event.getId(), e.getClass().getSimpleName());
         }
     }
 

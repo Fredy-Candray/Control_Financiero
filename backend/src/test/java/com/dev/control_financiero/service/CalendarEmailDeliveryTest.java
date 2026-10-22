@@ -3,7 +3,6 @@ package com.dev.control_financiero.service;
 import com.dev.control_financiero.entity.*;
 import com.dev.control_financiero.repository.*;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.test.util.ReflectionTestUtils;
 import java.time.*;
 import static org.mockito.Mockito.*;
@@ -13,7 +12,7 @@ class CalendarEmailDeliveryTest {
     @Test void sendsWithoutSmtpAndRecordsDeliveryOnlyOnce() {
         var deliveries=mock(EntregaRecordatorioRepository.class);var email=mock(NotificationEmailService.class);
         when(email.configured()).thenReturn(true);
-        var service=new CalendarNotificationScheduler(mock(EventoCalendarioRepository.class),deliveries,email,mock(ObjectProvider.class));
+        var service=new CalendarNotificationScheduler(mock(EventoCalendarioRepository.class),deliveries,email,mock(WhatsAppReminderGateway.class));
         var event=EventoCalendario.builder().id("test-event").titulo("Reunión").fecha(LocalDate.of(2026,10,20))
                 .hora(LocalTime.of(9,0)).usuario(Usuario.builder().nombre("Prueba").correo("reader@example.com").build()).build();
         var occurrence=LocalDateTime.of(2026,10,20,9,0);
@@ -27,7 +26,7 @@ class CalendarEmailDeliveryTest {
     @Test void failedDeliveryRemainsEligibleForRetry() {
         var deliveries=mock(EntregaRecordatorioRepository.class);var email=mock(NotificationEmailService.class);
         when(email.configured()).thenReturn(true);doThrow(new IllegalStateException()).when(email).send(anyString(),anyString(),anyString());
-        var service=new CalendarNotificationScheduler(mock(EventoCalendarioRepository.class),deliveries,email,mock(ObjectProvider.class));
+        var service=new CalendarNotificationScheduler(mock(EventoCalendarioRepository.class),deliveries,email,mock(WhatsAppReminderGateway.class));
         var event=EventoCalendario.builder().id("test-event").titulo("Actividad").usuario(Usuario.builder().nombre("Prueba").correo("reader@example.com").build()).build();
         ReflectionTestUtils.invokeMethod(service,"sendEmail",event,LocalDateTime.of(2026,10,20,9,0));
         verify(deliveries,never()).save(any());

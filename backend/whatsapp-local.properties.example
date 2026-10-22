@@ -1,0 +1,8 @@
+# Referencia, NO se carga automáticamente. No escribir credenciales reales aquí.
+# Para trabajar sin envíos, usar --spring.profiles.active=preparacion-local.
+app.whatsapp.enabled=false
+app.whatsapp.graph-version=
+app.whatsapp.phone-number-id=
+app.whatsapp.access-token=
+app.whatsapp.template=calendar_reminder
+app.whatsapp.template-language=es

@@ -146,11 +146,22 @@
         <label class="channel-option"><input type="checkbox" name="notifyBrowser" [(ngModel)]="form.notifyBrowser" /> Notificación en esta PC</label>
         <label class="channel-option"><input type="checkbox" name="notifyEmail" [(ngModel)]="form.notifyEmail" /> Correo electrónico registrado</label>
         <label class="channel-option"><input type="checkbox" name="notifyWhatsapp" [(ngModel)]="form.notifyWhatsapp" /> WhatsApp</label>
-        <small class="channel-hint">Correo y WhatsApp requieren que el servidor tenga configurados SMTP y Meta WhatsApp Cloud API.</small>
+        <small class="channel-hint">Correo y WhatsApp requieren configurar su servicio de envío en el servidor.</small>
+        <small class="channel-hint" *ngIf="form.notifyWhatsapp" role="status">{{ whatsappStatusLabel }}</small>
         <label class="whatsapp-field" *ngIf="form.notifyWhatsapp">Teléfono WhatsApp
           <input type="tel" name="whatsappPhone" [(ngModel)]="whatsappPhone" placeholder="7777-7777 o +50370000000" autocomplete="tel" />
         </label>
         <small class="channel-hint" *ngIf="form.notifyWhatsapp">Se guardará en tu perfil y se usará para estos avisos. Asegúrate de haber aceptado recibir mensajes de WhatsApp.</small>
+        <ng-container *ngIf="form.notifyWhatsapp">
+          <button type="button" class="secondary-button" (click)="previewWhatsApp()" [disabled]="whatsappPreviewBusy">{{ whatsappPreviewBusy ? 'Preparando…' : 'Vista previa sin enviar' }}</button>
+          <p class="form-error" *ngIf="whatsappPreviewError" role="alert">{{ whatsappPreviewError }}</p>
+          <div *ngIf="whatsappPreview" class="channel-hint" role="status">
+            <strong>Vista previa local · No se ha enviado</strong>
+            <p>Destino: {{ whatsappPreview.phone }}</p>
+            <pre style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit">{{ whatsappPreview.message }}</pre>
+            <p>Se generó con los datos actuales del formulario. Si los cambias, vuelve a generar la vista previa. El texto final dependerá de la plantilla que se configure posteriormente.</p>
+          </div>
+        </ng-container>
       </fieldset>
       <label>Notas (opcional)<textarea name="description" [(ngModel)]="form.description" rows="2" maxlength="300" placeholder="Agrega un detalle para recordar..."></textarea></label>
       <p class="form-error" *ngIf="formError" role="alert">{{ formError }}</p>
