@@ -17,6 +17,7 @@ public class MerchantCategoryService {
         return new Rule(name, new HashSet<>(Arrays.asList(aliases.split("\\|"))), Pattern.compile("\\b(?:"+expression+")\\b"));
     }
     private static final List<Rule> RULES=List.of(
+        rule("Cuota", "CUOTA|CUOTAS", "CUOTAS?"),
         rule("Comida", "COMIDA|ALIMENTACION", "LACA LACA|RESTAURANTE(?:S)?|CAFETERIA(?:S)?|PIZZERIA(?:S)?|POLLO CAMPERO|PIZZA HUT|BURGER KING|MCDONALD(?: S)?|WENDY(?: S)?"),
         rule("Supermercado", "SUPERMERCADO|SUPERMERCADOS", "MAXI DESPENSA|SUPER SELECTOS|SELECTOS|WALMART|DESPENSA DE DON JUAN"),
         rule("Combustible", "COMBUSTIBLE|GASOLINA", "GASOLINERA(?:S)?|PUMA ENERGY|TEXACO|SHELL"),
@@ -28,6 +29,7 @@ public class MerchantCategoryService {
     }
     public String suggestedName(String merchant) {
         String value=normalize(merchant);
+        if(RULES.get(0).merchant().matcher(value).find()) return "Cuota";
         var matches=RULES.stream().filter(r->r.merchant().matcher(value).find()).toList();
         return matches.size()==1?matches.get(0).name():null;
     }

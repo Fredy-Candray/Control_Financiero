@@ -40,6 +40,7 @@ class GmailNotificationSenderTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("\"raw\"")))
                 .andRespond(withSuccess("{\"id\":\"test\"}",MediaType.APPLICATION_JSON));
         sender.send("reader@example.com","Prueba","Solo datos ficticios");
+        assertEquals("CONNECTED",sender.permissionStatus().state());
         server.verify();verify(oauth).accessToken("sender-refresh");
     }
     @Test void neverSendsWithoutSeparatePermission() {

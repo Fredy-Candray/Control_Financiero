@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { from, of } from 'rxjs';
-import { catchError, concatMap, map, toArray } from 'rxjs/operators';
+import { catchError, concatMap, map, toArray, switchMap } from 'rxjs/operators';
 import { CalendarEvent, CalendarEventType, CalendarRecurrence } from '../../models/calendar-event';
 import { CalendarCategory } from '../../models/calendar-category';
 import { CalendarEventsService } from '../../services/calendar-events.service';
@@ -47,6 +47,7 @@ export class CalendarioComponent implements OnInit {
   categoryModalOpen = false;
   editingCategoryId: string | null = null;
   categoryError = '';
+  categoryBusy = false;
   categoryDraft = this.emptyCategoryDraft();
   editingId: string | null = null;
   notificationPermission: NotificationPermission | 'unsupported' = 'default';
@@ -78,24 +79,15 @@ export class CalendarioComponent implements OnInit {
     });
     this.categories = this.categoriesStore.list();
     this.events = this.eventsStore.list();
-    let migrated = false;
-    this.events = this.events.map(event => {
-      if (event.categoryId && this.categories.some(category => category.id === event.categoryId)) return event;
-      migrated = true;
-      return { ...event, categoryId: this.defaultCategoryId(event.type) };
-    });
-    if (migrated) this.events.forEach(event => this.eventsStore.save(event));
     this.notificationPermission = this.reminders.permission();
     this.reminders.start();
-    this.eventsStore.synchronize().subscribe({
+    this.categoriesStore.synchronize().pipe(switchMap(categories => {
+      this.categories = categories;
+      if (!this.form.categoryId) this.form.categoryId = this.defaultCategoryId(this.form.type);
+      return this.eventsStore.synchronize();
+    })).subscribe({
       next: serverEvents => {
-        this.events = serverEvents.map(event => ({
-          ...event,
-          categoryId: event.categoryId && this.categories.some(category => category.id === event.categoryId)
-            ? event.categoryId : this.defaultCategoryId(event.type)
-        }));
-        this.events.filter((event, index) => event.categoryId !== serverEvents[index]?.categoryId)
-          .forEach(event => this.eventsStore.saveRemote(event).subscribe({ error: () => undefined }));
+        this.events = serverEvents;
       },
       error: error => this.notificationMessage = this.serverErrorMessage(error, 'No se pudo sincronizar el calendario con el servidor. Los avisos por correo y WhatsApp no estarán disponibles.')
     });
@@ -247,21 +239,28 @@ export class CalendarioComponent implements OnInit {
   }
 
   saveCategory(): void {
+    if (this.categoryBusy) return;
     const name = this.categoryDraft.name.trim();
     if (!name) { this.categoryError = 'Escribe un nombre para la categoría.'; return; }
     if (this.categories.some(category => category.name.toLocaleLowerCase() === name.toLocaleLowerCase() && category.id !== this.editingCategoryId)) {
       this.categoryError = 'Ya existe una categoría con ese nombre.';
       return;
     }
-    this.categoriesStore.save({
+    this.categoryBusy = true;
+    this.categoriesStore.saveRemote({
       id: this.editingCategoryId ?? this.createId(),
       name,
       color: this.categoryDraft.color
-    });
-    this.categories = this.categoriesStore.list();
-    this.editingCategoryId = null;
-    this.categoryDraft = this.emptyCategoryDraft();
-    this.categoryError = '';
+    }).subscribe({ next: () => {
+      this.categories = this.categoriesStore.list();
+      this.editingCategoryId = null;
+      this.categoryDraft = this.emptyCategoryDraft();
+      this.categoryError = '';
+      this.categoryBusy = false;
+    }, error: error => {
+      this.categoryBusy = false;
+      this.categoryError = this.serverErrorMessage(error, 'No se pudo guardar la categoría en el servidor.');
+    }});
   }
 
   editCategory(category: CalendarCategory): void {
@@ -277,24 +276,26 @@ export class CalendarioComponent implements OnInit {
   }
 
   deleteCategory(category: CalendarCategory): void {
+    if (this.categoryBusy) return;
     if (this.categories.length <= 1) { this.categoryError = 'Debe quedar al menos una categoría.'; return; }
     const replacement = this.categories.find(item => item.id !== category.id)!;
     const affected = this.events.filter(event => event.categoryId === category.id);
     const detail = affected.length ? ` ${affected.length} evento(s) se reasignarán a “${replacement.name}”.` : '';
     if (!window.confirm(`¿Eliminar la categoría “${category.name}”?${detail}`)) return;
-    affected.forEach(event => {
-      const updated = { ...event, categoryId: replacement.id };
-      this.eventsStore.save(updated);
-      this.eventsStore.saveRemote(updated).subscribe({ error: () => undefined });
-    });
-    this.categoriesStore.remove(category.id);
-    this.categories = this.categoriesStore.list();
-    this.events = this.eventsStore.list();
-    if (this.editingCategoryId === category.id) {
-      this.editingCategoryId = null;
-      this.categoryDraft = this.emptyCategoryDraft();
-    }
-    this.categoryError = '';
+    this.categoryBusy = true;
+    this.categoriesStore.removeRemote(category.id, replacement.id).pipe(switchMap(categories => {
+      this.categories = categories;
+      return this.eventsStore.synchronize();
+    })).subscribe({ next: events => {
+      this.events = events;
+      if (this.form.categoryId === category.id) this.form.categoryId = replacement.id;
+      if (this.editingCategoryId === category.id) this.cancelCategoryEdit();
+      this.categoryError = '';
+      this.categoryBusy = false;
+    }, error: error => {
+      this.categoryBusy = false;
+      this.categoryError = this.serverErrorMessage(error, 'No se pudo eliminar la categoría. Actualiza el calendario.');
+    }});
   }
 
   openEdit(event: CalendarEvent): void {

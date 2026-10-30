@@ -7,4 +7,6 @@ export interface MovimientoDashboard {
   cuentaOrigen?: string;
   cuentaDestino?: string;
   categoria?: string;
+  destinatarioExterno?: string;
+  prestamoId?: number | null;
 }

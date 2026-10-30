@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../../api.config';
 import { Cuenta } from '../../models/cuenta';
+import { PrestamoPersonal } from '../../models/prestamo-personal';
 import { agruparCategorias, celdaCsv, centavos, efectoCuenta, filtrar, FiltrosReporte, flujoEfectivo, MovimientoReporte, patrimonioEn, PlanReporte, sumar } from './reportes-calculos';
 
 @Component({
@@ -14,6 +15,7 @@ export class ReportesComponent implements OnInit {
   cuentas: Cuenta[] = [];
   movimientos: MovimientoReporte[] = [];
   planes: PlanReporte[] = [];
+  prestamos: PrestamoPersonal[] = [];
   cargando = true;
   datosDisponibles = false;
   guardando = false;
@@ -24,7 +26,7 @@ export class ReportesComponent implements OnInit {
   tab = 'resumen';
   pagina = 1;
   agrupacion = 'mes';
-  readonly tamanoPagina = 20;
+  readonly tamanoPagina = 6;
   readonly hoy = this.fechaLocal(new Date());
   filtros: FiltrosReporte = { desde: this.hoy.slice(0, 7) + '-01', hasta: this.hoy, cuentaId: null, tipo: 'TODOS', categoria: '' };
   formulario: PlanReporte | null = null;
@@ -40,8 +42,8 @@ export class ReportesComponent implements OnInit {
     this.cargando = true;
     this.datosDisponibles = false;
     this.error = '';
-    this.http.get<{ cuentas: Cuenta[]; movimientos: MovimientoReporte[]; planes: PlanReporte[] }>(`${API_BASE_URL}/reportes`).subscribe({
-      next: datos => { this.cuentas = datos.cuentas; this.movimientos = datos.movimientos; this.planes = datos.planes; this.cargando = false; this.datosDisponibles = true; },
+    this.http.get<{ cuentas: Cuenta[]; movimientos: MovimientoReporte[]; planes: PlanReporte[]; prestamos: PrestamoPersonal[] }>(`${API_BASE_URL}/reportes`).subscribe({
+      next: datos => { this.cuentas = datos.cuentas; this.movimientos = datos.movimientos; this.planes = datos.planes; this.prestamos = datos.prestamos || []; this.cargando = false; this.datosDisponibles = true; },
       error: err => { this.cargando = false; this.error = err.status === 403 ? 'Tu rol no tiene permiso para consultar reportes.' : 'No se pudieron cargar los reportes. Verifica tu sesión y vuelve a intentar.'; }
     });
   }
@@ -61,7 +63,8 @@ export class ReportesComponent implements OnInit {
   get tarjetas(): Cuenta[] { return this.cuentas.filter(c => c.tipo === 'CREDITO'); }
   deuda(c: Cuenta): number { return Math.max(0, (centavos(c.limiteCredito ?? 0) - centavos(c.saldoActual)) / 100); }
   get deudaTotal(): number { return this.cuentasSeleccionadas.reduce((s, c) => s + (c.tipo === 'CREDITO' ? centavos(this.deuda(c)) : 0), 0) / 100; }
-  get patrimonio(): number { return this.cuentasSeleccionadas.reduce((s, c) => s + (c.tipo === 'CREDITO' ? -centavos(this.deuda(c)) : centavos(c.saldoActual)), 0) / 100; }
+  get deudaPersonal(): number { return this.filtros.cuentaId ? 0 : this.prestamos.reduce((sum, p) => sum + centavos(p.saldoPendiente), 0) / 100; }
+  get patrimonio(): number { return this.cuentasSeleccionadas.reduce((s, c) => s + (c.tipo === 'CREDITO' ? -centavos(this.deuda(c)) : centavos(c.saldoActual)), 0) / 100 - this.deudaPersonal; }
   get dineroDisponible(): number { return this.cuentasSeleccionadas.filter(c => c.tipo === 'EFECTIVO' || c.tipo === 'DEBITO').reduce((s, c) => s + centavos(c.saldoActual), 0) / 100; }
   get flujo(): { entradas: number; salidas: number; neto: number } { return flujoEfectivo(this.datos, this.cuentas, this.filtros.cuentaId); }
   get categoriasIngreso() { return agruparCategorias(this.datos, 'INGRESO'); }
@@ -103,7 +106,7 @@ export class ReportesComponent implements OnInit {
       const ultimo = this.fechaLocal(new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0));
       const cierre = ultimo > this.filtros.hasta ? this.filtros.hasta : ultimo;
       const deuda = -patrimonioEn(cierre, this.cuentasSeleccionadas.filter(c => c.tipo === 'CREDITO'), this.movimientos);
-      resultado.push({ mes, ingresos, gastos, balance: (centavos(ingresos) - centavos(gastos)) / 100, flujo: flujoEfectivo(lista, this.cuentas, this.filtros.cuentaId).neto, patrimonio: patrimonioEn(cierre, this.cuentasSeleccionadas, this.movimientos), deuda: Math.max(0, deuda) });
+      resultado.push({ mes, ingresos, gastos, balance: (centavos(ingresos) - centavos(gastos)) / 100, flujo: flujoEfectivo(lista, this.cuentas, this.filtros.cuentaId).neto, patrimonio: patrimonioEn(cierre, this.cuentasSeleccionadas, this.movimientos, this.filtros.cuentaId ? [] : this.prestamos), deuda: Math.max(0, deuda) });
       fecha.setMonth(fecha.getMonth() + 1);
     }
     return resultado;
@@ -140,8 +143,10 @@ export class ReportesComponent implements OnInit {
   }
   get listado(): MovimientoReporte[] { return this.datos.filter(m => this.tab === 'ingresos' ? m.tipo === 'INGRESO' : this.tab === 'gastos' ? m.tipo === 'GASTO' : true); }
   get paginas(): number { return Math.max(1, Math.ceil(this.listado.length / this.tamanoPagina)); }
-  get filas(): MovimientoReporte[] { return this.listado.slice((this.pagina - 1) * this.tamanoPagina, this.pagina * this.tamanoPagina); }
-  etiqueta(tipo: string): string { return ({ INGRESO: 'Ingreso', GASTO: 'Gasto', TRANSFERENCIA: 'Transferencia', PAGO_TARJETA: 'Pago de tarjeta' } as Record<string, string>)[tipo] ?? tipo; }
+  get paginaActual(): number { return Math.min(this.pagina, this.paginas); }
+  cambiarPagina(pagina: number): void { this.pagina = Math.min(Math.max(1, pagina), this.paginas); }
+  get filas(): MovimientoReporte[] { return this.listado.slice((this.paginaActual - 1) * this.tamanoPagina, this.paginaActual * this.tamanoPagina); }
+  etiqueta(tipo: string): string { return ({ INGRESO: 'Ingreso', GASTO: 'Gasto', TRANSFERENCIA: 'Transferencia', PAGO_TARJETA: 'Pago de tarjeta', PAGO_PRESTAMO: 'Pago de préstamo' } as Record<string, string>)[tipo] ?? tipo; }
   nuevo(tipo: PlanReporte['tipo'], plan?: PlanReporte): void {
     this.mensaje = ''; this.error = '';
     this.formulario = plan ? { ...plan } : { tipo, nombre: '', categoria: tipo === 'PRESUPUESTO' ? 'Sin categoría' : null, mes: tipo === 'PRESUPUESTO' ? this.filtros.desde.slice(0, 7) : null, cuentaId: null, monto: 1, acumulado: 0, aporteMensual: 0, tasaInteres: null, fechaObjetivo: null };
@@ -158,7 +163,7 @@ export class ReportesComponent implements OnInit {
   }
   exportar(): void {
     const filas: unknown[][] = [['Reporte financiero', this.filtros.desde, this.filtros.hasta], ['Vista', this.tabs.find(t => t.id === this.tab)?.nombre], ['Cuenta', this.cuentas.find(c => c.id === this.filtros.cuentaId)?.nombre || 'Todas'], ['Tipo', this.filtros.tipo], ['Categoría', this.filtros.categoria || 'Todas'], ['Moneda', 'USD'], ['Ingresos', this.ingresos], ['Gastos', this.gastos], ['Balance', this.balance], ['Deuda actual', this.deudaTotal], ['Patrimonio actual', this.patrimonio], [], ['Fecha', 'Tipo', 'Descripción', 'Categoría', 'Cuenta origen', 'Cuenta destino', 'Monto USD']];
-    for (const m of this.listado) filas.push([m.fechaMovimiento, this.etiqueta(m.tipo), m.descripcion, m.categoria, m.cuentaOrigen, m.cuentaDestino, Number(m.monto).toFixed(2)]);
+    for (const m of this.listado) filas.push([m.fechaMovimiento, this.etiqueta(m.tipo), m.descripcion, m.categoria, m.cuentaOrigen, m.cuentaDestino || m.destinatarioExterno, Number(m.monto).toFixed(2)]);
     filas.push([], ['Mes', 'Ingresos', 'Gastos', 'Balance', 'Flujo neto']);
     for (const mes of this.meses) filas.push([mes.mes, mes.ingresos, mes.gastos, mes.balance, mes.flujo]);
     filas.push([], ['Presupuesto', 'Mes', 'Categoría', 'Planificado', 'Gasto real (mes completo)', 'Restante']);
@@ -167,6 +172,8 @@ export class ReportesComponent implements OnInit {
     for (const p of this.metas) filas.push([p.nombre, p.monto, p.acumulado, p.aporteMensual, p.fechaObjetivo]);
     filas.push([], ['Cuenta', 'Saldo / crédito disponible actual', 'Deuda actual', 'Pagos de tarjeta del período']);
     for (const c of this.cuentasSeleccionadas) filas.push([c.nombre, c.saldoActual, c.tipo === 'CREDITO' ? this.deuda(c) : '', c.tipo === 'CREDITO' ? this.pagos(c) : '']);
+    filas.push([], ['Préstamo personal sin interés', 'Saldo inicial registrado', 'Saldo pendiente actual']);
+    for (const p of this.prestamos) filas.push([p.acreedor, p.saldoInicial, p.saldoPendiente]);
     const blob = new Blob(['\uFEFF' + filas.map(f => f.map(celdaCsv).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob), enlace = document.createElement('a');
     enlace.href = url; enlace.download = `reporte-${this.filtros.desde}-${this.filtros.hasta}.csv`; enlace.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -183,6 +190,8 @@ export class ReportesComponent implements OnInit {
       const secciones: import('./reportes-pdf').SeccionPdf[] = [];
       const tabla = (titulo: string, columnas: string[], filas: string[][], nota?: string) => secciones.push({ titulo, columnas, filas, nota });
       const vista = this.tabs.find(t => t.id === this.tab)?.nombre || 'Resumen';
+      if (['resumen', 'deudas', 'patrimonio'].includes(this.tab) && this.prestamos.length)
+        tabla('Préstamos personales sin interés', ['Acreedor', 'Saldo inicial', 'Pendiente actual'], this.prestamos.map(p => [p.acreedor, dinero(p.saldoInicial), dinero(p.saldoPendiente)]), 'Los pagos de capital reducen la cuenta de origen y esta deuda; no se cuentan como gastos.');
       const finAnterior = new Date(this.filtros.desde + 'T12:00:00'); finAnterior.setDate(finAnterior.getDate() - 1);
       const inicioAnterior = new Date(finAnterior);
       const diasPeriodo = Math.round((new Date(this.filtros.hasta + 'T12:00:00').getTime() - new Date(this.filtros.desde + 'T12:00:00').getTime()) / 86400000) + 1;
@@ -209,11 +218,11 @@ export class ReportesComponent implements OnInit {
       if (this.tab === 'comparativos') {
         tabla('Comparación de períodos', ['Período', 'Ingresos', 'Gastos', 'Balance'], this.comparaciones.map(c => [c.periodo, dinero(c.ingresos), dinero(c.gastos), dinero(c.balance)]));
       }
-      if (['resumen', 'ingresos', 'gastos', 'cuentas', 'flujo'].includes(this.tab)) tabla('Detalle completo de movimientos', ['Fecha', 'Tipo', 'Descripción', 'Categoría', 'Origen', 'Destino', 'Monto'], this.listado.map(m => [m.fechaMovimiento ? fechaPdf(m.fechaMovimiento) + ' ' + m.fechaMovimiento.slice(11, 16) : '-', this.etiqueta(m.tipo), m.descripcion || '-', m.categoria || 'Sin categoría', m.cuentaOrigen || '-', m.cuentaDestino || '-', dinero(m.monto)]));
+      if (['resumen', 'ingresos', 'gastos', 'cuentas', 'flujo'].includes(this.tab)) tabla('Detalle completo de movimientos', ['Fecha', 'Tipo', 'Descripción', 'Categoría', 'Origen', 'Destino', 'Monto'], this.listado.map(m => [m.fechaMovimiento ? fechaPdf(m.fechaMovimiento) + ' ' + m.fechaMovimiento.slice(11, 16) : '-', this.etiqueta(m.tipo), m.descripcion || '-', m.categoria || 'Sin categoría', m.cuentaOrigen || '-', m.cuentaDestino || m.destinatarioExterno || '-', dinero(m.monto)]));
       const doc = crearReportePdf(`Informe financiero: ${vista}`, [`Cuenta: ${this.cuentas.find(c => c.id === this.filtros.cuentaId)?.nombre || 'Todas'} | Tipo: ${this.filtros.tipo} | Categoría: ${this.filtros.categoria || 'Todas'}`], secciones, {
         vista: this.tab, desde: this.filtros.desde, hasta: this.filtros.hasta, generado: new Date(),
         ingresos: this.ingresos, gastos: this.gastos, balance: this.balance, patrimonio: this.patrimonio,
-        deuda: this.deudaTotal, dineroDisponible: this.dineroDisponible, flujo: this.flujo, movimientos: this.datos, meses: this.meses, cuentas: this.cuentas,
+        deuda: this.deudaTotal, deudaPersonal: this.deudaPersonal, dineroDisponible: this.dineroDisponible, flujo: this.flujo, movimientos: this.datos, meses: this.meses, cuentas: this.cuentas,
         anterior: historialAnteriorDisponible ? { ingresos: this.anterior('INGRESO'), gastos: this.anterior('GASTO'), desde: this.fechaLocal(inicioAnterior), hasta: this.fechaLocal(finAnterior) } : undefined
       }, logoPdf);
       doc.save(`reporte-${this.tab}-${this.filtros.desde}-${this.filtros.hasta}.pdf`);

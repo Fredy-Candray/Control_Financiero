@@ -7,6 +7,7 @@ export interface MesInforme {
 export interface ContextoInforme {
   vista: string; desde: string; hasta: string; generado: Date;
   ingresos: number; gastos: number; balance: number; patrimonio: number; deuda: number; dineroDisponible: number;
+  deudaPersonal?: number;
   flujo: { entradas: number; salidas: number; neto: number };
   movimientos: MovimientoReporte[]; meses: MesInforme[];
   cuentas: Pick<Cuenta, 'id' | 'tipo'>[];
@@ -40,7 +41,8 @@ export function prepararAnalisisPdf(datos: ContextoInforme) {
   if (categorias[0] && categorias[0].nombre !== 'Sin categoría' && categorias[0].porcentaje >= 50)
     observaciones.push(`${categorias[0].nombre} concentra el ${categorias[0].porcentaje.toFixed(1)} % del gasto registrado (${dineroPdf(categorias[0].monto)}).`);
   if (centavos(datos.flujo.neto) !== centavos(datos.balance)) observaciones.push(`El flujo neto de efectivo es ${dineroPdf(datos.flujo.neto)} y el balance es ${dineroPdf(datos.balance)}. El flujo refleja entradas y salidas de efectivo y débito; el balance incluye compras a crédito y excluye transferencias y pagos de tarjeta.`);
-  observaciones.push('Patrimonio actual = saldos de efectivo y débito menos deuda de tarjetas. No equivale a dinero disponible ni al balance del período.');
+  observaciones.push('Patrimonio actual = saldos de efectivo y débito menos deuda de tarjetas y préstamos personales registrados. No equivale a dinero disponible ni al balance del período.');
+  if (datos.deudaPersonal) observaciones.push(`Hay ${dineroPdf(datos.deudaPersonal)} pendientes de préstamos personales sin interés. Devolver su capital reduce el dinero disponible y la deuda, sin sumar un gasto adicional.`);
   const resumen = datos.movimientos.length
     ? `Durante el período se registraron ingresos por ${dineroPdf(datos.ingresos)} y gastos por ${dineroPdf(datos.gastos)}. El balance fue ${datos.balance < 0 ? 'negativo' : datos.balance > 0 ? 'positivo' : 'equilibrado'}${datos.balance ? ` en ${dineroPdf(Math.abs(datos.balance))}` : ''}.`
     : 'No se registraron movimientos para el período y los filtros seleccionados.';

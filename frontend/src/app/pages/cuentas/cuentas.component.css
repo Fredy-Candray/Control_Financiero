@@ -116,3 +116,8 @@ input::placeholder { color: #9ca9b9; }
 .gmail-history td:last-child { min-width:200px; }
 .gmail-card h3 { margin:12px 0; font-size:1rem; }
 @media(max-width:640px) { .gmail-actions button { flex:1 1 150px; } }
+.gmail-pagination { display:flex; align-items:center; justify-content:center; gap:16px; padding:20px 16px; color:var(--text); font-size:.8rem; }
+.gmail-pagination button { min-height:44px; padding:9px 14px; border:1px solid var(--card-border); border-radius:9px; background:var(--surface); color:var(--text); cursor:pointer; }
+.gmail-pagination button:disabled { opacity:.45; cursor:default; }
+.gmail-pagination button:not(:disabled):hover { color:var(--accent); border-color:var(--accent); }
+@media(max-width:640px) { .gmail-pagination { padding:16px 10px; gap:8px; font-size:.72rem; text-align:center; } .gmail-pagination button { padding:9px 10px; } }

@@ -20,6 +20,9 @@ public class CrearMovimientoRequest {
     private BigDecimal monto;
 
     private String descripcion;
+    @jakarta.validation.constraints.Size(max=120) private String destinatarioExterno;
+    private Long prestamoId;
+    @jakarta.validation.constraints.Pattern(regexp="[a-zA-Z0-9-]{1,36}") private String referenciaCliente;
 
     private java.time.LocalDateTime fechaMovimiento;
 

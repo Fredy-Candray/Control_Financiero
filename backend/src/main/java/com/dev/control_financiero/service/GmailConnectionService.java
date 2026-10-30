@@ -35,7 +35,7 @@ public class GmailConnectionService {
     @Transactional public String disconnect(Long userId) {
         var c=connections.lockByUser(userId).orElseThrow(()->new IllegalArgumentException("No hay una conexión."));
         String token=c.getRefreshTokenEncrypted()==null?null:cipher.decrypt(c.getRefreshTokenEncrypted());
-        c.setEnabled(false); c.setRefreshTokenEncrypted(null); connections.save(c); return token;
+        c.setEnabled(false); c.setRefreshTokenEncrypted(null); c.setLastError(null); connections.save(c); return token;
     }
     @Transactional public void syncResult(Long userId,String error) {
         connections.lockByUser(userId).ifPresent(c->{ c.setLastError(error); if(error==null)c.setLastSync(Instant.now()); connections.save(c); });

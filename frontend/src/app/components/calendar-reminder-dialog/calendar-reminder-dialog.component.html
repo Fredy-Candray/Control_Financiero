@@ -1,0 +1,23 @@
+<dialog #dialog class="reminder-dialog" [style.--reminder-color]="notice.color" role="alertdialog"
+  aria-modal="true" aria-labelledby="reminder-heading" aria-describedby="reminder-when" (cancel)="cancel($event)">
+  <header class="reminder-header">
+    <div class="reminder-label"><span class="category-dot" aria-hidden="true"></span>{{ notice.categoryName }}</div>
+    <button type="button" class="close-reminder" aria-label="Cerrar recordatorio" (click)="dismissed.emit()" autofocus>×</button>
+  </header>
+  <div class="reminder-body">
+    <span class="reminder-symbol" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.7">
+        <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+    <p class="reminder-eyebrow">{{ notice.payment ? 'Recordatorio de pago' : 'Actividad programada' }}</p>
+    <h2 id="reminder-heading">{{ notice.title }}</h2>
+    <div id="reminder-when" class="reminder-when"><span>{{ dateLabel() }}</span><strong>{{ timeLabel() }}</strong></div>
+    <p class="reminder-description" *ngIf="notice.description">{{ notice.description }}</p>
+    <p class="reminder-pending" *ngIf="pending">{{ pending }} {{ pending === 1 ? 'recordatorio más por revisar' : 'recordatorios más por revisar' }}</p>
+  </div>
+  <footer class="reminder-actions">
+    <button type="button" class="dismiss-button" (click)="dismissed.emit()">{{ pending ? 'Siguiente recordatorio' : 'Cerrar' }}</button>
+    <button type="button" class="calendar-button" (click)="viewCalendar.emit()">Ver calendario</button>
+  </footer>
+</dialog>

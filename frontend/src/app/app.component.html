@@ -10,20 +10,14 @@
     </button>
     <button type="button" class="calendar-reminder-close" (click)="nextEmailNotice()" aria-label="Cerrar aviso de movimiento">×</button>
   </section>
-  <section class="calendar-reminder-toast" *ngIf="calendarReminder" role="alert" aria-live="assertive">
-    <span class="calendar-reminder-icon" aria-hidden="true">{{ calendarReminder.payment ? '▣' : '◷' }}</span>
-    <button type="button" class="calendar-reminder-copy" (click)="openCalendarReminder()">
-      <strong>{{ calendarReminder.payment ? 'Recordatorio de pago' : 'Actividad programada' }}</strong>
-      <span>{{ calendarReminder.title }} · {{ calendarReminderTime(calendarReminder.date) }}</span>
-    </button>
-    <button type="button" class="calendar-reminder-close" (click)="closeCalendarReminder()" aria-label="Cerrar recordatorio">×</button>
-  </section>
   </div>
+  <app-calendar-reminder-dialog *ngIf="calendarReminder" [notice]="calendarReminder" [pending]="calendarReminderQueue.length"
+    (dismissed)="closeCalendarReminder()" (viewCalendar)="openCalendarReminder()" />
   <aside class="sidebar drawer" [class.open]="sidebarOpen" *ngIf="showSidebar">
     <button class="drawer-close" *ngIf="sidebarOpen" (click)="closeSidebarOverlay()" aria-label="Cerrar menú lateral">
       ✕
     </button>
-    <div class="brand">
+    <a class="brand" routerLink="/inicio" (click)="closeSidebarOverlay()" aria-label="Ir al inicio de COFI">
       <div class="brand-logo">
         <img src="assets/cofi-logo.png" alt="Logo COFI" />
       </div>
@@ -31,7 +25,7 @@
         <h2>COFI</h2>
         <p>Control Financiero</p>
       </div>
-    </div>
+    </a>
 
     <nav class="nav-links" #navLinks>
       <section class="nav-group" *ngFor="let section of menuSections">
@@ -129,6 +123,7 @@
       <button class="user-menu-backdrop" *ngIf="showUserMenu" type="button" aria-label="Cerrar menú de usuario" (click)="closeUserMenu()"></button>
     </header>
 
+    <app-mail-connection-notice *ngIf="isAuthenticated && showTopbar" />
     <main class="main-content" [class.public-page]="!showTopbar">
       <router-outlet></router-outlet>
     </main>

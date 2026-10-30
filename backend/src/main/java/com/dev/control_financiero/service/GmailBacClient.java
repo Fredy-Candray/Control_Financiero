@@ -43,7 +43,14 @@ public class GmailBacClient {
     }
     private JsonNode token(LinkedMultiValueMap<String,String> form) {
         return http.post().uri("https://oauth2.googleapis.com/token").contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(form).retrieve().body(JsonNode.class);
+                .body(form).retrieve().onStatus(status->status.is4xxClientError(),(request,response)->{
+                    byte[] body=response.getBody().readNBytes(16384);
+                    boolean revoked=false;
+                    try { revoked="invalid_grant".equals(new com.fasterxml.jackson.databind.ObjectMapper().readTree(body).path("error").asText()); }
+                    catch(Exception ignored) { }
+                    if(revoked)throw new GmailAuthorizationException();
+                    throw new IllegalStateException("Google no pudo validar la configuración OAuth.");
+                }).body(JsonNode.class);
     }
     public JsonNode profile(String accessToken) { return get("https://gmail.googleapis.com/gmail/v1/users/me/profile",accessToken); }
     public JsonNode list(String accessToken,long after,String page) {

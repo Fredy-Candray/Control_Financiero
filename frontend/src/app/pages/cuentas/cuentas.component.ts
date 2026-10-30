@@ -183,6 +183,17 @@ export class CuentasComponent implements OnInit {
     });
   }
 
+  paginaAvisos = 1;
+  readonly avisosPorPagina = 6;
+  get totalPaginasAvisos(): number { return Math.max(1, Math.ceil(this.gmailHistory.length / this.avisosPorPagina)); }
+  get paginaAvisosActual(): number { return Math.min(this.paginaAvisos, this.totalPaginasAvisos); }
+  get avisosPaginados(): CuentasComponent['gmailHistory'] {
+    return this.gmailHistory.slice((this.paginaAvisosActual - 1) * this.avisosPorPagina, this.paginaAvisosActual * this.avisosPorPagina);
+  }
+  cambiarPaginaAvisos(pagina: number): void {
+    this.paginaAvisos = Math.min(Math.max(1, pagina), this.totalPaginasAvisos);
+  }
+
   cargarGmail(): void {
     this.http.get<NonNullable<CuentasComponent['gmail']>>(`${API_BASE_URL}/gmail-bac`).subscribe({ next: data => this.gmail = data, error: () => this.gmailError = 'No se pudo consultar la conexión a Gmail.' });
     this.http.get<CuentasComponent['gmailHistory']>(`${API_BASE_URL}/gmail-bac/history`).subscribe({ next: data => this.gmailHistory = data, error: () => this.gmailError = 'No se pudo cargar el historial de importación.' });

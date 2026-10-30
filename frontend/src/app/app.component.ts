@@ -3,7 +3,10 @@ import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } fro
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { ThemeService } from './services/theme.service';
-import { CalendarReminderService } from './services/calendar-reminder.service';
+import { CalendarReminderService, CalendarReminderNotice } from './services/calendar-reminder.service';
+import { CalendarReminderDialogComponent } from './components/calendar-reminder-dialog/calendar-reminder-dialog.component';
+import { CalendarCategoriesService } from './services/calendar-categories.service';
+import { MailConnectionNoticeComponent } from './components/mail-connection-notice/mail-connection-notice.component';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from './api.config';
 import { AuthService } from './services/auth.service';
@@ -34,7 +37,7 @@ interface MenuResponse {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, InstallAppComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, InstallAppComponent, CalendarReminderDialogComponent, MailConnectionNoticeComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -52,20 +55,19 @@ export class AppComponent implements OnInit {
   private sessionValidationStarted = false;
   sidebarCollapsed = false;
   sidebarOpen = false; // mobile overlay open state
-  calendarReminder: { title: string; date: Date; payment: boolean } | null = null;
-  private reminderToastTimer: ReturnType<typeof setTimeout> | null = null;
+  calendarReminder: CalendarReminderNotice | null = null;
+  calendarReminderQueue: CalendarReminderNotice[] = [];
   emailMovement: EmailMovementNotice | null = null;
   emailQueue: EmailMovementNotice[] = [];
   private emailToastTimer: ReturnType<typeof setTimeout> | null = null;
-  constructor(private router: Router, private themeService: ThemeService, private calendarReminders: CalendarReminderService, private http: HttpClient, private authService: AuthService, private emailNotices: EmailMovementNotificationService) {
+  constructor(private router: Router, private themeService: ThemeService, private calendarReminders: CalendarReminderService, private http: HttpClient, private authService: AuthService, private emailNotices: EmailMovementNotificationService, private calendarCategories: CalendarCategoriesService) {
     this.emailNotices.registered$.subscribe(notice => {
       this.emailQueue.push(notice);
       if (!this.emailMovement) this.nextEmailNotice();
     });
     this.calendarReminders.due$.subscribe(reminder => {
-      this.calendarReminder = reminder;
-      if (this.reminderToastTimer) clearTimeout(this.reminderToastTimer);
-      this.reminderToastTimer = setTimeout(() => this.calendarReminder = null, 20_000);
+      this.calendarReminderQueue.push(reminder);
+      if (!this.calendarReminder) this.closeCalendarReminder();
     });
   }
 
@@ -102,6 +104,7 @@ export class AppComponent implements OnInit {
           storage.setItem('userRole', this.userRole);
           this.loadCurrentProfile();
           this.loadMenu();
+          this.calendarCategories.synchronize().subscribe({ error: () => undefined });
           this.emailNotices.start();
         },
         error: () => {
@@ -135,6 +138,8 @@ export class AppComponent implements OnInit {
     if (!this.showSidebar) {
       this.sidebarCollapsed = false;
       this.clearEmailNotices();
+      this.calendarReminder = null;
+      this.calendarReminderQueue = [];
     }
   }
 
@@ -172,8 +177,7 @@ export class AppComponent implements OnInit {
   }
 
   closeCalendarReminder(): void {
-    this.calendarReminder = null;
-    if (this.reminderToastTimer) clearTimeout(this.reminderToastTimer);
+    this.calendarReminder = this.calendarReminderQueue.shift() || null;
   }
 
   nextEmailNotice(): void {
@@ -252,6 +256,8 @@ export class AppComponent implements OnInit {
 
   logout(): void {
     this.clearEmailNotices();
+    this.calendarReminder = null;
+    this.calendarReminderQueue = [];
     this.showUserMenu = false;
     this.authService.logout().subscribe({ error: () => undefined });
     this.authService.clearSession();

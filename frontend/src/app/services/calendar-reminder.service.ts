@@ -4,15 +4,25 @@ import { Subject } from 'rxjs';
 import { CalendarEvent } from '../models/calendar-event';
 import { CalendarEventsService } from './calendar-events.service';
 import { readAuthSessionValue } from './auth.service';
+import { CalendarCategoriesService } from './calendar-categories.service';
+
+export interface CalendarReminderNotice {
+  title: string;
+  date: Date;
+  payment: boolean;
+  description: string;
+  categoryName: string;
+  color: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class CalendarReminderService {
   private timer: ReturnType<typeof setInterval> | null = null;
-  private readonly dueSubject = new Subject<{ title: string; date: Date; payment: boolean }>();
+  private readonly dueSubject = new Subject<CalendarReminderNotice>();
   readonly due$ = this.dueSubject.asObservable();
   private readonly onResume = () => this.checkRemindersSafely();
 
-  constructor(private events: CalendarEventsService, private router: Router) {}
+  constructor(private events: CalendarEventsService, private router: Router, private categories: CalendarCategoriesService) {}
 
   start(): void {
     if (this.timer) return;
@@ -63,7 +73,12 @@ export class CalendarReminderService {
       if (notified.includes(occurrenceKey)) continue;
       // Always show an in-app alert. The OS notification is an additional
       // channel and may be hidden by Windows focus/notification settings.
-      this.dueSubject.next({ title: event.title, date: occurrence, payment: event.type === 'PAGO_TARJETA' });
+      const categories = this.categories.list();
+      const category = categories.find(item => item.id === event.categoryId)
+        ?? categories.find(item => item.id === (event.type === 'PAGO_TARJETA' ? 'payment' : 'meeting'));
+      const color = category?.color && /^#[\da-f]{6}$/i.test(category.color) ? category.color : '#16a06a';
+      this.dueSubject.next({ title: event.title, date: occurrence, payment: event.type === 'PAGO_TARJETA',
+        description: event.description || '', categoryName: category?.name || 'Actividad', color });
       if (this.permission() === 'granted') this.show(event, occurrence);
       notified.push(occurrenceKey);
     }

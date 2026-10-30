@@ -87,6 +87,14 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   busqueda = '';
   filtroRol = '';
   filtroEstado = 'Activo';
+  pagina = 1;
+  readonly usuariosPorPagina = 6;
+  get totalPaginas(): number { return Math.max(1, Math.ceil(this.usuariosFiltrados.length / this.usuariosPorPagina)); }
+  get paginaActual(): number { return Math.min(this.pagina, this.totalPaginas); }
+  get usuariosPaginados(): UsuarioVista[] {
+    return this.usuariosFiltrados.slice((this.paginaActual - 1) * this.usuariosPorPagina, this.paginaActual * this.usuariosPorPagina);
+  }
+  cambiarPagina(pagina: number): void { this.pagina = Math.min(Math.max(1, pagina), this.totalPaginas); }
   modalAbierto = false;
   modalEliminarAbierto = false;
   usuarioSeleccionado: UsuarioVista | null = null;

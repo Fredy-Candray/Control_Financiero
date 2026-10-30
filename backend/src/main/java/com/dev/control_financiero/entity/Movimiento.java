@@ -29,6 +29,10 @@ public class Movimiento {
 
     @Column(length = 255)
     private String descripcion;
+    @org.hibernate.annotations.Nationalized @Column(name="destinatario_externo",length=120)
+    private String destinatarioExterno;
+    @Column(name="referencia_cliente",length=36) private String referenciaCliente;
+    @JsonIgnore @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="prestamo_id") private PrestamoPersonal prestamo;
 
     @Column(nullable = false)
     private LocalDateTime fechaMovimiento;

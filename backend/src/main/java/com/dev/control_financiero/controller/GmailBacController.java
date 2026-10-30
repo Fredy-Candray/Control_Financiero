@@ -24,13 +24,18 @@ public class GmailBacController {
     private final GmailBacScheduler scheduler;
     @Value("${app.gmail.frontend-url:http://localhost:4200/cuentas}") private String frontendUrl;
     @Value("${app.gmail.events-since:}") private String eventsSince="";
+    @Value("${app.gmail.import-enabled:true}") private boolean importEnabled=true;
 
-    public record Status(boolean configured,boolean connected,boolean enabled,String correo,Instant importSince,Instant lastSync,String lastError) {}
+    public record Status(boolean configured,boolean connected,boolean enabled,String correo,Instant importSince,Instant lastSync,String lastError,boolean reauthorizationRequired) {}
     @GetMapping public Status status(HttpServletRequest request) {
         var c=connections.findByUsuarioId(user(request)).orElse(new GmailConnection());
         Instant cutoff=c.getImportSince();
         if(cutoff!=null && !eventsSince.isBlank() && Instant.parse(eventsSince).isAfter(cutoff)) cutoff=Instant.parse(eventsSince);
-        return new Status(client.configured()&&cipher.configured(),c.getRefreshTokenEncrypted()!=null,c.isEnabled(),c.getCorreo(),cutoff,c.getLastSync(),c.getLastError());
+        boolean permissionError=c.getLastError()!=null && c.getLastError().startsWith(GmailAuthorizationException.PREFIX);
+        boolean reauthorize=c.getRefreshTokenEncrypted()!=null && permissionError;
+        String error=permissionError?c.getLastError().substring(GmailAuthorizationException.PREFIX.length()):c.getLastError();
+        if(!importEnabled && c.isEnabled() && error==null)error="La importación automática está pausada en esta instalación. Revisa los movimientos pendientes antes de reactivarla.";
+        return new Status(client.configured()&&cipher.configured(),c.getRefreshTokenEncrypted()!=null,c.isEnabled()&&importEnabled,c.getCorreo(),cutoff,c.getLastSync(),error,reauthorize);
     }
     @GetMapping("/history") public List<BankEmailImport> history(HttpServletRequest request) { return imports.findTop50ByUsuarioIdOrderByIdDesc(user(request)); }
     public record Notifications(Long cursor, List<BankEmailImportRepository.MovementNotice> movements) {}
@@ -70,6 +75,8 @@ public class GmailBacController {
     }
     public record EnableRequest(boolean enabled) {}
     @PutMapping("/enabled") public Status enabled(@RequestBody EnableRequest body,HttpServletRequest request) {
+        user(request);
+        if(body.enabled() && !importEnabled)throw new ResponseStatusException(HttpStatus.CONFLICT,"La importación está pausada en la configuración de esta instalación. Revisa los movimientos pendientes antes de reactivarla.");
         try { service.enable(user(request),body.enabled()); } catch(IllegalArgumentException e) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST,e.getMessage()); }
         return status(request);
     }

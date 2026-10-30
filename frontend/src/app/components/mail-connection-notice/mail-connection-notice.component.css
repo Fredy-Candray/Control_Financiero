@@ -1,0 +1,12 @@
+:host { display:block; }
+.connection-notice { display:flex; align-items:flex-start; gap:14px; margin:18px 32px 0; padding:18px 20px; color:var(--text); background:color-mix(in srgb,#e9a63b 10%,var(--surface)); border:1px solid color-mix(in srgb,#e9a63b 50%,var(--card-border)); border-left:5px solid #e9a63b; border-radius:12px; }
+.notice-symbol { display:grid; place-items:center; flex:none; width:28px; height:28px; border:2px solid var(--warning-text); border-radius:50%; color:var(--warning-text); font-weight:800; }
+.notice-copy { flex:1; min-width:0; }
+h2 { margin:0 0 6px; font-size:1rem; line-height:1.4; }
+p { margin:0; font-size:.9rem; line-height:1.6; overflow-wrap:anywhere; }
+a { flex:none; padding:10px 14px; color:var(--text); background:var(--surface); border:1px solid var(--card-border); border-radius:9px; font-size:.85rem; font-weight:600; text-decoration:none; }
+details { margin-top:12px; font-size:.9rem; }
+summary { cursor:pointer; font-weight:600; }
+details p { margin-top:8px; }
+@media(max-width:700px) { .connection-notice { margin:14px 16px 0; padding:16px; flex-wrap:wrap; } a { margin-left:42px; } }
+@media print { :host { display:none; } }

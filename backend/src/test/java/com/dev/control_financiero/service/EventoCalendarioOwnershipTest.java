@@ -14,7 +14,7 @@ class EventoCalendarioOwnershipTest {
     final EventoCalendarioRepository events=mock(EventoCalendarioRepository.class);
     final UsuarioRepository users=mock(UsuarioRepository.class);
     final CuentaRepository accounts=mock(CuentaRepository.class);
-    final EventoCalendarioService service=new EventoCalendarioService(events,users,accounts);
+    final EventoCalendarioService service=new EventoCalendarioService(events,users,accounts,mock(CategoriaCalendarioService.class));
     EventoCalendarioRequest request(Long account) {
         return new EventoCalendarioRequest("event-id","Actividad","","ACTIVIDAD",null,LocalDate.now(),LocalTime.NOON,
                 account,null,"NONE",0,false,false,true,false,null);

@@ -15,6 +15,16 @@ public class MovimientoController {
 
     private final MovimientoService movimientoService;
 
+    @PutMapping("/{id}/detalles")
+    public MovimientoResponse editarDetalles(@PathVariable Long id,
+            @Valid @RequestBody com.dev.control_financiero.dto.EditarMovimientoRequest request,
+            jakarta.servlet.http.HttpServletRequest servletRequest) {
+        var session=servletRequest.getSession(false);
+        if(session==null || !(session.getAttribute("userId") instanceof Long userId))
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+        return movimientoService.editarDetalles(userId,id,request);
+    }
+
     @PostMapping
     public MovimientoResponse crearMovimiento(
             @Valid @RequestBody CrearMovimientoRequest request, jakarta.servlet.http.HttpServletRequest servletRequest) {

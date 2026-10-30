@@ -1,5 +1,6 @@
 import { Cuenta } from '../../models/cuenta';
 import { MovimientoDashboard } from '../../models/movimiento-dashboard';
+import { PrestamoPersonal } from '../../models/prestamo-personal';
 
 export interface MovimientoReporte extends MovimientoDashboard {
   cuentaOrigenId: number | null;
@@ -50,12 +51,18 @@ export function flujoEfectivo(movimientos: MovimientoReporte[], cuentas: Cuenta[
   return { entradas: entradas / 100, salidas: salidas / 100, neto: (entradas - salidas) / 100 };
 }
 
-export function patrimonioEn(fecha: string, cuentas: Cuenta[], movimientos: MovimientoReporte[]): number {
+export function deudaPersonalEn(fecha: string, prestamos: PrestamoPersonal[], movimientos: MovimientoReporte[]): number {
+  return prestamos.filter(p => p.fechaRegistro.slice(0, 10) <= fecha).reduce((total, p) => total + centavos(p.saldoPendiente)
+    + movimientos.filter(m => m.tipo === 'PAGO_PRESTAMO' && m.prestamoId === p.id && (m.fechaMovimiento?.slice(0, 10) || '') > fecha)
+      .reduce((sum, m) => sum + centavos(m.monto), 0), 0) / 100;
+}
+
+export function patrimonioEn(fecha: string, cuentas: Cuenta[], movimientos: MovimientoReporte[], prestamos: PrestamoPersonal[] = []): number {
   return cuentas.filter(c => !c.fechaCreacion || c.fechaCreacion.slice(0, 10) <= fecha).reduce((total, c) => {
     const posteriores = movimientos.filter(m => (m.fechaMovimiento?.slice(0, 10) ?? '') > fecha);
     const saldo = centavos(c.saldoActual) - posteriores.reduce((s, m) => s + efectoCuenta(m, c.id), 0);
     return total + saldo - (c.tipo === 'CREDITO' ? centavos(c.limiteCredito ?? 0) : 0);
-  }, 0) / 100;
+  }, 0) / 100 - deudaPersonalEn(fecha, prestamos, movimientos);
 }
 
 export function agruparCategorias(movimientos: MovimientoReporte[], tipo: string): { nombre: string; monto: number; porcentaje: number }[] {

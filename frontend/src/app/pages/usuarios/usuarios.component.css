@@ -72,3 +72,8 @@
 /* Mobile layout: keep long values and controls within their containers. */
 @media(max-width:800px){:host,.page-shell,.users-page,.users-panel,.summary-grid,.summary-card,.summary-card>div,.page-intro>div,.toolbar,.toolbar>*,.table-scroll,.modal-card,.modal-card form>*,.user-details-grid>div{min-width:0;max-width:100%}.page-intro,.toolbar,.panel-heading{flex-wrap:wrap}.table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}.summary-card span,.summary-card strong,.user-details-grid dd,.temporary-notice{overflow-wrap:anywhere}.modal-backdrop{padding:12px;overflow-y:auto}.modal-card{max-height:calc(100dvh - 24px)}.modal-card input,.modal-card select{min-width:0;max-width:100%}.modal-actions{flex-wrap:wrap}.modal-actions button{flex:1 1 110px}}
 @media(max-width:480px){.summary-grid{grid-template-columns:minmax(0,1fr)}.page-intro>.add-button{width:100%;align-self:stretch}}
+.users-pagination { display:flex; align-items:center; justify-content:center; gap:16px; padding:20px 16px; color:var(--text); font-size:.8rem; }
+.users-pagination button { min-height:44px; padding:9px 14px; border:1px solid var(--card-border); border-radius:9px; background:var(--surface); color:var(--text); cursor:pointer; }
+.users-pagination button:disabled { opacity:.45; cursor:default; }
+.users-pagination button:not(:disabled):hover { color:var(--accent); border-color:var(--accent); }
+@media(max-width:640px) { .users-pagination { padding:16px 10px; gap:8px; font-size:.72rem; text-align:center; } .users-pagination button { padding:9px 10px; } }

@@ -5,6 +5,7 @@ public enum TipoMovimiento {
     INGRESO,
     GASTO,
     TRANSFERENCIA,
-    PAGO_TARJETA
+    PAGO_TARJETA,
+    PAGO_PRESTAMO
 
 }

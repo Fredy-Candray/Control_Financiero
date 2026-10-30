@@ -18,7 +18,7 @@ class ReporteControllerTest {
     final CuentaRepository cuentas = mock(CuentaRepository.class);
     final UsuarioService usuarios = mock(UsuarioService.class);
     final MenuService menus = mock(MenuService.class);
-    final ReporteController controller = new ReporteController(reportes, movimientos, cuentas, usuarios, menus);
+    final ReporteController controller = new ReporteController(reportes, movimientos, cuentas, usuarios, menus, mock(PrestamoPersonalService.class));
 
     @Test void exigeSesion() throws Exception {
         MockMvcBuilders.standaloneSetup(controller).build().perform(get("/api/reportes")).andExpect(status().isUnauthorized());

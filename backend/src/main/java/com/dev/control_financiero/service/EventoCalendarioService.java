@@ -22,6 +22,7 @@ public class EventoCalendarioService {
     private final EventoCalendarioRepository eventos;
     private final UsuarioRepository usuarios;
     private final CuentaRepository cuentas;
+    private final CategoriaCalendarioService categorias;
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager entityManager;
 
@@ -47,7 +48,7 @@ public class EventoCalendarioService {
         event.setTitulo(request.title().trim());
         event.setDescripcion(request.description() == null ? "" : request.description().trim());
         event.setTipo(request.type());
-        event.setCategoriaId(request.categoryId());
+        event.setCategoriaId(categorias.validarParaEvento(usuarioId,request.categoryId(),request.type()));
         event.setFecha(request.date());
         event.setHora(request.time());
         event.setCuentaId(request.accountId());

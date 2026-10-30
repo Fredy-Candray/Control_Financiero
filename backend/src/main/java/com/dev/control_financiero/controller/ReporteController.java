@@ -23,13 +23,15 @@ public class ReporteController {
     private final CuentaRepository cuentas;
     private final UsuarioService usuarios;
     private final MenuService menus;
+    private final PrestamoPersonalService prestamos;
 
-    public record DatosReporte(List<Cuenta> cuentas, List<MovimientoResponse> movimientos, List<PlanReporte> planes) {}
+    public record DatosReporte(List<Cuenta> cuentas, List<MovimientoResponse> movimientos, List<PlanReporte> planes,
+        List<com.dev.control_financiero.entity.PrestamoPersonal> prestamos) {}
 
     @GetMapping
     public DatosReporte datos(HttpServletRequest request) {
         Long userId = usuarioId(request);
-        return new DatosReporte(cuentas.findByUsuarioId(userId), movimientos.listarPorUsuario(userId), reportes.listar(userId));
+        return new DatosReporte(cuentas.findByUsuarioId(userId), movimientos.listarPorUsuario(userId), reportes.listar(userId), prestamos.listar(userId));
     }
 
     @PostMapping("/planes")

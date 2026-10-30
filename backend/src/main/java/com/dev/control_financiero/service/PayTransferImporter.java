@@ -82,7 +82,7 @@ public class PayTransferImporter {
         }
         record.setUltimosCuatro(transfer.destination().substring(transfer.destination().length()-4));
         record.setComercio("PAY → "+transfer.recipient());
-        applyPay(userId,record,TipoMovimiento.GASTO,"PAGO A "+transfer.recipient());
+        applyPay(userId,record,TipoMovimiento.GASTO,"PAY a "+transfer.recipient(),transfer.recipient());
     }
     private void importCredit(Long userId,BankEmailImport record,PayTransferParser.Credit credit) {
         var instant=credit.date().atZone(ZoneId.of("America/El_Salvador")).toInstant();
@@ -97,6 +97,9 @@ public class PayTransferImporter {
         applyPay(userId,record,TipoMovimiento.INGRESO,credit.payer()==null?"ABONO PAY":"ABONO DE "+credit.payer());
     }
     private void applyPay(Long userId,BankEmailImport record,TipoMovimiento type,String description) {
+        applyPay(userId,record,type,description,null);
+    }
+    private void applyPay(Long userId,BankEmailImport record,TipoMovimiento type,String description,String recipient) {
         var matches=accounts.findByUsuarioId(userId).stream().filter(a->originName.equalsIgnoreCase(a.getNombre())
                 && Boolean.TRUE.equals(a.getActiva()) && a.getTipo()==TipoCuenta.DEBITO).toList();
         if(matches.size()!=1) { save(record,"ERROR","No hay una única cuenta Pay activa."); return; }
@@ -107,6 +110,7 @@ public class PayTransferImporter {
         var request=new CrearMovimientoRequest(); request.setUsuarioId(userId); request.setTipo(type);
         request.setCuentaOrigenId(account.getId()); request.setMonto(record.getMonto()); request.setFechaMovimiento(record.getFechaCompra());
         request.setDescripcion(description.substring(0,Math.min(description.length(),255)));
+        request.setDestinatarioExterno(recipient);
         record.setMovimientoId(movements.crearMovimiento(request).getId());
         save(record,"IMPORTADO",type==TipoMovimiento.INGRESO?"Abono PAY registrado.":"Salida PAY a un tercero registrada como gasto.");
     }

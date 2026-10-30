@@ -67,10 +67,10 @@ public class GmailBacScheduler {
                 } while(page!=null);
             } else log.info("Importación PAY sin asociación configurada para este usuario.");
             state.syncResult(userId,null);
-        } catch(HttpClientErrorException e) {
-            state.syncResult(userId,"Google rechazó el acceso. Reconecta Gmail si el permiso expiró o fue revocado.");
         } catch(Exception e) {
-            state.syncResult(userId,"No se completó la sincronización. Los mensajes pendientes se reintentarán; revisa la conexión y los saldos.");
+            state.syncResult(userId,GmailPermissionErrors.needsReauthorization(e)
+                    ? GmailAuthorizationException.PREFIX+"El permiso para leer Gmail venció o fue revocado. Reconecta Gmail en Cuentas."
+                    : "No se completó la sincronización. Los mensajes pendientes se reintentarán; revisa la conexión y los saldos.");
         }
     }
 }

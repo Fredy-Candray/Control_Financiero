@@ -6,6 +6,11 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface EventoCalendarioRepository extends JpaRepository<EventoCalendario, String> {
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("update EventoCalendario e set e.categoriaId = :replacement where e.usuario.id = :user and e.categoriaId = :category")
+    int reasignarCategoria(@org.springframework.data.repository.query.Param("user") Long user,
+        @org.springframework.data.repository.query.Param("category") String category,
+        @org.springframework.data.repository.query.Param("replacement") String replacement);
     List<EventoCalendario> findByUsuario_IdOrderByFechaAscHoraAsc(Long usuarioId);
     @Query("select e from EventoCalendario e join fetch e.usuario u where e.completado = false and u.activo = true")
     List<EventoCalendario> findReadyForReminderDelivery();

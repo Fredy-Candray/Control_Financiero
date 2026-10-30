@@ -18,9 +18,9 @@
   <section class="users-panel">
     <div class="panel-heading"><div><h2>Directorio de usuarios</h2><p>Consulta y gestiona los perfiles registrados.</p></div><span class="result-count">{{ usuariosFiltrados.length }} resultados</span></div>
     <div class="toolbar">
-      <label class="search-box"><span aria-hidden="true">⌕</span><input  type="search" placeholder="Buscar por nombre o correo..." [(ngModel)]="busqueda" aria-label="Buscar usuarios"></label>
-      <label class="filter-box"><span class="sr-only">Filtrar por rol</span><select  [(ngModel)]="filtroRol"><option value="">Todos los roles</option><option value="Administrador">Administrador</option><option value="Usuario">Usuario</option></select></label>
-      <label class="filter-box"><span class="sr-only">Filtrar por estado</span><select  [(ngModel)]="filtroEstado"><option value="">Todos los estados</option><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></label>
+      <label class="search-box"><span aria-hidden="true">⌕</span><input  type="search" placeholder="Buscar por nombre o correo..." [(ngModel)]="busqueda" (ngModelChange)="pagina = 1" aria-label="Buscar usuarios"></label>
+      <label class="filter-box"><span class="sr-only">Filtrar por rol</span><select  [(ngModel)]="filtroRol" (ngModelChange)="pagina = 1"><option value="">Todos los roles</option><option value="Administrador">Administrador</option><option value="Usuario">Usuario</option></select></label>
+      <label class="filter-box"><span class="sr-only">Filtrar por estado</span><select  [(ngModel)]="filtroEstado" (ngModelChange)="pagina = 1"><option value="">Todos los estados</option><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></label>
     </div>
 
     <div class="loading-state" *ngIf="cargando">Cargando usuarios…</div>
@@ -28,7 +28,7 @@
       <table>
         <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Fecha de alta</th><th><span class="sr-only">Acciones</span></th></tr></thead>
         <tbody>
-          <tr *ngFor="let usuario of usuariosFiltrados">
+          <tr *ngFor="let usuario of usuariosPaginados">
             <td><div class="identity"><span class="avatar">{{ usuario.nombre.charAt(0).toUpperCase() }}</span><span><strong>{{ usuario.nombre }}</strong><small>{{ usuario.correo }} · &#64;{{ usuario.username }}</small></span></div></td>
             <td><span class="role-pill" [class.admin-role]="usuario.rol === 'Administrador'">{{ usuario.rol }}</span></td>
             <td><span class="status-pill" [class.inactive]="usuario.estado === 'Inactivo'"><i></i>{{ usuario.estado }}</span></td>
@@ -38,6 +38,11 @@
         </tbody>
       </table>
     </div>
+    <nav *ngIf="!cargando && !errorCarga && usuariosFiltrados.length" class="users-pagination" aria-label="Paginación del directorio de usuarios">
+      <button type="button" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1">Anterior</button>
+      <span aria-live="polite">Página {{ paginaActual }} de {{ totalPaginas }} · {{ usuariosFiltrados.length }} resultados</span>
+      <button type="button" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas">Siguiente</button>
+    </nav>
     <ng-template #emptyState><div class="empty-state" *ngIf="!cargando"><span class="empty-icon">⌕</span><h3>{{ errorCarga ? 'Usuarios no disponibles' : 'No encontramos usuarios' }}</h3><p>{{ errorCarga ? 'Comprueba que el servidor esté conectado.' : 'Prueba con otro término o cambia los filtros.' }}</p></div></ng-template>
   </section>
 </section>

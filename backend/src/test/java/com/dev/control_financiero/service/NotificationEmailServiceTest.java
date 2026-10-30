@@ -8,6 +8,18 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class NotificationEmailServiceTest {
+    @Test void htmlReminderUsesMultipartSmtp() throws Exception {
+        ObjectProvider<JavaMailSender> provider=mock(ObjectProvider.class);var smtp=mock(JavaMailSender.class);
+        when(provider.getIfAvailable()).thenReturn(smtp);when(provider.getObject()).thenReturn(smtp);
+        var mime=new jakarta.mail.internet.MimeMessage(jakarta.mail.Session.getInstance(new java.util.Properties()));
+        when(smtp.createMimeMessage()).thenReturn(mime);
+        var gmail=mock(GmailNotificationSender.class);
+        var service=new NotificationEmailService(provider,gmail,"smtp","smtp.example.com","sender@example.com");
+        service.sendHtml("reader@example.com","Recordatorio","Actividad","<h1>Actividad</h1>");
+        verify(smtp).send(mime);
+        mime.saveChanges();
+        assertTrue(mime.isMimeType("multipart/*"));verifyNoInteractions(gmail);
+    }
     @Test void localConfigurationStillUsesSmtp() {
         ObjectProvider<JavaMailSender> provider=mock(ObjectProvider.class);var smtp=mock(JavaMailSender.class);
         when(provider.getIfAvailable()).thenReturn(smtp);when(provider.getObject()).thenReturn(smtp);
@@ -22,5 +34,13 @@ class NotificationEmailServiceTest {
         var service=new NotificationEmailService(provider,gmail,"gmail-api","","sender@example.com");
         service.send("reader@example.com","Recordatorio","Prueba");
         verify(gmail).send("reader@example.com","Recordatorio","Prueba");verifyNoInteractions(provider);
+    }
+    @Test void htmlReminderUsesGmailWithoutSmtp() {
+        ObjectProvider<JavaMailSender> provider=mock(ObjectProvider.class);var gmail=mock(GmailNotificationSender.class);
+        when(gmail.configured()).thenReturn(true);
+        var service=new NotificationEmailService(provider,gmail,"gmail-api","","sender@example.com");
+        service.sendHtml("reader@example.com","Recordatorio","Actividad","<h1>Actividad</h1>");
+        verify(gmail).sendHtml("reader@example.com","Recordatorio","Actividad","<h1>Actividad</h1>");
+        verifyNoInteractions(provider);
     }
 }

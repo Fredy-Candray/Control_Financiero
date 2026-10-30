@@ -29,3 +29,12 @@
   .pagination button{width:100%;min-width:0}
 }
 @media print{.reports{display:block;color:#111; width:100%; min-width:0; box-sizing:border-box; }.actions,.filters,.tabs,button,.plan-form,.pagination{display:none!important}.panel{box-shadow:none;border:1px solid #ddd;margin-bottom:14px;break-inside:avoid}.page-header{margin-bottom:16px}.metrics,.two-columns{margin-bottom:14px}.table-wrap,.chart{overflow:visible}.print-only{display:block}.movements{break-inside:auto}table{font-size:9px}th,td{padding:6px}.bar,.track span{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+@media screen {
+  .pagination { display:flex; align-items:center; justify-content:center; gap:16px; padding:20px 0 0; margin-top:0; font-size:.8rem; }
+  .pagination button { min-height:44px; padding:9px 14px; border-radius:9px; }
+  .pagination span { grid-column:auto; grid-row:auto; }
+}
+@media screen and (max-width:650px) {
+  .pagination { flex-wrap:nowrap; gap:8px; font-size:.72rem; text-align:center; }
+  .pagination button { width:auto; flex-shrink:0; padding:9px 10px; }
+}

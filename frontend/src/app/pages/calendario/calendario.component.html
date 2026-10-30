@@ -175,9 +175,9 @@
     <header class="modal-heading"><div><p class="eyebrow">Calendario personal</p><h2>Categorías</h2></div><button type="button" class="close-button" (click)="closeCategoryManager()" aria-label="Cerrar">×</button></header>
     <p class="modal-description">Crea categorías y asigna un color para identificar tus actividades en el calendario.</p>
     <form class="category-form" (ngSubmit)="saveCategory()">
-      <label>Nombre<input type="text" name="categoryName" [(ngModel)]="categoryDraft.name" maxlength="40" required placeholder="Ej. Personal" /></label>
-      <label class="color-field">Color<input type="color" name="categoryColor" [(ngModel)]="categoryDraft.color" /></label>
-      <div class="category-form-actions"><button type="button" class="secondary-button" *ngIf="editingCategoryId" (click)="cancelCategoryEdit()">Cancelar</button><button type="submit" class="primary-button">{{ editingCategoryId ? 'Guardar cambios' : 'Crear categoría' }}</button></div>
+      <label>Nombre<input type="text" name="categoryName" [(ngModel)]="categoryDraft.name" maxlength="80" [disabled]="categoryBusy" required placeholder="Ej. Recordatorio" /></label>
+      <label class="color-field">Color<input type="color" name="categoryColor" [(ngModel)]="categoryDraft.color" [disabled]="categoryBusy" /></label>
+      <div class="category-form-actions"><button type="button" class="secondary-button" *ngIf="editingCategoryId" [disabled]="categoryBusy" (click)="cancelCategoryEdit()">Cancelar</button><button type="submit" class="primary-button" [disabled]="categoryBusy">{{ categoryBusy ? 'Guardando…' : editingCategoryId ? 'Guardar cambios' : 'Crear categoría' }}</button></div>
     </form>
     <p class="form-error" *ngIf="categoryError" role="alert">{{ categoryError }}</p>
     <div class="category-list"><div class="category-row" *ngFor="let category of categories"><span class="category-identity"><i class="category-swatch" [style.background]="category.color"></i><strong>{{ category.name }}</strong></span><span class="category-hex">{{ category.color }}</span><span class="category-actions"><button type="button" (click)="editCategory(category)" [attr.aria-label]="'Editar ' + category.name" title="Editar">✎</button><button type="button" class="delete-action" (click)="deleteCategory(category)" [attr.aria-label]="'Eliminar ' + category.name" title="Eliminar">×</button></span></div></div>

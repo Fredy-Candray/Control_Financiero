@@ -124,6 +124,7 @@ export function crearReportePdf(titulo: string, filtros: string[], secciones: Se
       hints.forEach((line, n) => texto(line, x + 4, top + 25 + n * 3, 6.8));
     });
     y += 74;
+    if (contexto.deudaPersonal) parrafo(`Deuda actual de préstamos personales sin interés: ${dineroPdf(contexto.deudaPersonal)}. Está descontada del patrimonio al consultar todas las cuentas.`, 8);
     texto('Resumen del período', margen, y, 10, verde, true); y += 6; parrafo(a.resumen);
     parrafo(`El gasto total incluye las compras con cualquier medio de pago; ${dineroPdf(a.gastoEfectivo)} corresponden a efectivo y ya están incluidos, no se suman otra vez. Ingresos menos gastos indica el resultado del período; los pagos de tarjeta y las transferencias internas no son gastos adicionales.`, 8);
     parrafo('Los indicadores del período respetan los filtros. Dinero disponible, patrimonio y deuda son valores actuales de las cuentas seleccionadas; no son saldos históricos ni se filtran por tipo o categoría. El dinero disponible no incluye el crédito de las tarjetas ni descuenta su deuda.', 8);

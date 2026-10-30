@@ -1,0 +1,17 @@
+<section *ngIf="readerNeedsReconnect" class="connection-notice" role="alert">
+  <span class="notice-symbol" aria-hidden="true">!</span>
+  <div class="notice-copy"><h2>Reconecta Gmail para registrar tus movimientos</h2>
+    <p>El permiso de lectura venció o fue revocado. Autoriza nuevamente Gmail en Cuentas para reanudar la sincronización.</p>
+  </div>
+  <a routerLink="/cuentas" fragment="gmail-title">Ir a reconectar Gmail</a>
+</section>
+<section *ngIf="senderNeedsReconnect" class="connection-notice" role="alert">
+  <span class="notice-symbol" aria-hidden="true">!</span>
+  <div class="notice-copy"><h2>El correo de recordatorios necesita reconectarse</h2>
+    <p>El permiso para enviar correos venció o fue revocado. Renueva la autorización de la cuenta emisora de COFI para recuperar el envío.</p>
+    <details><summary>Cómo recuperar el envío</summary>
+      <p>Vuelve a autorizar en Google la cuenta que envía los recordatorios de COFI. Si no administras esta instalación, solicita al administrador que renueve esa conexión.</p>
+      <p>Esta autorización de envío es distinta de la conexión de Gmail para leer movimientos en Cuentas.</p>
+    </details>
+  </div>
+</section>

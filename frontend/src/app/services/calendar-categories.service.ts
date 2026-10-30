@@ -1,60 +1,61 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { finalize, shareReplay, tap } from 'rxjs/operators';
 import { CalendarCategory } from '../models/calendar-category';
 import { readAuthSessionValue } from './auth.service';
+import { API_BASE_URL } from '../api.config';
 
 @Injectable({ providedIn: 'root' })
 export class CalendarCategoriesService {
-  private readonly defaults: CalendarCategory[] = [
-    { id: 'meeting', name: 'Reunión', color: '#16a06a' },
-    { id: 'payment', name: 'Pago de tarjeta', color: '#ef3340' },
-    { id: 'task', name: 'Tarea', color: '#f0c419' },
-    { id: 'event', name: 'Evento', color: '#f28c28' }
-  ];
-
+  private inFlight: { user: string; request: Observable<CalendarCategory[]> } | null = null;
+  constructor(private http: HttpClient) {}
   private key(): string {
     return `controlFinanciero.calendar.categories.${readAuthSessionValue('userId') || '1'}`;
   }
-
+  /** Read-only cache for reminders, never the authoritative category store. */
   list(): CalendarCategory[] {
     try {
-      const stored = localStorage.getItem(this.key());
-      if (stored) {
-        const parsed: unknown = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          const categories = parsed.filter((category): category is CalendarCategory =>
-            !!category && typeof category === 'object' &&
-            typeof category.id === 'string' && typeof category.name === 'string' && typeof category.color === 'string'
-          );
-          const migrationKey = `${this.key()}.v2`;
-          if (localStorage.getItem(migrationKey)) return categories;
-          const legacyIds = new Set(['internal', 'external', 'critical']);
-          const custom = categories.filter(category => !legacyIds.has(category.id) && !this.defaults.some(item => item.id === category.id));
-          const migrated = [...this.defaults.map(category => ({ ...category })), ...custom];
-          this.write(migrated);
-          localStorage.setItem(migrationKey, 'true');
-          return migrated;
-        }
-      }
-    } catch { /* Restore defaults if stored categories are malformed. */ }
-    const initial = this.defaults.map(category => ({ ...category }));
-    this.write(initial);
-    localStorage.setItem(`${this.key()}.v2`, 'true');
-    return initial;
+      const parsed: unknown = JSON.parse(localStorage.getItem(this.key()) || '[]');
+      return Array.isArray(parsed) ? parsed.filter((item): item is CalendarCategory =>
+        !!item && typeof item === 'object' && typeof item.id === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(item.id) &&
+        typeof item.name === 'string' && !!item.name.trim() && item.name.length <= 80 &&
+        typeof item.color === 'string' && /^#[0-9a-f]{6}$/i.test(item.color)) : [];
+    } catch { return []; }
   }
-
-  save(category: CalendarCategory): void {
-    const categories = this.list();
-    const index = categories.findIndex(item => item.id === category.id);
-    if (index < 0) categories.push(category);
-    else categories[index] = category;
-    this.write(categories);
+  synchronize(): Observable<CalendarCategory[]> {
+    const user = readAuthSessionValue('userId');
+    if (!user) return throwError(() => new Error('Inicia sesión nuevamente.'));
+    if (this.inFlight?.user === user) return this.inFlight.request;
+    const key = this.key(), marker = `${key}.database.v1`, legacy = this.list();
+    const migrated = localStorage.getItem(marker) === 'true';
+    const request = (migrated
+      ? this.http.get<CalendarCategory[]>(`${API_BASE_URL}/calendario/categorias`)
+      : this.http.post<CalendarCategory[]>(`${API_BASE_URL}/calendario/categorias/migracion`, { categories: legacy }))
+      .pipe(tap(categories => {
+        if (readAuthSessionValue('userId') !== user) return;
+        if (!migrated && localStorage.getItem(`${key}.legacy-backup.v1`) === null)
+          localStorage.setItem(`${key}.legacy-backup.v1`, localStorage.getItem(key) || JSON.stringify(legacy));
+        localStorage.setItem(key, JSON.stringify(categories));
+        localStorage.setItem(marker, 'true');
+      }), finalize(() => { if (this.inFlight?.user === user) this.inFlight = null; }),
+      shareReplay({ bufferSize: 1, refCount: false }));
+    this.inFlight = { user, request };
+    return request;
   }
-
-  remove(id: string): void {
-    this.write(this.list().filter(category => category.id !== id));
+  saveRemote(category: CalendarCategory): Observable<CalendarCategory> {
+    const key = this.key(), user = readAuthSessionValue('userId');
+    return this.http.put<CalendarCategory>(`${API_BASE_URL}/calendario/categorias/${encodeURIComponent(category.id)}`, category)
+      .pipe(tap(saved => {
+        if (readAuthSessionValue('userId') !== user) return;
+        localStorage.setItem(key, JSON.stringify([...this.list().filter(item => item.id !== saved.id), saved]));
+      }));
   }
-
-  private write(categories: CalendarCategory[]): void {
-    localStorage.setItem(this.key(), JSON.stringify(categories));
+  removeRemote(id: string, replacement: string): Observable<CalendarCategory[]> {
+    const key = this.key(), user = readAuthSessionValue('userId');
+    return this.http.delete<CalendarCategory[]>(`${API_BASE_URL}/calendario/categorias/${encodeURIComponent(id)}`,
+      { params: { replacement } }).pipe(tap(categories => {
+        if (readAuthSessionValue('userId') === user) localStorage.setItem(key, JSON.stringify(categories));
+      }));
   }
 }

@@ -60,6 +60,7 @@ export const routes: Routes = [
   // Recovery links must remain accessible even if this browser has a stale login marker.
   { path: 'reset-password', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'inicio', loadComponent: () => import('./pages/inicio/inicio.component').then(m => m.InicioComponent), canActivate: [authGuard] },
 
   {
     path: '',

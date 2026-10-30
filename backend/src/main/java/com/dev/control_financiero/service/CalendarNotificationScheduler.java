@@ -53,7 +53,8 @@ public class CalendarNotificationScheduler {
             return;
         }
         try {
-            email.send(to,"Recordatorio: " + event.getTitulo(),emailBody(event, occurrence));
+            email.sendHtml(to,"COFI · Recordatorio: " + event.getTitulo(),emailBody(event, occurrence),
+                    CalendarReminderEmail.html(event, occurrence));
             record(event, occurrence, "EMAIL");
             log.info("Recordatorio por correo enviado para el evento {} a {}.", event.getId(), maskEmail(to));
         } catch (Exception e) {

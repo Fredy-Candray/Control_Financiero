@@ -14,7 +14,7 @@ class MovimientoCompraTest {
     final CuentaRepository accounts=mock(CuentaRepository.class);
     final CategoriaRepository categories=mock(CategoriaRepository.class);
     final UsuarioRepository users=mock(UsuarioRepository.class);
-    final MovimientoService service=new MovimientoService(records,accounts,categories,users);
+    final MovimientoService service=new MovimientoService(records,accounts,categories,users,mock(PrestamoPersonalRepository.class));
     final Usuario user=Usuario.builder().id(1L).build();
     private Cuenta setup(String available) {
         var account=Cuenta.builder().id(2L).nombre("BAC VISA").usuario(user).tipo(TipoCuenta.CREDITO).activa(true)

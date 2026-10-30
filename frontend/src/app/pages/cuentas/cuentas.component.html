@@ -122,6 +122,11 @@
     </div>
     <h3>Últimos avisos procesados</h3>
     <p class="form-hint" *ngIf="!gmailHistory.length">Todavía no hay avisos procesados.</p>
-    <div class="gmail-history" *ngIf="gmailHistory.length"><table><thead><tr><th>Fecha</th><th>Cuenta / tarjeta</th><th>Operación</th><th>Monto</th><th>Estado</th><th>Detalle</th><th>Aviso</th></tr></thead><tbody><tr *ngFor="let item of gmailHistory"><td>{{ item.fechaCompra ? (item.fechaCompra | date:'dd/MM/yyyy HH:mm') : '—' }}</td><td>{{ item.ultimosCuatro || '—' }}</td><td>{{ item.comercio || '—' }}</td><td>{{ item.monto === null ? '—' : (item.monto | currency:'USD') }}</td><td>{{ item.estado }}</td><td>{{ item.detalle }}</td><td><a *ngIf="item.gmailMessageId" [href]="'https://mail.google.com/mail/u/0/#all/' + item.gmailMessageId" target="_blank" rel="noopener noreferrer">Ver correo</a></td></tr></tbody></table></div>
+    <div class="gmail-history" *ngIf="gmailHistory.length"><table><thead><tr><th>Fecha</th><th>Cuenta / tarjeta</th><th>Operación</th><th>Monto</th><th>Estado</th><th>Detalle</th><th>Aviso</th></tr></thead><tbody><tr *ngFor="let item of avisosPaginados"><td>{{ item.fechaCompra ? (item.fechaCompra | date:'dd/MM/yyyy HH:mm') : '—' }}</td><td>{{ item.ultimosCuatro || '—' }}</td><td>{{ item.comercio || '—' }}</td><td>{{ item.monto === null ? '—' : (item.monto | currency:'USD') }}</td><td>{{ item.estado }}</td><td>{{ item.detalle }}</td><td><a *ngIf="item.gmailMessageId" [href]="'https://mail.google.com/mail/u/0/#all/' + item.gmailMessageId" target="_blank" rel="noopener noreferrer">Ver correo</a></td></tr></tbody></table></div>
+    <nav *ngIf="gmailHistory.length" class="gmail-pagination" aria-label="Paginación de avisos procesados">
+      <button type="button" (click)="cambiarPaginaAvisos(paginaAvisosActual - 1)" [disabled]="paginaAvisosActual === 1">Anterior</button>
+      <span aria-live="polite">Página {{ paginaAvisosActual }} de {{ totalPaginasAvisos }} · {{ gmailHistory.length }} resultados</span>
+      <button type="button" (click)="cambiarPaginaAvisos(paginaAvisosActual + 1)" [disabled]="paginaAvisosActual === totalPaginasAvisos">Siguiente</button>
+    </nav>
   </section>
 </section>

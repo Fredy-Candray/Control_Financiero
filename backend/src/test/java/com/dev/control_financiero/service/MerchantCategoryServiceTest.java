@@ -19,10 +19,17 @@ class MerchantCategoryServiceTest {
         assertEquals("Salud",service.suggestedName("FARMACIAS DEL CENTRO"));
     }
     @Test void noAdivinaComprasGenericasPersonasNiCoincidenciasParciales() {
-        for(String merchant:List.of("CC12COMPRA EN CUOTA MA","PAGO A JUAN PEREZ","COMPRA 123","SHELLY TORRES","RESTAURANTERO",""))
+        for(String merchant:List.of("PAGO A JUAN PEREZ","COMPRA 123","SHELLY TORRES","RESTAURANTERO",""))
             assertNull(service.categoryId(merchant));
         assertNull(service.categoryId(null));
         verifyNoInteractions(repository);
+    }
+    @Test void cuotaExplicitaUsaCategoriaCuotaSinInferirElComercio() {
+        when(repository.findAll()).thenReturn(List.of(Categoria.builder().id(12L).nombre("Cuota").activa(true).build()));
+        assertEquals(12L,service.categoryId("CC12COMPRA EN CUOTA MA"));
+        assertEquals("Cuota",service.suggestedName("COMPRA EN CUOTAS SUPER SELECTOS"));
+        assertNull(service.suggestedName("CUOTAPLAN"));
+        verify(repository,never()).save(any());
     }
     @Test void dejaSinCategoriaCuandoHayReglasContradictorias() {
         assertNull(service.categoryId("FARMACIA SUPER SELECTOS"));
