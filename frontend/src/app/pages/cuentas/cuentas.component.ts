@@ -35,7 +35,7 @@ export class CuentasComponent implements OnInit {
   editBanco = '';
   editUltimosCuatro = '';
   gmail: { configured: boolean; connected: boolean; enabled: boolean; correo: string | null; importSince: string | null; lastSync: string | null; lastError: string | null } | null = null;
-  gmailHistory: { id: number; gmailMessageId: string; estado: string; comercio: string | null; monto: number | null; ultimosCuatro: string | null; fechaCompra: string | null; detalle: string }[] = [];
+  gmailHistory: { id: number; gmailMessageId: string; estado: string; comercio: string | null; monto: number | null; ultimosCuatro: string | null; fechaCompra: string | null; detalle: string; revisionNota?: string | null }[] = [];
   gmailBusy = false;
   gmailError = '';
 

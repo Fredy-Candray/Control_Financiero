@@ -1,6 +1,7 @@
 import { Cuenta } from '../../models/cuenta';
 import { MovimientoDashboard } from '../../models/movimiento-dashboard';
 import { PrestamoPersonal } from '../../models/prestamo-personal';
+import { PrestamoOtorgado } from '../../models/prestamo-otorgado';
 
 export interface MovimientoReporte extends MovimientoDashboard {
   cuentaOrigenId: number | null;
@@ -35,7 +36,7 @@ export function filtrar(movimientos: MovimientoReporte[], filtros: FiltrosReport
 
 export function efectoCuenta(m: MovimientoReporte, id: number): number {
   let efecto = 0;
-  if (m.cuentaOrigenId === id) efecto += m.tipo === 'INGRESO' ? centavos(m.monto) : -centavos(m.monto);
+  if (m.cuentaOrigenId === id) efecto += m.tipo === 'INGRESO' || m.tipo === 'COBRO_PRESTAMO' ? centavos(m.monto) : -centavos(m.monto);
   if (m.cuentaDestinoId === id) efecto += centavos(m.monto);
   return efecto;
 }
@@ -57,12 +58,13 @@ export function deudaPersonalEn(fecha: string, prestamos: PrestamoPersonal[], mo
       .reduce((sum, m) => sum + centavos(m.monto), 0), 0) / 100;
 }
 
-export function patrimonioEn(fecha: string, cuentas: Cuenta[], movimientos: MovimientoReporte[], prestamos: PrestamoPersonal[] = []): number {
+export function patrimonioEn(fecha: string, cuentas: Cuenta[], movimientos: MovimientoReporte[], prestamos: PrestamoPersonal[] = [], otorgados: PrestamoOtorgado[] = []): number {
   return cuentas.filter(c => !c.fechaCreacion || c.fechaCreacion.slice(0, 10) <= fecha).reduce((total, c) => {
     const posteriores = movimientos.filter(m => (m.fechaMovimiento?.slice(0, 10) ?? '') > fecha);
     const saldo = centavos(c.saldoActual) - posteriores.reduce((s, m) => s + efectoCuenta(m, c.id), 0);
     return total + saldo - (c.tipo === 'CREDITO' ? centavos(c.limiteCredito ?? 0) : 0);
-  }, 0) / 100 - deudaPersonalEn(fecha, prestamos, movimientos);
+  }, 0) / 100 - deudaPersonalEn(fecha, prestamos, movimientos) + otorgados.filter(p => p.fecha.slice(0,10) <= fecha)
+    .reduce((sum,p) => sum + centavos(p.pendiente) + movimientos.filter(m => m.tipo === 'COBRO_PRESTAMO' && m.prestamoOtorgadoId === p.id && (m.fechaMovimiento?.slice(0,10) || '') > fecha).reduce((s,m) => s + centavos(m.monto),0),0) / 100;
 }
 
 export function agruparCategorias(movimientos: MovimientoReporte[], tipo: string): { nombre: string; monto: number; porcentaje: number }[] {

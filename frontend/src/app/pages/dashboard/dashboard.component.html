@@ -64,9 +64,9 @@
         <div *ngIf="!movimientos.length" class="recent-empty">Todavía no hay movimientos para mostrar.</div>
         <div class="recent-list" *ngIf="movimientos.length">
           <div class="recent-row" *ngFor="let movimiento of movimientos">
-            <span class="recent-icon" [class.positive]="movimiento.tipo === 'INGRESO'">{{ movimiento.tipo === 'INGRESO' ? '↙' : movimiento.tipo === 'TRANSFERENCIA' ? '⇄' : '↗' }}</span>
-            <div class="recent-info"><strong>{{ movimiento.descripcion || 'Movimiento' }}</strong><small>{{ movimiento.tipo }} · {{ movimiento.cuentaOrigen || 'Cuenta' }}<ng-container *ngIf="movimiento.cuentaDestino"> → {{ movimiento.cuentaDestino }}</ng-container></small><small>Categoría: {{ movimiento.categoria || 'Sin categoría' }}</small></div>
-            <strong class="recent-amount" [class.outgoing]="movimiento.tipo !== 'INGRESO'">{{ movimiento.tipo === 'INGRESO' ? '+' : '−' }}${{ movimiento.monto | number:'1.2-2' }}</strong>
+            <span class="recent-icon" [class.positive]="(movimiento.tipo === 'INGRESO' || movimiento.tipo === 'COBRO_PRESTAMO')">{{ (movimiento.tipo === 'INGRESO' || movimiento.tipo === 'COBRO_PRESTAMO') ? '↙' : movimiento.tipo === 'TRANSFERENCIA' ? '⇄' : '↗' }}</span>
+            <div class="recent-info"><strong>{{ movimiento.descripcion || 'Movimiento' }}</strong><small>{{ etiquetaMovimiento(movimiento.tipo) }} · {{ movimiento.cuentaOrigen || 'Cuenta' }}<ng-container *ngIf="movimiento.cuentaDestino"> → {{ movimiento.cuentaDestino }}</ng-container></small><small>Categoría: {{ movimiento.categoria || 'Sin categoría' }}</small></div>
+            <strong class="recent-amount" [class.outgoing]="movimiento.tipo !== 'INGRESO' && movimiento.tipo !== 'COBRO_PRESTAMO'">{{ (movimiento.tipo === 'INGRESO' || movimiento.tipo === 'COBRO_PRESTAMO') ? '+' : '−' }}${{ movimiento.monto | number:'1.2-2' }}</strong>
           </div>
         </div>
       </article>

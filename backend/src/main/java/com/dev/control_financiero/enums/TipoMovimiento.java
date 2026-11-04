@@ -6,6 +6,8 @@ public enum TipoMovimiento {
     GASTO,
     TRANSFERENCIA,
     PAGO_TARJETA,
-    PAGO_PRESTAMO
+    PAGO_PRESTAMO,
+    PRESTAMO_OTORGADO,
+    COBRO_PRESTAMO
 
 }

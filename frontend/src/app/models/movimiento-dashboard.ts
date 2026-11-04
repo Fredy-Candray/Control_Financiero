@@ -9,4 +9,5 @@ export interface MovimientoDashboard {
   categoria?: string;
   destinatarioExterno?: string;
   prestamoId?: number | null;
+  prestamoOtorgadoId?: number | null;
 }

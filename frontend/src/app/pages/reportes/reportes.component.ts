@@ -1,3 +1,4 @@
+import { PrestamoOtorgado } from '../../models/prestamo-otorgado';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,6 +17,7 @@ export class ReportesComponent implements OnInit {
   movimientos: MovimientoReporte[] = [];
   planes: PlanReporte[] = [];
   prestamos: PrestamoPersonal[] = [];
+  prestamosOtorgados: PrestamoOtorgado[] = [];
   cargando = true;
   datosDisponibles = false;
   guardando = false;
@@ -42,8 +44,8 @@ export class ReportesComponent implements OnInit {
     this.cargando = true;
     this.datosDisponibles = false;
     this.error = '';
-    this.http.get<{ cuentas: Cuenta[]; movimientos: MovimientoReporte[]; planes: PlanReporte[]; prestamos: PrestamoPersonal[] }>(`${API_BASE_URL}/reportes`).subscribe({
-      next: datos => { this.cuentas = datos.cuentas; this.movimientos = datos.movimientos; this.planes = datos.planes; this.prestamos = datos.prestamos || []; this.cargando = false; this.datosDisponibles = true; },
+    this.http.get<{ cuentas: Cuenta[]; movimientos: MovimientoReporte[]; planes: PlanReporte[]; prestamos: PrestamoPersonal[]; prestamosOtorgados: PrestamoOtorgado[] }>(`${API_BASE_URL}/reportes`).subscribe({
+      next: datos => { this.cuentas = datos.cuentas; this.movimientos = datos.movimientos; this.planes = datos.planes; this.prestamos = datos.prestamos || []; this.prestamosOtorgados = datos.prestamosOtorgados || []; this.cargando = false; this.datosDisponibles = true; },
       error: err => { this.cargando = false; this.error = err.status === 403 ? 'Tu rol no tiene permiso para consultar reportes.' : 'No se pudieron cargar los reportes. Verifica tu sesión y vuelve a intentar.'; }
     });
   }
@@ -64,7 +66,7 @@ export class ReportesComponent implements OnInit {
   deuda(c: Cuenta): number { return Math.max(0, (centavos(c.limiteCredito ?? 0) - centavos(c.saldoActual)) / 100); }
   get deudaTotal(): number { return this.cuentasSeleccionadas.reduce((s, c) => s + (c.tipo === 'CREDITO' ? centavos(this.deuda(c)) : 0), 0) / 100; }
   get deudaPersonal(): number { return this.filtros.cuentaId ? 0 : this.prestamos.reduce((sum, p) => sum + centavos(p.saldoPendiente), 0) / 100; }
-  get patrimonio(): number { return this.cuentasSeleccionadas.reduce((s, c) => s + (c.tipo === 'CREDITO' ? -centavos(this.deuda(c)) : centavos(c.saldoActual)), 0) / 100 - this.deudaPersonal; }
+  get patrimonio(): number { return this.cuentasSeleccionadas.reduce((s, c) => s + (c.tipo === 'CREDITO' ? -centavos(this.deuda(c)) : centavos(c.saldoActual)), 0) / 100 - this.deudaPersonal + (this.filtros.cuentaId ? 0 : this.prestamosOtorgados.reduce((s,p) => s + centavos(p.pendiente),0) / 100); }
   get dineroDisponible(): number { return this.cuentasSeleccionadas.filter(c => c.tipo === 'EFECTIVO' || c.tipo === 'DEBITO').reduce((s, c) => s + centavos(c.saldoActual), 0) / 100; }
   get flujo(): { entradas: number; salidas: number; neto: number } { return flujoEfectivo(this.datos, this.cuentas, this.filtros.cuentaId); }
   get categoriasIngreso() { return agruparCategorias(this.datos, 'INGRESO'); }
@@ -106,7 +108,7 @@ export class ReportesComponent implements OnInit {
       const ultimo = this.fechaLocal(new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0));
       const cierre = ultimo > this.filtros.hasta ? this.filtros.hasta : ultimo;
       const deuda = -patrimonioEn(cierre, this.cuentasSeleccionadas.filter(c => c.tipo === 'CREDITO'), this.movimientos);
-      resultado.push({ mes, ingresos, gastos, balance: (centavos(ingresos) - centavos(gastos)) / 100, flujo: flujoEfectivo(lista, this.cuentas, this.filtros.cuentaId).neto, patrimonio: patrimonioEn(cierre, this.cuentasSeleccionadas, this.movimientos, this.filtros.cuentaId ? [] : this.prestamos), deuda: Math.max(0, deuda) });
+      resultado.push({ mes, ingresos, gastos, balance: (centavos(ingresos) - centavos(gastos)) / 100, flujo: flujoEfectivo(lista, this.cuentas, this.filtros.cuentaId).neto, patrimonio: patrimonioEn(cierre, this.cuentasSeleccionadas, this.movimientos, this.filtros.cuentaId ? [] : this.prestamos, this.filtros.cuentaId ? [] : this.prestamosOtorgados), deuda: Math.max(0, deuda) });
       fecha.setMonth(fecha.getMonth() + 1);
     }
     return resultado;
@@ -146,7 +148,7 @@ export class ReportesComponent implements OnInit {
   get paginaActual(): number { return Math.min(this.pagina, this.paginas); }
   cambiarPagina(pagina: number): void { this.pagina = Math.min(Math.max(1, pagina), this.paginas); }
   get filas(): MovimientoReporte[] { return this.listado.slice((this.paginaActual - 1) * this.tamanoPagina, this.paginaActual * this.tamanoPagina); }
-  etiqueta(tipo: string): string { return ({ INGRESO: 'Ingreso', GASTO: 'Gasto', TRANSFERENCIA: 'Transferencia', PAGO_TARJETA: 'Pago de tarjeta', PAGO_PRESTAMO: 'Pago de préstamo' } as Record<string, string>)[tipo] ?? tipo; }
+  etiqueta(tipo: string): string { return ({ INGRESO: 'Ingreso', GASTO: 'Gasto', TRANSFERENCIA: 'Transferencia', PAGO_TARJETA: 'Pago de tarjeta', PAGO_PRESTAMO: 'Pago de préstamo', PRESTAMO_OTORGADO: 'Dinero prestado', COBRO_PRESTAMO: 'Devolución de préstamo' } as Record<string, string>)[tipo] ?? tipo; }
   nuevo(tipo: PlanReporte['tipo'], plan?: PlanReporte): void {
     this.mensaje = ''; this.error = '';
     this.formulario = plan ? { ...plan } : { tipo, nombre: '', categoria: tipo === 'PRESUPUESTO' ? 'Sin categoría' : null, mes: tipo === 'PRESUPUESTO' ? this.filtros.desde.slice(0, 7) : null, cuentaId: null, monto: 1, acumulado: 0, aporteMensual: 0, tasaInteres: null, fechaObjetivo: null };
@@ -172,6 +174,8 @@ export class ReportesComponent implements OnInit {
     for (const p of this.metas) filas.push([p.nombre, p.monto, p.acumulado, p.aporteMensual, p.fechaObjetivo]);
     filas.push([], ['Cuenta', 'Saldo / crédito disponible actual', 'Deuda actual', 'Pagos de tarjeta del período']);
     for (const c of this.cuentasSeleccionadas) filas.push([c.nombre, c.saldoActual, c.tipo === 'CREDITO' ? this.deuda(c) : '', c.tipo === 'CREDITO' ? this.pagos(c) : '']);
+    filas.push([], ['Dinero prestado por cobrar', 'Prestado', 'Pendiente']);
+    for (const p of this.prestamosOtorgados) filas.push([p.persona, p.monto, p.pendiente]);
     filas.push([], ['Préstamo personal sin interés', 'Saldo inicial registrado', 'Saldo pendiente actual']);
     for (const p of this.prestamos) filas.push([p.acreedor, p.saldoInicial, p.saldoPendiente]);
     const blob = new Blob(['\uFEFF' + filas.map(f => f.map(celdaCsv).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8;' });
@@ -192,6 +196,7 @@ export class ReportesComponent implements OnInit {
       const vista = this.tabs.find(t => t.id === this.tab)?.nombre || 'Resumen';
       if (['resumen', 'deudas', 'patrimonio'].includes(this.tab) && this.prestamos.length)
         tabla('Préstamos personales sin interés', ['Acreedor', 'Saldo inicial', 'Pendiente actual'], this.prestamos.map(p => [p.acreedor, dinero(p.saldoInicial), dinero(p.saldoPendiente)]), 'Los pagos de capital reducen la cuenta de origen y esta deuda; no se cuentan como gastos.');
+      if (this.prestamosOtorgados.length) tabla('Dinero prestado por cobrar', ['Persona', 'Prestado', 'Pendiente'], this.prestamosOtorgados.map(p => [p.persona, dinero(p.monto), dinero(p.pendiente)]), 'El capital prestado no es gasto y su devolución no es ingreso nuevo.');
       const finAnterior = new Date(this.filtros.desde + 'T12:00:00'); finAnterior.setDate(finAnterior.getDate() - 1);
       const inicioAnterior = new Date(finAnterior);
       const diasPeriodo = Math.round((new Date(this.filtros.hasta + 'T12:00:00').getTime() - new Date(this.filtros.desde + 'T12:00:00').getTime()) / 86400000) + 1;

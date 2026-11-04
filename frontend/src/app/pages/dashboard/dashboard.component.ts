@@ -18,6 +18,7 @@ import { readAuthSessionValue } from '../../services/auth.service';
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
+  etiquetaMovimiento(tipo:string):string { return ({INGRESO:'Ingreso',GASTO:'Gasto',TRANSFERENCIA:'Transferencia',PAGO_TARJETA:'Pago de tarjeta',PAGO_PRESTAMO:'Pago de préstamo',PRESTAMO_OTORGADO:'Dinero prestado',COBRO_PRESTAMO:'Devolución de préstamo'} as Record<string,string>)[tipo] || tipo; }
   private readonly destroyRef = inject(DestroyRef);
   sincronizacion: EstadoSincronizacion | null = null;
   consultandoSincronizacion = true;

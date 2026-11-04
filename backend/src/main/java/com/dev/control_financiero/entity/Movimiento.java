@@ -31,6 +31,7 @@ public class Movimiento {
     private String descripcion;
     @org.hibernate.annotations.Nationalized @Column(name="destinatario_externo",length=120)
     private String destinatarioExterno;
+    private Long prestamoOtorgadoId;
     @Column(name="referencia_cliente",length=36) private String referenciaCliente;
     @JsonIgnore @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="prestamo_id") private PrestamoPersonal prestamo;
 

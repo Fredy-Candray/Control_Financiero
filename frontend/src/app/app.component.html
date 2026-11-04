@@ -28,6 +28,7 @@
     </a>
 
     <nav class="nav-links" #navLinks>
+      <section class="nav-group"><h3 class="nav-group-title">Control personal</h3><a routerLink="/seguimiento" routerLinkActive="active" title="Control y dinero prestado"><span class="nav-icon" aria-hidden="true">✓</span><span class="nav-label">Control y préstamos</span></a></section>
       <section class="nav-group" *ngFor="let section of menuSections">
         <h3 class="nav-group-title">{{ section.titulo }}</h3>
         <a *ngFor="let option of section.opciones" [routerLink]="option.ruta" routerLinkActive="active" [title]="option.etiqueta">

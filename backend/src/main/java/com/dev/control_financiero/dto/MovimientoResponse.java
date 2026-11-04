@@ -24,10 +24,12 @@ public class MovimientoResponse {
     private String cuentaDestino;
     private String categoria;
     private Long categoriaId;
+    private Long prestamoOtorgadoId;
 
     public static MovimientoResponse from(Movimiento movimiento) {
         return MovimientoResponse.builder()
                 .id(movimiento.getId())
+                .prestamoOtorgadoId(movimiento.getPrestamoOtorgadoId())
                 .tipo(movimiento.getTipo())
                 .monto(movimiento.getMonto())
                 .descripcion(movimiento.getDescripcion())

@@ -52,7 +52,7 @@ export class MovimientosComponent implements OnInit {
   editarMovimiento(movimiento: any): void {
     if (this.guardandoEdicion) return;
     this.editandoId = movimiento.id;
-    this.nombrePayFijo = movimiento.cuentaOrigen?.toLowerCase() === 'pay' && !!movimiento.destinatarioExterno;
+    this.nombrePayFijo = movimiento.cuentaOrigen?.toLowerCase() === 'pay' && !!movimiento.destinatarioExterno && ['GASTO','PRESTAMO_OTORGADO'].includes(movimiento.tipo);
     this.nombreEditado = movimiento.descripcion ?? '';
     this.categoriaEditada = movimiento.categoriaId ?? null;
     this.errorEdicion = '';
@@ -215,11 +215,11 @@ export class MovimientosComponent implements OnInit {
   }
 
   etiquetaTipo(tipo: string): string {
-    return ({ INGRESO: 'Ingreso', GASTO: 'Gasto', TRANSFERENCIA: 'Transferencia', PAGO_TARJETA: 'Pago de tarjeta', PAGO_PRESTAMO: 'Pago de préstamo' } as Record<string, string>)[tipo] ?? tipo;
+    return ({ INGRESO: 'Ingreso', GASTO: 'Gasto', TRANSFERENCIA: 'Transferencia', PAGO_TARJETA: 'Pago de tarjeta', PAGO_PRESTAMO: 'Pago de préstamo', PRESTAMO_OTORGADO: 'Dinero prestado', COBRO_PRESTAMO: 'Devolución de préstamo' } as Record<string, string>)[tipo] ?? tipo;
   }
 
   esSalida(tipo: string): boolean {
-    return tipo === 'GASTO' || tipo === 'PAGO_TARJETA' || tipo === 'TRANSFERENCIA' || tipo === 'PAGO_PRESTAMO';
+    return tipo === 'GASTO' || tipo === 'PAGO_TARJETA' || tipo === 'TRANSFERENCIA' || tipo === 'PAGO_PRESTAMO' || tipo === 'PRESTAMO_OTORGADO';
   }
   cambiarTipo(): void { this.cuentaDestinoId = null; this.destinoTransferencia = 'PROPIA'; this.destinatarioExterno = ''; }
   seleccionarDestino(value: number | 'EXTERNO' | null): void {

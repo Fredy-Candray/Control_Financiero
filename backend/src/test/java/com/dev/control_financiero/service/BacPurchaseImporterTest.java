@@ -12,6 +12,27 @@ import java.math.BigDecimal;
 import java.util.*;
 
 class BacPurchaseImporterTest {
+    private void withdrawalSetup() throws Exception {
+        when(parser.parse(raw)).thenThrow(new IllegalArgumentException("Not purchase"));
+        when(parser.withdrawal(raw)).thenReturn(Optional.of(new BacEmailParser.Withdrawal("8564",new BigDecimal("100.00"),LocalDateTime.ofInstant(now.minusSeconds(20),ZoneId.of("America/El_Salvador")),"<atm@example.test>")));
+        org.springframework.test.util.ReflectionTestUtils.setField(importer,"accountAliases","1:8564:5");
+        var debit=Cuenta.builder().id(5L).nombre("Débito").tipo(TipoCuenta.DEBITO).banco("BAC").ultimosCuatro("9994").activa(true).saldoActual(new BigDecimal("258.95")).build();
+        var cash=Cuenta.builder().id(1L).nombre("Efectivo").tipo(TipoCuenta.EFECTIVO).activa(true).saldoActual(BigDecimal.ZERO).build();
+        when(accounts.findByUsuarioId(1L)).thenReturn(List.of(debit,cash));when(movements.crearMovimiento(any())).thenReturn(MovimientoResponse.builder().id(40L).build());
+    }
+    @Test void withdrawalTransfersDebitToCashWithoutExpense() throws Exception {
+        withdrawalSetup();importer.process(1L,"withdrawal",now,raw);
+        verify(movements).crearMovimiento(argThat(r->r.getTipo()==TipoMovimiento.TRANSFERENCIA&&r.getCuentaOrigenId()==5L&&r.getCuentaDestinoId()==1L&&r.getMonto().compareTo(new BigDecimal("100.00"))==0));
+        verify(imports).save(argThat(r->"IMPORTADO".equals(r.getEstado())&&r.getMovimientoId()==40L));verifyNoInteractions(merchantCategories);
+    }
+    @Test void possibleManualWithdrawalDoesNotDebitTwice() throws Exception {
+        withdrawalSetup();when(movements.posibleRetiroYaRegistrado(eq(1L),eq(5L),eq(1L),any(),any())).thenReturn(true);
+        importer.process(1L,"withdrawal",now,raw);verify(movements,never()).crearMovimiento(any());verify(imports).save(argThat(r->"PENDIENTE".equals(r.getEstado())));
+    }
+    @Test void unmappedAccountStaysPending() throws Exception {
+        withdrawalSetup();org.springframework.test.util.ReflectionTestUtils.setField(importer,"accountAliases","");
+        importer.process(1L,"withdrawal",now,raw);verify(movements,never()).crearMovimiento(any());verify(imports).save(argThat(r->"PENDIENTE".equals(r.getEstado())));
+    }
     final GmailConnectionRepository connections=mock(GmailConnectionRepository.class);
     final BankEmailImportRepository imports=mock(BankEmailImportRepository.class);
     final CuentaRepository accounts=mock(CuentaRepository.class);

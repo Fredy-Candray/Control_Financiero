@@ -6,6 +6,9 @@ import java.math.BigDecimal;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Pageable;
 public interface BankEmailImportRepository extends JpaRepository<BankEmailImport,Long> {
+    List<BankEmailImport> findByUsuarioIdAndEstadoInOrderByIdDesc(Long userId,List<String> estados);
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    Optional<BankEmailImport> findByIdAndUsuarioId(Long id,Long userId);
     interface MovementNotice {
         Long getId();
         String getDescripcion();

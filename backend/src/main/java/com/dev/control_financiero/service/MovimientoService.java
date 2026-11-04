@@ -29,6 +29,20 @@ public class MovimientoService {
     private final CategoriaRepository categoriaRepository;
     private final UsuarioRepository usuarioRepository;
     private final com.dev.control_financiero.repository.PrestamoPersonalRepository prestamos;
+    @Transactional(readOnly=true)
+    public boolean posibleRetiroYaRegistrado(Long user,Long source,Long destination,BigDecimal amount,LocalDateTime fecha) {
+        return movimientoRepository.findByUsuarioId(user).stream().anyMatch(m->m.getTipo()==TipoMovimiento.TRANSFERENCIA
+            &&m.getCuentaOrigen()!=null&&source.equals(m.getCuentaOrigen().getId())&&m.getCuentaDestino()!=null&&destination.equals(m.getCuentaDestino().getId())
+            &&m.getMonto().compareTo(amount)==0&&m.getFechaMovimiento()!=null&&!m.getFechaMovimiento().isBefore(fecha.minusDays(1))&&!m.getFechaMovimiento().isAfter(fecha.plusDays(1)));
+    }
+
+    @Transactional(readOnly=true)
+    public boolean posiblePrestamoYaRegistrado(Long user,Long account,BigDecimal amount,LocalDateTime fecha,TipoMovimiento tipo) {
+        return movimientoRepository.findByUsuarioId(user).stream().anyMatch(m -> m.getTipo()==tipo
+                && m.getPrestamoOtorgadoId()!=null && m.getCuentaOrigen()!=null && account.equals(m.getCuentaOrigen().getId())
+                && m.getMonto().compareTo(amount)==0 && m.getFechaMovimiento()!=null
+                && !m.getFechaMovimiento().isBefore(fecha.minusDays(1)) && !m.getFechaMovimiento().isAfter(fecha.plusDays(1)));
+    }
 
     @Transactional
     public MovimientoResponse editarDetalles(Long userId, Long id, com.dev.control_financiero.dto.EditarMovimientoRequest request) {
@@ -41,6 +55,7 @@ public class MovimientoService {
                     .orElseThrow(() -> new IllegalArgumentException("Categoría no disponible."));
         }
         boolean payExterno=movimiento.getCuentaOrigen()!=null && "Pay".equalsIgnoreCase(movimiento.getCuentaOrigen().getNombre())
+                && (movimiento.getTipo()==TipoMovimiento.GASTO || movimiento.getTipo()==TipoMovimiento.PRESTAMO_OTORGADO)
                 && movimiento.getDestinatarioExterno()!=null && !movimiento.getDestinatarioExterno().isBlank();
         movimiento.setDescripcion(payExterno ? "PAY a "+movimiento.getDestinatarioExterno()
                 : request.descripcion()==null?"":request.descripcion().trim());
@@ -66,6 +81,8 @@ public class MovimientoService {
 
     @Transactional
     public MovimientoResponse crearMovimiento(CrearMovimientoRequest request) {
+        if(request.getTipo()==TipoMovimiento.PRESTAMO_OTORGADO || request.getTipo()==TipoMovimiento.COBRO_PRESTAMO)
+            throw new IllegalArgumentException("Registra esta operación desde Dinero prestado.");
         boolean externa=request.getDestinatarioExterno()!=null && !request.getDestinatarioExterno().isBlank();
         if(externa && request.getCuentaDestinoId()!=null) throw new IllegalArgumentException("Selecciona una cuenta propia o un destinatario externo, no ambos.");
         if(externa && request.getTipo()!=TipoMovimiento.TRANSFERENCIA && request.getTipo()!=TipoMovimiento.GASTO)

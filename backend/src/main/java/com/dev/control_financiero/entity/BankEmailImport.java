@@ -21,4 +21,6 @@ public class BankEmailImport {
     @Column(nullable=false,length=30) private String estado;
     @Column(length=255) private String detalle;
     private Instant procesadoEn;
+    @Column(length=255) private String revisionNota;
+    private Instant revisadoEn;
 }

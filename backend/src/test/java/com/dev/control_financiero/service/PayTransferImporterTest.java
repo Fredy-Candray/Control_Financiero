@@ -82,4 +82,11 @@ class PayTransferImporterTest {
         importer.process(1L,"new",received,raw); verifyNoInteractions(movements);
         verify(imports).save(argThat(r->"PENDIENTE".equals(r.getEstado())));
     }
+    @Test void manualLoanCandidateIsLeftForReviewWithoutAnotherDebit() throws Exception {
+        ReflectionTestUtils.setField(importer,"extended",true);ReflectionTestUtils.setField(importer,"ownerName","Fredy");
+        when(parser.parse(raw)).thenReturn(new PayTransferParser.Transfer(BigDecimal.TEN,"XXXXX5687","BANCO AGRÍCOLA","Ana","manual-loan-test",LocalDateTime.ofInstant(received.minusSeconds(60),ZoneId.of("America/El_Salvador")),null));
+        when(movements.posiblePrestamoYaRegistrado(eq(1L),eq(6L),eq(BigDecimal.TEN),any(),eq(TipoMovimiento.PRESTAMO_OTORGADO))).thenReturn(true);
+        importer.process(1L,"new",received,raw);
+        verify(movements,never()).crearMovimiento(any());verify(imports).save(argThat(r->"PENDIENTE".equals(r.getEstado())));
+    }
 }

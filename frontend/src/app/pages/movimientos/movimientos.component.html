@@ -76,7 +76,7 @@
         <option value="INGRESO">Ingresos</option>
         <option value="GASTO">Gastos</option>
         <option value="TRANSFERENCIA">Transferencias entre mis cuentas</option>
-        <option value="PAGO_TARJETA">Pagos de tarjeta</option>
+        <option value="PAGO_TARJETA">Pagos de tarjeta</option><option value="PRESTAMO_OTORGADO">Dinero prestado</option><option value="COBRO_PRESTAMO">Devoluciones de préstamos</option>
       </select>
       <select [(ngModel)]="categoriaFiltro" (ngModelChange)="reiniciarPagina()" [disabled]="guardandoEdicion" aria-label="Filtrar por categoría">
         <option ngValue="TODAS">Todas las categorías</option>
@@ -97,7 +97,7 @@
       <div class="movement-table-header"><span>Movimiento</span><span>Cuenta</span><span>Categoría</span><span>Fecha</span><span class="align-right">Monto</span></div>
       <article class="movement-row" *ngFor="let movimiento of movimientosPaginados">
         <div class="movement-name-cell">
-          <span class="movement-icon" [class.income-icon]="movimiento.tipo === 'INGRESO'" [class.transfer-icon]="movimiento.tipo === 'TRANSFERENCIA'">{{ movimiento.tipo === 'INGRESO' ? '↙' : movimiento.tipo === 'TRANSFERENCIA' ? '⇄' : '↗' }}</span>
+          <span class="movement-icon" [class.income-icon]="(movimiento.tipo === 'INGRESO' || movimiento.tipo === 'COBRO_PRESTAMO')" [class.transfer-icon]="movimiento.tipo === 'TRANSFERENCIA'">{{ (movimiento.tipo === 'INGRESO' || movimiento.tipo === 'COBRO_PRESTAMO') ? '↙' : movimiento.tipo === 'TRANSFERENCIA' ? '⇄' : '↗' }}</span>
           <span><strong>{{ movimiento.descripcion || etiquetaTipo(movimiento.tipo) }}</strong><small>{{ etiquetaTipo(movimiento.tipo) }}<ng-container *ngIf="movimiento.tipo === 'GASTO' && movimiento.destinatarioExterno"> por transferencia</ng-container></small></span>
           <button type="button" class="edit-movement" (click)="editarMovimiento(movimiento)" [disabled]="guardandoEdicion" [attr.aria-label]="'Editar movimiento: ' + (movimiento.descripcion || etiquetaTipo(movimiento.tipo))" title="Editar nombre y categoría">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6Z"/><path d="m14 5 5 5"/></svg>

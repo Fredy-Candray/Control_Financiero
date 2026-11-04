@@ -104,6 +104,10 @@ public class PayTransferImporter {
                 && Boolean.TRUE.equals(a.getActiva()) && a.getTipo()==TipoCuenta.DEBITO).toList();
         if(matches.size()!=1) { save(record,"ERROR","No hay una única cuenta Pay activa."); return; }
         var account=accounts.findLockedById(matches.get(0).getId()).orElseThrow();
+        if(movements.posiblePrestamoYaRegistrado(userId,account.getId(),record.getMonto(),record.getFechaCompra(),
+                type==TipoMovimiento.INGRESO?TipoMovimiento.COBRO_PRESTAMO:TipoMovimiento.PRESTAMO_OTORGADO)) {
+            save(record,"PENDIENTE","Posible préstamo o devolución ya registrado manualmente. Vincula el movimiento en Control y préstamos; no se modificaron saldos.");return;
+        }
         if(type==TipoMovimiento.GASTO && account.getSaldoActual().compareTo(record.getMonto())<0) {
             save(record,"ERROR","Saldo insuficiente en Pay."); return;
         }

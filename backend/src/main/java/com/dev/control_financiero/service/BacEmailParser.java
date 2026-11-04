@@ -13,6 +13,24 @@ import java.util.regex.*;
 @Component
 public class BacEmailParser {
     public record Purchase(String lastFour,String merchant,BigDecimal amount,LocalDateTime date,String rfcId) {}
+    public record Withdrawal(String accountLastFour,BigDecimal amount,LocalDateTime date,String rfcId) {}
+    public Optional<Withdrawal> withdrawal(byte[] raw) throws Exception {
+        authenticatedNoticeSubject(raw);
+        var message=new MimeMessage(Session.getInstance(new Properties()),new ByteArrayInputStream(raw));
+        if(!(message.getFrom()[0] instanceof InternetAddress sender)||!"alerta@baccredomatic.com".equalsIgnoreCase(sender.getAddress()))return Optional.empty();
+        String text=body(message,"text/plain");
+        if(text.isBlank())text=body(message,"text/html").replaceAll("(?is)<(script|style)\\b[^>]*>.*?</\\1>","").replaceAll("(?i)</(?:td|tr|p|div|br|h[1-6])>|<br\\s*/?>"," ").replaceAll("<[^>]+>"," ").replace("&nbsp;"," ").replace("&amp;","&");
+        text=text.replace('\u00a0',' ').replaceAll("\\s+"," ").trim();
+        var details=Pattern.compile("(?i)se ha realizado un retiro de un cajero autom[aá]tico a su cuenta en USD,? n[uú]mero [*xX• ]*(\\d{4}),? por un monto de ([0-9][0-9,]*\\.[0-9]{2}) USD\\b").matcher(text);
+        if(!details.find())return Optional.empty();
+        var date=Pattern.compile("(?i)Fecha\\s+(\\d{1,2}/\\d{1,2}/\\d{4}) a las (\\d{2}:\\d{2}:\\d{2})\\b").matcher(text);
+        if(!date.find())throw new IllegalArgumentException("Falta la fecha del retiro.");
+        var amount=new BigDecimal(details.group(2).replace(",",""));
+        if(amount.signum()<=0||amount.precision()-amount.scale()>16)throw new IllegalArgumentException("Monto de retiro no válido.");
+        var repeated=Pattern.compile("(?i)Monto enviado\\s+([0-9][0-9,]*\\.[0-9]{2}) USD\\b").matcher(text);
+        if(repeated.find()&&amount.compareTo(new BigDecimal(repeated.group(1).replace(",","")))!=0)throw new IllegalArgumentException("Los montos del retiro no coinciden.");
+        return Optional.of(new Withdrawal(details.group(1),amount,LocalDateTime.parse(date.group(1)+" "+date.group(2),DateTimeFormatter.ofPattern("d/M/uuuu HH:mm:ss").withResolverStyle(java.time.format.ResolverStyle.STRICT)),message.getMessageID()));
+    }
     public String authenticatedNoticeSubject(byte[] raw) throws Exception {
         var message=new MimeMessage(Session.getInstance(new Properties()),new ByteArrayInputStream(raw));
         var from=message.getFrom(); var auth=message.getHeader("Authentication-Results");
