@@ -7,7 +7,12 @@
     </div>
     <div class="page-badge"><strong>{{ cuentas.length }}</strong><span>cuentas</span></div>
   </header>
-
+  <nav class="module-tabs" aria-label="Secciones de cuentas">
+    <button type="button" [class.active]="vista==='cuentas'" [attr.aria-pressed]="vista==='cuentas'" (click)="seleccionarVista('cuentas')">Mis cuentas</button>
+    <button type="button" [class.active]="vista==='comparar'" [attr.aria-pressed]="vista==='comparar'" (click)="seleccionarVista('comparar')">Comparar con el banco</button>
+  </nav>
+  <app-seguimiento *ngIf="vista==='comparar'" tab="conciliacion" [embebido]="true" />
+  <ng-container *ngIf="vista==='cuentas'">
   <div *ngIf="cargando" class="state-card">Cargando tus cuentas…</div>
   <div *ngIf="error" class="state-card error" role="alert">{{ error }}</div>
   <div *ngIf="success" class="state-card success" role="status">{{ success }}</div>
@@ -121,6 +126,7 @@
       <button type="button" class="secondary-button" *ngIf="gmail?.connected" (click)="desconectarGmail()" [disabled]="gmailBusy">Desconectar Gmail</button>
     </div>
     <h3>Últimos avisos procesados</h3>
+    <p class="form-hint">Para atender avisos pendientes, ve a <a routerLink="/movimientos" [queryParams]="{vista:'avisos'}">Movimientos → Avisos por revisar</a>.</p>
     <p class="form-hint" *ngIf="!gmailHistory.length">Todavía no hay avisos procesados.</p>
     <div class="gmail-history" *ngIf="gmailHistory.length"><table><thead><tr><th>Fecha</th><th>Cuenta / tarjeta</th><th>Operación</th><th>Monto</th><th>Estado</th><th>Detalle</th><th>Aviso</th></tr></thead><tbody><tr *ngFor="let item of avisosPaginados"><td>{{ item.fechaCompra ? (item.fechaCompra | date:'dd/MM/yyyy HH:mm') : '—' }}</td><td>{{ item.ultimosCuatro || '—' }}</td><td>{{ item.comercio || '—' }}</td><td>{{ item.monto === null ? '—' : (item.monto | currency:'USD') }}</td><td>{{ item.estado }}</td><td>{{ item.detalle }}<small *ngIf="item.revisionNota">Revisión: {{ item.revisionNota }}</small></td><td><a *ngIf="item.gmailMessageId" [href]="'https://mail.google.com/mail/u/0/#all/' + item.gmailMessageId" target="_blank" rel="noopener noreferrer">Ver correo</a></td></tr></tbody></table></div>
     <nav *ngIf="gmailHistory.length" class="gmail-pagination" aria-label="Paginación de avisos procesados">
@@ -129,4 +135,5 @@
       <button type="button" (click)="cambiarPaginaAvisos(paginaAvisosActual + 1)" [disabled]="paginaAvisosActual === totalPaginasAvisos">Siguiente</button>
     </nav>
   </section>
+  </ng-container>
 </section>

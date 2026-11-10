@@ -7,7 +7,12 @@
     </div>
     <div class="page-badge"><strong>{{ movimientos.length }}</strong><span>registros</span></div>
   </header>
-
+  <nav class="module-tabs" aria-label="Secciones de movimientos">
+    <button type="button" [class.active]="vista==='movimientos'" [attr.aria-pressed]="vista==='movimientos'" (click)="seleccionarVista('movimientos')">Mis movimientos</button>
+    <button type="button" [class.active]="vista==='avisos'" [attr.aria-pressed]="vista==='avisos'" (click)="seleccionarVista('avisos')">Avisos por revisar</button>
+  </nav>
+  <app-seguimiento *ngIf="vista==='avisos'" tab="pendientes" [embebido]="true" />
+  <ng-container *ngIf="vista==='movimientos'">
   <div *ngIf="error" class="state-card error" role="alert">{{ error }}</div>
   <div *ngIf="success" class="state-card success" role="status">{{ success }}</div>
 
@@ -123,4 +128,5 @@
     </nav>
     </div>
   </section>
+  </ng-container>
 </section>

@@ -12,6 +12,7 @@ import { API_BASE_URL } from './api.config';
 import { AuthService } from './services/auth.service';
 import { EmailMovementNotificationService, EmailMovementNotice } from './services/email-movement-notification.service';
 import { InstallAppComponent } from './components/install-app/install-app.component';
+import { AhorroAlertsComponent } from './components/ahorro-alerts/ahorro-alerts.component';
 
 interface PerfilBadge {
   username: string;
@@ -21,7 +22,7 @@ interface PerfilBadge {
 interface MenuOption {
   etiqueta: string;
   ruta: string;
-  icono: 'dashboard' | 'cuentas' | 'movimientos' | 'calendario' | 'usuarios' | 'configuracion' | 'reporte';
+  icono: 'dashboard' | 'cuentas' | 'movimientos' | 'calendario' | 'usuarios' | 'configuracion' | 'reporte' | 'prestamos' | 'ahorro';
 }
 
 interface MenuSection {
@@ -37,7 +38,7 @@ interface MenuResponse {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, InstallAppComponent, CalendarReminderDialogComponent, MailConnectionNoticeComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, InstallAppComponent, CalendarReminderDialogComponent, MailConnectionNoticeComponent, AhorroAlertsComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -171,9 +172,24 @@ export class AppComponent implements OnInit {
 
   private loadMenu(): void {
     this.http.get<MenuResponse>(`${API_BASE_URL}/auth/me/menu`).subscribe({
-      next: response => { this.menuSections = response.secciones || []; },
-      error: () => { this.menuSections = []; }
+      next: response => { this.menuSections = this.organizarSecciones(response.secciones || []); },
+      error: () => { this.menuSections = this.organizarSecciones([]); }
     });
+  }
+
+  private organizarSecciones(secciones: MenuSection[]): MenuSection[] {
+    const resultado = secciones.map(s=>({...s,opciones:[...s.opciones]}));
+    const grupoFinanzas=resultado.find(s=>s.titulo.trim().toLocaleLowerCase()==='finanzas');
+    const ahorro:MenuOption={etiqueta:'Ahorro y Liquidez',ruta:'/ahorro-liquidez',icono:'ahorro'};
+    if(grupoFinanzas){if(!grupoFinanzas.opciones.some(o=>o.ruta===ahorro.ruta))grupoFinanzas.opciones.push(ahorro);}
+    else resultado.unshift({titulo:'Finanzas',opciones:[ahorro]});
+    const finanzas = resultado.findIndex(section => section.titulo.trim().toLocaleLowerCase() === 'finanzas');
+    const sistema = resultado.findIndex(section => section.titulo.trim().toLocaleLowerCase() === 'sistema');
+    const posicion = finanzas >= 0 ? finanzas + 1 : sistema >= 0 ? sistema : resultado.length;
+    resultado.splice(posicion, 0, { titulo: 'Control personal', opciones: [
+      { etiqueta: 'Dinero prestado', ruta: '/dinero-prestado', icono: 'prestamos' }
+    ] });
+    return resultado;
   }
 
   closeCalendarReminder(): void {

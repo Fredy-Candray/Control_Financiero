@@ -11,6 +11,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class PlanReporte {
+    @Transient private boolean presupuestoGlobal;
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false)

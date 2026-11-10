@@ -12,3 +12,10 @@ application-local.properties
 
 # Local editor settings
 /.idea/
+
+# Android signing identities and generated Gradle output
+/android-apk/.gradle/
+/android-apk/build/
+/android-apk/local.properties
+*.keystore
+*.jks

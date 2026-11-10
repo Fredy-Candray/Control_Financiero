@@ -1,10 +1,12 @@
 # Control de cuentas y dinero prestado
 
-La sección «Control y préstamos» tiene tres apartados por usuario, protegidos por sesión activa:
+Las funciones se organizan por su propósito y se mantienen protegidas por sesión activa:
 
-- Avisos pendientes: lista todos los avisos PENDIENTE o ERROR; permite vincular un movimiento propio del mismo monto cuando el aviso lo identifica, o marcarlo atendido con una nota obligatoria. No crea ni modifica dinero. Conserva el detalle original, nota de revisión y fecha. Para una operación todavía no registrada, se registra primero en Movimientos y luego se vincula.
-- Conciliar saldos: compara el saldo observado en el banco con el saldo actual de COFI. En crédito se compara el crédito disponible. Guarda ambos valores y la diferencia como una observación fechada; no reemplaza saldos ni crea ajustes. Muestra las últimas 50 revisiones.
-- Dinero prestado: registro principalmente manual, con persona, monto, cuenta de efectivo/débito, nota y fecha de devolución opcionales. Permite abonos parciales, historial y vincular salidas o entradas ya registradas. Es un seguimiento de capital sin intereses; no gestiona intereses, comisiones ni cobros automáticos.
+- Movimientos → Avisos por revisar: lista todos los avisos PENDIENTE o ERROR; permite vincular un movimiento propio del mismo monto cuando el aviso lo identifica, o marcarlo atendido con una nota obligatoria. No crea ni modifica dinero. Conserva el detalle original, nota de revisión y fecha. Para una operación todavía no registrada, se registra primero en Movimientos y luego se vincula.
+- Cuentas → Comparar con el banco: compara el saldo observado en el banco con el saldo actual de COFI. En crédito se compara el crédito disponible. Guarda ambos valores y la diferencia como una observación fechada; no reemplaza saldos ni crea ajustes. Muestra las últimas 50 revisiones.
+- Dinero prestado (apartado independiente en el menú): registro principalmente manual, con persona, monto, cuenta de efectivo/débito, nota y fecha de devolución opcionales. Permite abonos parciales, historial y vincular salidas o entradas ya registradas. Es un seguimiento de capital sin intereses; no gestiona intereses, comisiones ni cobros automáticos.
+
+La ruta actual es `/dinero-prestado`. Los enlaces antiguos a `/seguimiento` se conservan mediante redirección; sus pestañas de avisos y conciliación llevan a los módulos correspondientes. Cada vista solicita solo los datos que utiliza. Esta reorganización no cambia tablas ni movimientos.
 
 Un préstamo nuevo descuenta una vez de la cuenta de origen y genera PRESTAMO_OTORGADO. Vincular un gasto ya descontado solo cambia su clasificación, sin repetir la salida. Una devolución nueva acredita la cuenta elegida y genera COBRO_PRESTAMO; vincular un ingreso existente no lo vuelve a acreditar. El capital prestado no se suma a gastos y el capital recuperado no se suma a ingresos nuevos. Sí aparecen en el flujo de efectivo y el historial. El patrimonio global incluye el capital pendiente por cobrar; no se atribuye toda esa deuda a una cuenta individual al filtrar reportes.
 

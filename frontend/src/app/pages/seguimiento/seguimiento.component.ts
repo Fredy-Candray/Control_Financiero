@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
 import { API_BASE_URL } from '../../api.config';
 import { readAuthSessionValue } from '../../services/auth.service';
 import { Cuenta } from '../../models/cuenta';
@@ -13,24 +13,38 @@ interface Aviso { id:number; gmailMessageId:string; comercio:string|null; monto:
 interface Revision { id:number; cuentaNombre:string; saldoCofi:number; saldoBanco:number; diferencia:number; fecha:string; nota:string|null; }
 @Component({selector:'app-seguimiento',standalone:true,imports:[CommonModule,FormsModule,RouterLink],templateUrl:'./seguimiento.component.html',styleUrl:'./seguimiento.component.css'})
 export class SeguimientoComponent implements OnInit {
-  tab='pendientes'; cargando=true; busy=''; error=''; mensaje=''; pagina=1;
+  @Input() tab:'pendientes'|'conciliacion'|'prestamos'='prestamos';
+  @Input() embebido=false;
+  cargando=true; busy=''; error=''; mensaje=''; pagina=1;
   avisos:Aviso[]=[]; revisiones:Revision[]=[]; prestamos:PrestamoOtorgado[]=[]; cuentas:Cuenta[]=[]; movimientos:any[]=[];
   avisoId:number|null=null; accion='VINCULAR'; motivo=''; movimientoAviso:number|null=null;
   cuentaRevision:number|null=null; saldoBanco:number|null=null; notaRevision=''; refRevision=this.ref();
   modoPrestamo='INICIAL'; persona=''; movimientoPrestamo:number|null=null; cuentaPrestamo:number|null=null; montoPrestamo:number|null=null; vencimiento=''; notaPrestamo=''; refPrestamo=this.ref();
   abonoId:number|null=null; modoAbono='NUEVO'; movimientoAbono:number|null=null; cuentaAbono:number|null=null; montoAbono:number|null=null; refAbono=this.ref();
   historialId:number|null=null; historial:any[]=[];
-  constructor(private http:HttpClient,private route:ActivatedRoute){}
-  ngOnInit():void {const t=this.route.snapshot.queryParamMap.get('tab');if(t&&['pendientes','conciliacion','prestamos'].includes(t))this.tab=t;this.cargar();}
+  constructor(private http:HttpClient,private route:ActivatedRoute,private router:Router){}
+  ngOnInit():void {
+    // Keep old bookmarks working after moving review and comparison to their own modules.
+    const legacy=this.route.snapshot.queryParamMap.get('tab');
+    if(!this.embebido&&(legacy==='pendientes'||legacy==='conciliacion')){
+      void this.router.navigate([legacy==='pendientes'?'/movimientos':'/cuentas'],{queryParams:{vista:legacy==='pendientes'?'avisos':'comparar'},replaceUrl:true});return;
+    }
+    this.cargar();
+  }
   private ref():string{return globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,16)}`;}
   cargar():void {
     this.cargando=true;this.error='';const user=readAuthSessionValue('userId');
-    forkJoin({avisos:this.http.get<Aviso[]>(`${API_BASE_URL}/control-financiero/pendientes`),revisiones:this.http.get<Revision[]>(`${API_BASE_URL}/control-financiero/conciliaciones`),prestamos:this.http.get<PrestamoOtorgado[]>(`${API_BASE_URL}/control-financiero/prestamos`),cuentas:this.http.get<Cuenta[]>(`${API_BASE_URL}/cuentas/usuario/${user}`),movimientos:this.http.get<any[]>(`${API_BASE_URL}/movimientos/usuario/${user}`)}).subscribe({
+    forkJoin({
+      avisos:this.tab==='pendientes'?this.http.get<Aviso[]>(`${API_BASE_URL}/control-financiero/pendientes`):of<Aviso[]>([]),
+      revisiones:this.tab==='conciliacion'?this.http.get<Revision[]>(`${API_BASE_URL}/control-financiero/conciliaciones`):of<Revision[]>([]),
+      prestamos:this.tab==='prestamos'?this.http.get<PrestamoOtorgado[]>(`${API_BASE_URL}/control-financiero/prestamos`):of<PrestamoOtorgado[]>([]),
+      cuentas:this.tab!=='pendientes'?this.http.get<Cuenta[]>(`${API_BASE_URL}/cuentas/usuario/${user}`):of<Cuenta[]>([]),
+      movimientos:this.tab!=='conciliacion'?this.http.get<any[]>(`${API_BASE_URL}/movimientos/usuario/${user}`):of<any[]>([])
+    }).subscribe({
       next:r=>{this.avisos=r.avisos;this.revisiones=r.revisiones;this.prestamos=r.prestamos;this.cuentas=r.cuentas;this.movimientos=r.movimientos;this.cargando=false;this.pagina=Math.min(this.pagina,this.paginas);},
-      error:()=>{this.cargando=false;this.error='No se pudo cargar el control de cuentas. Revisa tu sesión y vuelve a intentar.';}
+      error:()=>{this.cargando=false;this.error='No se pudo cargar esta sección. Revisa tu sesión y vuelve a intentar.';}
     });
   }
-  cambiarTab(tab:string):void {if(this.busy)return;this.tab=tab;this.pagina=1;this.error='';this.mensaje='';}
   get registros():any[]{return this.tab==='pendientes'?this.avisos:this.tab==='conciliacion'?this.revisiones:this.prestamos;}
   get paginas():number{return Math.max(1,Math.ceil(this.registros.length/6));}
   get filas():any[]{return this.registros.slice((Math.min(this.pagina,this.paginas)-1)*6,Math.min(this.pagina,this.paginas)*6);}

@@ -1,19 +1,28 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Cuenta } from '../../models/cuenta';
 import { API_BASE_URL } from '../../api.config';
 import { readAuthSessionValue } from '../../services/auth.service';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { SeguimientoComponent } from '../seguimiento/seguimiento.component';
 
 @Component({
   selector: 'app-cuentas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeguimientoComponent, RouterLink],
   templateUrl: './cuentas.component.html',
   styleUrl: './cuentas.component.css'
 })
 export class CuentasComponent implements OnInit {
+  vista: 'cuentas' | 'comparar' = 'cuentas';
+  private destroyRef = inject(DestroyRef);
+  seleccionarVista(vista: 'cuentas' | 'comparar'): void {
+    this.vista = vista;
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { vista: vista === 'comparar' ? 'comparar' : null }, queryParamsHandling: 'merge' });
+  }
   cuentas: Cuenta[] = [];
   movimientos: any[] = [];
   cargando = true;
@@ -39,9 +48,10 @@ export class CuentasComponent implements OnInit {
   gmailBusy = false;
   gmailError = '';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private route: ActivatedRoute, private router: Router) {}
 
   ngOnInit(): void {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => this.vista = params.get('vista') === 'comparar' ? 'comparar' : 'cuentas');
     this.cargarCuentas();
     this.cargarMovimientos();
     this.cargarGmail();

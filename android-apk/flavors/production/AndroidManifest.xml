@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+  <application android:usesCleartextTraffic="false" tools:replace="android:usesCleartextTraffic">
+    <meta-data android:name="cofi.local_mode" android:value="false" tools:replace="android:value" />
+    <meta-data android:name="cofi.release_origin" android:value="${cofiOrigin}" />
+  </application>
+</manifest>

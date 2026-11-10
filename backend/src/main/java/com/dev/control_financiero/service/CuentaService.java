@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class CuentaService {
+    @org.springframework.beans.factory.annotation.Autowired private AhorroEventos ahorroEventos;
 
     private final CuentaRepository cuentaRepository;
     private final UsuarioRepository usuarioRepository;
@@ -53,7 +54,9 @@ public class CuentaService {
                 .usuario(usuario)
                 .build();
 
-        return cuentaRepository.save(cuenta);
+        var guardada=cuentaRepository.save(cuenta);
+        if(ahorroEventos!=null)ahorroEventos.registrar(cuenta.getUsuario().getId());
+        return guardada;
     }
 
     @Transactional
@@ -86,7 +89,9 @@ public class CuentaService {
         if (request.getActiva() != null) {
             cuenta.setActiva(request.getActiva());
         }
-        return cuentaRepository.save(cuenta);
+        var guardada=cuentaRepository.save(cuenta);
+        if(ahorroEventos!=null)ahorroEventos.registrar(cuenta.getUsuario().getId());
+        return guardada;
     }
 
     public List<Cuenta> listarCuentas() {

@@ -1,0 +1,100 @@
+plugins { id 'com.android.application' version '9.1.0' }
+
+def releaseOrigin = providers.environmentVariable('COFI_RELEASE_ORIGIN').orElse('').get()
+def keyFile = providers.environmentVariable('COFI_UPLOAD_KEYSTORE').orElse('').get()
+def uploadAlias = providers.environmentVariable('COFI_UPLOAD_ALIAS').orElse('').get()
+def uploadStorePassword = providers.environmentVariable('COFI_UPLOAD_STORE_PASSWORD').orElse('').get()
+def uploadKeyPassword = providers.environmentVariable('COFI_UPLOAD_KEY_PASSWORD').orElse('').get()
+def webOutput = layout.buildDirectory.dir('generated/web')
+def assetsOutput = layout.buildDirectory.dir('generated/assets')
+def resOutput = layout.buildDirectory.dir('generated/res')
+
+android {
+    namespace 'app.micofi.android'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'app.micofi.android'
+        minSdk 26
+        targetSdk 35
+        versionCode 9
+        versionName '1.0.0'
+    }
+    signingConfigs {
+        upload {
+            if (keyFile) storeFile file(keyFile)
+            storePassword uploadStorePassword
+            keyAlias uploadAlias
+            keyPassword uploadKeyPassword
+        }
+    }
+    flavorDimensions += 'environment'
+    productFlavors {
+        local { dimension 'environment'; versionNameSuffix '-local' }
+        production {
+            dimension 'environment'
+            manifestPlaceholders = [cofiOrigin: releaseOrigin]
+        }
+    }
+    buildTypes {
+        debug { debuggable false }
+        release { debuggable false; signingConfig signingConfigs.upload }
+    }
+    sourceSets {
+        main {
+            manifest.srcFile layout.buildDirectory.file('generated/manifest/AndroidManifest.xml')
+            java.srcDirs = ['src']
+            assets.srcDirs = [assetsOutput]
+            res.srcDirs = ['res', resOutput]
+        }
+        production { manifest.srcFile 'flavors/production/AndroidManifest.xml' }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+    lint { abortOnError true; checkReleaseBuilds true }
+}
+
+tasks.register('compileCofiWeb', Exec) {
+    workingDir '../frontend'
+    commandLine 'node', 'node_modules/@angular/cli/bin/ng.js', 'build', '--output-path', webOutput.get().asFile.absolutePath
+    inputs.dir '../frontend/src'
+    inputs.file '../frontend/angular.json'
+    inputs.file '../frontend/package-lock.json'
+    outputs.dir webOutput
+}
+tasks.register('bundleCofiAssets', Sync) {
+    dependsOn 'compileCofiWeb'
+    from(webOutput.map { it.dir('browser') }) {
+        into 'www'
+        exclude 'assets/frs.jpg', 'assets/imagen.png', 'assets/logo.png', 'assets/navegador.png', 'assets/.gitkeep'
+        exclude 'assets/icons/vecteezy-original/*.eps', 'assets/icons/vecteezy-original/*.jpg'
+    }
+    into assetsOutput
+}
+tasks.register('prepareCofiIcon', Copy) {
+    from '../frontend/src/assets/icons/cofi-512.png'
+    into resOutput.map { it.dir('drawable') }
+    rename { 'cofi.png' }
+}
+tasks.register('prepareCofiManifest') {
+    inputs.file 'AndroidManifest.xml'
+    def generated = layout.buildDirectory.file('generated/manifest/AndroidManifest.xml')
+    outputs.file generated
+    doLast {
+        def target = generated.get().asFile
+        target.parentFile.mkdirs()
+        target.text = file('AndroidManifest.xml').getText('UTF-8').replace(' package="app.micofi.android"', '')
+    }
+}
+tasks.named('preBuild') { dependsOn 'bundleCofiAssets', 'prepareCofiIcon', 'prepareCofiManifest' }
+tasks.register('validateProductionConfig') {
+    doLast {
+        URI uri
+        try { uri = new URI(releaseOrigin) } catch (Exception ignored) { throw new GradleException('Configura COFI_RELEASE_ORIGIN con el origen HTTPS definitivo.') }
+        if (uri.scheme != 'https' || !uri.host || uri.userInfo || uri.query || uri.fragment || !(uri.path in ['', '/']) || uri.port == 0 || uri.port > 65535)
+            throw new GradleException('La versión de publicación requiere un origen HTTPS válido, sin rutas ni credenciales.')
+        if (!keyFile || !file(keyFile).isFile() || !uploadAlias || !uploadStorePassword || !uploadKeyPassword)
+            throw new GradleException('Falta configurar la firma de subida propia de COFI. Nunca se usa la firma de pruebas para publicación.')
+    }
+}
+tasks.configureEach {
+    if (name == 'preProductionReleaseBuild') dependsOn 'validateProductionConfig'
+}

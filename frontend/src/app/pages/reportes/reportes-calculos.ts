@@ -8,6 +8,7 @@ export interface MovimientoReporte extends MovimientoDashboard {
   cuentaDestinoId: number | null;
 }
 export interface PlanReporte {
+  presupuestoGlobal?: boolean;
   id?: number;
   tipo: 'PRESUPUESTO' | 'META' | 'DEUDA';
   nombre: string;

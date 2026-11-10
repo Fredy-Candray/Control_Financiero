@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 
 @Service @RequiredArgsConstructor
 public class ControlFinancieroService {
+    @org.springframework.beans.factory.annotation.Autowired private AhorroEventos ahorroEventos;
     private final BankEmailImportRepository avisos;
     private final MovimientoRepository movimientos;
     private final CuentaRepository cuentas;
@@ -109,7 +110,7 @@ public class ControlFinancieroService {
         var loan=new PrestamoOtorgado();loan.setUsuarioId(user);loan.setPersona(persona.trim());loan.setMonto(monto);loan.setPendiente(monto);
         loan.setFecha(fecha);loan.setVencimiento(vencimiento);loan.setNota(nota);loan.setReferenciaCliente(ref);loan=prestamos.save(loan);
         movement.setTipo(TipoMovimiento.PRESTAMO_OTORGADO);movement.setPrestamoOtorgadoId(loan.getId());
-        movement=movimientos.save(movement);loan.setMovimientoOrigenId(movement.getId());return prestamos.save(loan);
+        movement=movimientos.save(movement);loan.setMovimientoOrigenId(movement.getId());if(ahorroEventos!=null)ahorroEventos.registrar(user);return prestamos.save(loan);
     }
     @Transactional public PrestamoOtorgado cobrar(Long user,Long id,BigDecimal monto,Long cuentaId,Long movimientoId,String ref) {
         var owner=usuarios.findLockedById(user).orElseThrow(ControlFinancieroService::missing);
@@ -139,6 +140,6 @@ public class ControlFinancieroService {
         }
         money(monto);require(monto.compareTo(loan.getPendiente())<=0,"El abono supera el saldo pendiente.");
         movement.setTipo(TipoMovimiento.COBRO_PRESTAMO);movement.setPrestamoOtorgadoId(id);movimientos.save(movement);
-        loan.setPendiente(loan.getPendiente().subtract(monto));return prestamos.save(loan);
+        loan.setPendiente(loan.getPendiente().subtract(monto));if(ahorroEventos!=null)ahorroEventos.registrar(user);return prestamos.save(loan);
     }
 }

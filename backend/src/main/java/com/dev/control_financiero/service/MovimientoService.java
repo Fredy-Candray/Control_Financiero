@@ -23,6 +23,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class MovimientoService {
+    @org.springframework.beans.factory.annotation.Autowired private AhorroEventos ahorroEventos;
 
     private final MovimientoRepository movimientoRepository;
     private final CuentaRepository cuentaRepository;
@@ -60,7 +61,9 @@ public class MovimientoService {
         movimiento.setDescripcion(payExterno ? "PAY a "+movimiento.getDestinatarioExterno()
                 : request.descripcion()==null?"":request.descripcion().trim());
         movimiento.setCategoria(categoria);
-        return MovimientoResponse.from(movimientoRepository.save(movimiento));
+        var guardado=movimientoRepository.save(movimiento);
+        if(ahorroEventos!=null)ahorroEventos.registrar(movimiento.getUsuario().getId());
+        return MovimientoResponse.from(guardado);
     }
 
     public static void validarLimiteCredito(BigDecimal limiteCredito, BigDecimal saldoActual, BigDecimal monto) {
@@ -289,7 +292,9 @@ public class MovimientoService {
                 .cuentaDestino(cuentaDestino)
                 .build();
 
-        return MovimientoResponse.from(movimientoRepository.save(movimiento));
+        var guardado=movimientoRepository.save(movimiento);
+        if(ahorroEventos!=null)ahorroEventos.registrar(movimiento.getUsuario().getId());
+        return MovimientoResponse.from(guardado);
     }
     public List<Movimiento> listarMovimientos() {
         return movimientoRepository.findAll();

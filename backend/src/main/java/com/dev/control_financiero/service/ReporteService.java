@@ -15,16 +15,19 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ReporteService {
+    @org.springframework.beans.factory.annotation.Autowired private AhorroReporteBridge ahorro;
     private final PlanReporteRepository planes;
     private final CuentaRepository cuentas;
 
     @Transactional(readOnly = true)
     public List<PlanReporte> listar(Long usuarioId) {
-        return planes.findByUsuarioIdOrderByIdAsc(usuarioId);
+        var resultado=new java.util.ArrayList<>(planes.findByUsuarioIdOrderByIdAsc(usuarioId).stream().filter(p->ahorro==null||"DEUDA".equals(p.getTipo())).toList());
+        if(ahorro!=null)resultado.addAll(ahorro.planes(usuarioId));return resultado;
     }
 
     @Transactional
     public PlanReporte guardar(Long usuarioId, Long id, PlanReporteRequest request) {
+        if(ahorro!=null&&!"DEUDA".equals(request.tipo()))throw new ResponseStatusException(HttpStatus.CONFLICT,"Gestiona metas y presupuestos desde Ahorro y Liquidez.");
         if ("PRESUPUESTO".equals(request.tipo()) && (request.mes() == null || request.categoria() == null || request.categoria().isBlank())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Indica el mes y la categoría del presupuesto.");
         }
@@ -45,6 +48,7 @@ public class ReporteService {
         if (duplicado) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ya existe un registro para esta categoría y mes o tarjeta.");
         var plan = id == null ? new PlanReporte() : planes.findByIdAndUsuarioId(id, usuarioId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if(ahorro!=null&&id!=null&&!"DEUDA".equals(plan.getTipo()))throw new ResponseStatusException(HttpStatus.CONFLICT,"Este plan anterior ya se gestiona desde Ahorro y Liquidez.");
         plan.setUsuarioId(usuarioId);
         plan.setTipo(request.tipo());
         plan.setNombre(request.nombre().trim());

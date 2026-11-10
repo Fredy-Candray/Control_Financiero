@@ -53,7 +53,7 @@ export function crearReportePdf(titulo: string, filtros: string[], secciones: Se
     const columns = seccion.columnas.length;
     const columnStyles: Record<number, { halign?: 'right'; cellWidth?: number }> = {};
     seccion.columnas.forEach((nombre, index) => {
-      if (/Monto|Ingresos|Gastos|Balance|Deuda|Patrimonio|Disponible|Límite|Planificado|Restante|Salidas|Entradas|Flujo|Porcentaje|Progreso|Utilización|Acumulado|Objetivo|Pagos|Aporte|Variación|Interés|Tasa/i.test(nombre)) columnStyles[index] = { halign: 'right' };
+      if (/Monto|Ingresos|Gastos|Balance|Deuda|Patrimonio|Disponible|Límite|Planificado|Restante|Salidas|Entradas|Flujo|Porcentaje|Progreso|Utilización|Reservado|Objetivo|Pagos|Aporte|Variación|Interés|Tasa/i.test(nombre)) columnStyles[index] = { halign: 'right' };
     });
     if (detalle) [23, 22, 43, 22, 23, 23, 22].forEach((cellWidth, index) => columnStyles[index] = { ...columnStyles[index], cellWidth: cellWidth * ancho / 178 });
     autoTable(doc, {

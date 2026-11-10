@@ -1,6 +1,34 @@
 # APK Android de pruebas locales
 
+## Versión 0.6: Ahorro y Liquidez
+
+Incluye el módulo conectado al backend y la base local: metas, reservas virtuales, gastos fijos, presupuestos y alertas internas. Requiere la migración `V20261109__ahorro_liquidez.sql` y el backend actualizado; no contiene datos de ejemplo ni cuentas preconfiguradas. Conserva el splash de 2 segundos.
+
+## Versión 0.5: organización de finanzas
+
+Incluye «Comparar con el banco» dentro de Cuentas, «Avisos por revisar» dentro de Movimientos y «Dinero prestado» independiente en el menú. Mantiene el splash de 2 segundos. No requiere cambios de base de datos.
+
+## Versión 0.4: splash screen
+
+En 0.4.3 la presentación permanece visible durante 2 segundos y luego se desvanece. Para cambios exclusivamente nativos, `build.ps1 -WebAssets <carpeta-apk-assets>` permite reutilizar de forma explícita una interfaz compilada sin modificar el frontend.
+
+Arranque con el logo de COFI centrado sobre azul marino y transición suave al inicio. Android 12 o posterior utiliza su splash nativo; Android 8–11 muestra la presentación de marca con el nombre y lema. No realiza llamadas de red ni comprueba el servidor durante esta pantalla. Al recrear la actividad no se repite la presentación. Se conserva la firma de pruebas para actualizar la instalación anterior.
+
+La preparación de la variante de publicación, su estado de validación y los pendientes reales están en [PUBLICACION.md](PUBLICACION.md). El archivo APK generado por `build.ps1` sigue siendo exclusivamente de pruebas locales.
+
+## Versión 0.3 local
+
+Mejora el inicio y la barra superior, incluye ayuda para la dirección y una explicación de privacidad. Acepta IP privada y puerto sin escribir el protocolo y rechaza servidores públicos. Bloquea enlaces y recursos externos dentro de la app local. El cambio de servidor limpia cookies y almacenamiento web de la instalación anterior. No consulta servicios remotos al abrir.
+
 Esta app instala un cliente Android real, con icono y WebView propio. No utiliza Railway. El servidor y la base de datos siguen en la laptop: no hay una copia de los saldos dentro del APK.
+
+## Versión 0.2
+
+Incluye la interfaz compilada de COFI dentro del APK y una pantalla de inicio que abre sin conexión. No contiene direcciones remotas preconfiguradas ni credenciales. Solo consulta el servidor cuando pulsas «Conectar a COFI». Comprueba `/api/auth/me` sin enviar credenciales, con tiempo de espera limitado, antes de abrir el sistema. Si falla, permite corregir la dirección o reintentar en la misma pantalla.
+
+Las operaciones y los saldos siguen requiriendo el backend disponible. Incluir la interfaz no convierte el teléfono en servidor ni implementa movimientos sin conexión. En las pruebas locales, la computadora debe estar encendida. La disponibilidad permanente se configurará por separado cuando el propietario lo solicite.
+
+La compilación incluye el frontend actual desde los paquetes ya instalados, verifica la firma del APK y genera un archivo SHA256. No descarga dependencias. Las comprobaciones de validación pueden ejecutarse con `javac` sobre `src/app/micofi/android/ServerAddress.java` y `tests/app/micofi/android/ServerAddressTest.java` y después `java app.micofi.android.ServerAddressTest` usando la carpeta de clases como classpath.
 
 ## Compilar
 

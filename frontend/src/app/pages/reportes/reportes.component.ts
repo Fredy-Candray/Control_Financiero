@@ -1,5 +1,6 @@
 import { PrestamoOtorgado } from '../../models/prestamo-otorgado';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Optional, Inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -38,7 +39,7 @@ export class ReportesComponent implements OnInit {
     { id: 'metas', nombre: 'Ahorros y metas' }, { id: 'deudas', nombre: 'Deudas' },
     { id: 'cuentas', nombre: 'Cuentas' }, { id: 'patrimonio', nombre: 'Patrimonio' }, { id: 'comparativos', nombre: 'Comparativos' }
   ];
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, @Optional() @Inject(Router) private router:Router|null=null) {}
   ngOnInit(): void { this.cargar(); }
   cargar(): void {
     this.cargando = true;
@@ -116,7 +117,7 @@ export class ReportesComponent implements OnInit {
   altura(valor: number): number { return Math.abs(valor) / Math.max(1, ...this.meses.flatMap(m => [m.ingresos, m.gastos])) * 100; }
   get presupuestos() {
     return this.planes.filter(p => p.tipo === 'PRESUPUESTO' && !!p.mes && p.mes >= this.filtros.desde.slice(0, 7) && p.mes <= this.filtros.hasta.slice(0, 7) && (!this.filtros.categoria || p.categoria === this.filtros.categoria)).map(p => {
-      const gastado = sumar(this.movimientos.filter(m => m.fechaMovimiento?.startsWith(p.mes!) && (m.categoria || 'Sin categoría') === p.categoria), 'GASTO');
+      const gastado = sumar(this.movimientos.filter(m => m.fechaMovimiento?.startsWith(p.mes!) && (p.presupuestoGlobal || (m.categoria || 'Sin categoría') === p.categoria)), 'GASTO');
       return { plan: p, gastado, porcentaje: gastado / p.monto * 100, restante: (centavos(p.monto) - centavos(gastado)) / 100 };
     });
   }
@@ -150,8 +151,9 @@ export class ReportesComponent implements OnInit {
   get filas(): MovimientoReporte[] { return this.listado.slice((this.paginaActual - 1) * this.tamanoPagina, this.paginaActual * this.tamanoPagina); }
   etiqueta(tipo: string): string { return ({ INGRESO: 'Ingreso', GASTO: 'Gasto', TRANSFERENCIA: 'Transferencia', PAGO_TARJETA: 'Pago de tarjeta', PAGO_PRESTAMO: 'Pago de préstamo', PRESTAMO_OTORGADO: 'Dinero prestado', COBRO_PRESTAMO: 'Devolución de préstamo' } as Record<string, string>)[tipo] ?? tipo; }
   nuevo(tipo: PlanReporte['tipo'], plan?: PlanReporte): void {
+    if(tipo!=='DEUDA'){if(this.router)void this.router.navigate(['/ahorro-liquidez'],{queryParams:{vista:tipo==='META'?'metas':'presupuestos'}});return;}
     this.mensaje = ''; this.error = '';
-    this.formulario = plan ? { ...plan } : { tipo, nombre: '', categoria: tipo === 'PRESUPUESTO' ? 'Sin categoría' : null, mes: tipo === 'PRESUPUESTO' ? this.filtros.desde.slice(0, 7) : null, cuentaId: null, monto: 1, acumulado: 0, aporteMensual: 0, tasaInteres: null, fechaObjetivo: null };
+    this.formulario = plan ? { ...plan } : { tipo, nombre: '', categoria: null, mes: null, cuentaId: null, monto: 1, acumulado: 0, aporteMensual: 0, tasaInteres: null, fechaObjetivo: null };
     setTimeout(() => document.querySelector('app-reportes .plan-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
   }
   guardar(): void {
@@ -170,7 +172,7 @@ export class ReportesComponent implements OnInit {
     for (const mes of this.meses) filas.push([mes.mes, mes.ingresos, mes.gastos, mes.balance, mes.flujo]);
     filas.push([], ['Presupuesto', 'Mes', 'Categoría', 'Planificado', 'Gasto real (mes completo)', 'Restante']);
     for (const p of this.presupuestos) filas.push([p.plan.nombre, p.plan.mes, p.plan.categoria, p.plan.monto, p.gastado, p.restante]);
-    filas.push([], ['Meta', 'Objetivo', 'Acumulado declarado', 'Aporte mensual', 'Fecha objetivo']);
+    filas.push([], ['Meta', 'Objetivo', 'Reservado en metas', 'Aporte mensual', 'Fecha objetivo']);
     for (const p of this.metas) filas.push([p.nombre, p.monto, p.acumulado, p.aporteMensual, p.fechaObjetivo]);
     filas.push([], ['Cuenta', 'Saldo / crédito disponible actual', 'Deuda actual', 'Pagos de tarjeta del período']);
     for (const c of this.cuentasSeleccionadas) filas.push([c.nombre, c.saldoActual, c.tipo === 'CREDITO' ? this.deuda(c) : '', c.tipo === 'CREDITO' ? this.pagos(c) : '']);
@@ -214,7 +216,7 @@ export class ReportesComponent implements OnInit {
       }
       if (this.tab === 'flujo') tabla('Flujo de efectivo', ['Entradas', 'Salidas', 'Flujo neto'], [[dinero(this.flujo.entradas), dinero(this.flujo.salidas), dinero(this.flujo.neto)]], 'Incluye efectivo y débito. Las transferencias entre las cuentas seleccionadas se compensan; las compras a crédito afectan el flujo al pagar la tarjeta.');
       if (this.tab === 'presupuestos') tabla('Presupuestos', ['Nombre', 'Mes', 'Categoría', 'Planificado', 'Gasto real', 'Utilización', 'Restante'], this.presupuestos.map(p => [p.plan.nombre, p.plan.mes || '', p.plan.categoria || '', dinero(p.plan.monto), dinero(p.gastado), p.porcentaje.toFixed(1) + ' %', dinero(p.restante)]), 'El gasto real incluye el mes completo para cada categoría, sin los filtros de cuenta y tipo.');
-      if (this.tab === 'metas') tabla('Metas de ahorro', ['Meta', 'Objetivo', 'Acumulado', 'Progreso', 'Aporte mensual', 'Fecha objetivo', 'Estimación'], this.metas.map(p => [p.nombre, dinero(p.monto), dinero(p.acumulado || 0), this.avance(p).toFixed(1) + ' %', dinero(p.aporteMensual || 0), p.fechaObjetivo || 'Sin registrar', this.estimacion(p)]), 'Acumulado declarado manualmente. Las estimaciones suponen aportes constantes y no incluyen rendimientos.');
+      if (this.tab === 'metas') tabla('Metas de ahorro', ['Meta', 'Objetivo', 'Reservado', 'Progreso', 'Aporte mensual', 'Fecha objetivo', 'Estimación'], this.metas.map(p => [p.nombre, dinero(p.monto), dinero(p.acumulado || 0), this.avance(p).toFixed(1) + ' %', dinero(p.aporteMensual || 0), p.fechaObjetivo || 'Sin registrar', this.estimacion(p)]), 'Fondos reservados en Ahorro y Liquidez. Las estimaciones suponen aportes constantes y no incluyen rendimientos.');
       if (this.tab === 'cuentas') tabla('Cuentas financieras', ['Cuenta', 'Tipo', 'Saldo / disponible actual', 'Entradas del período', 'Salidas del período'], this.cuentasSeleccionadas.map(c => [c.nombre, c.tipo, dinero(c.saldoActual), dinero(this.entradas(c)), dinero(this.salidas(c))]));
       if (this.tab === 'deudas') tabla('Tarjetas de crédito', ['Tarjeta', 'Límite', 'Disponible', 'Deuda', 'Pagos del período', 'Tasa anual', 'Interés mensual estimado', 'Vencimiento'], this.cuentasSeleccionadas.filter(c => c.tipo === 'CREDITO').map(c => {
         const p = this.detalleDeuda(c);

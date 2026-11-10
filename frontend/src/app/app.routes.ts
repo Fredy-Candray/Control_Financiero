@@ -61,7 +61,9 @@ export const routes: Routes = [
   { path: 'reset-password', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'inicio', loadComponent: () => import('./pages/inicio/inicio.component').then(m => m.InicioComponent), canActivate: [authGuard] },
-  { path: 'seguimiento', loadComponent: () => import('./pages/seguimiento/seguimiento.component').then(m => m.SeguimientoComponent), canActivate: [authGuard] },
+  { path: 'seguimiento', redirectTo: 'dinero-prestado', pathMatch: 'full' },
+  { path: 'dinero-prestado', loadComponent: () => import('./pages/seguimiento/seguimiento.component').then(m => m.SeguimientoComponent), canActivate: [authGuard] },
+  { path: 'ahorro-liquidez', loadComponent: () => import('./pages/ahorro-liquidez/ahorro-liquidez.component').then(m => m.AhorroLiquidezComponent), canActivate: [authGuard] },
 
   {
     path: '',

@@ -1,11 +1,11 @@
 <section class="control-page">
-  <header><div><p class="eyebrow">Tus cuentas, claras</p><h1>Control y dinero prestado</h1><p class="muted">Revisa avisos, compara saldos y lleva el control de lo que te deben.</p></div><button type="button" (click)="cargar()" [disabled]="cargando || !!busy">Actualizar</button></header>
-  <nav class="tabs" aria-label="Secciones de control"><button type="button" [class.active]="tab==='pendientes'" (click)="cambiarTab('pendientes')" [disabled]="!!busy">Avisos pendientes · {{ avisos.length }}</button><button type="button" [class.active]="tab==='conciliacion'" (click)="cambiarTab('conciliacion')" [disabled]="!!busy">Conciliar saldos</button><button type="button" [class.active]="tab==='prestamos'" (click)="cambiarTab('prestamos')" [disabled]="!!busy">Dinero prestado</button></nav>
+  <header *ngIf="!embebido"><div><p class="eyebrow">Tu dinero por recuperar</p><h1>Dinero prestado</h1><p class="muted">Consulta quién te debe, cuánto falta y registra sus devoluciones.</p></div><button type="button" (click)="cargar()" [disabled]="cargando || !!busy">Actualizar</button></header>
+  <div class="embedded-actions" *ngIf="embebido"><button type="button" (click)="cargar()" [disabled]="cargando || !!busy">Actualizar</button></div>
   <p class="message error" *ngIf="error" role="alert">{{ error }}</p><p class="message success" *ngIf="mensaje" role="status">{{ mensaje }}</p><p *ngIf="cargando" role="status">Cargando…</p>
   <ng-container *ngIf="!cargando">
     <section *ngIf="tab==='pendientes'" class="panel">
-      <h2>Avisos que necesitan revisión</h2><p class="muted">Los formatos no reconocidos no modifican saldos. Abre el correo y comprueba si el movimiento ya está registrado antes de resolverlo.</p>
-      <p *ngIf="!avisos.length" class="empty">No tienes avisos pendientes.</p>
+      <h2>Avisos por revisar <span class="badge">{{ avisos.length }}</span></h2><p class="review-explanation">Estos avisos todavía no han generado movimientos automáticos ni cambiado tus saldos.</p><p class="muted">COFI no pudo procesarlos con seguridad. La operación podría estar registrada manualmente: compruébalo antes de vincularla. Si falta, regístrala en Movimientos y luego vuelve aquí.</p>
+      <p *ngIf="!avisos.length" class="empty">No tienes avisos por revisar.</p>
       <article *ngFor="let a of filas" class="notice-row">
         <div><strong>{{ a.comercio || 'Aviso bancario' }}</strong><p>{{ a.fechaCompra ? (a.fechaCompra | date:'dd/MM/yyyy HH:mm') : 'Fecha no identificada' }}<ng-container *ngIf="a.monto!=null"> · {{ a.monto | currency:'USD' }}</ng-container></p><p class="muted">{{ a.detalle }}</p></div>
         <div class="actions"><a *ngIf="a.gmailMessageId" [href]="'https://mail.google.com/mail/u/0/#all/' + a.gmailMessageId" target="_blank" rel="noopener noreferrer">Ver correo</a><button type="button" (click)="abrirAviso(a)" [disabled]="!!busy">Revisar</button></div>
@@ -19,7 +19,7 @@
       </article>
     </section>
     <ng-container *ngIf="tab==='conciliacion'">
-      <section class="panel"><h2>Comparar con el banco</h2><p class="muted">Guarda una fotografía de ambos saldos. Si hay diferencia, revisa los movimientos; esta operación no cambia el saldo de COFI.</p>
+      <section class="panel"><h2>Comparar con el banco</h2><p class="muted">Compara el saldo de COFI con el que ves en tu banco y guarda el resultado. Si hay diferencia, revisa los movimientos. Guardar esta comparación no cambia tus saldos.</p>
         <form (ngSubmit)="conciliar()" #revisionForm="ngForm">
           <label>Cuenta<select name="cuentaRevision" [(ngModel)]="cuentaRevision" required><option [ngValue]="null">Selecciona una cuenta</option><option *ngFor="let c of cuentasActivas" [ngValue]="c.id">{{ c.nombre }}</option></select></label>
           <label>{{ cuentaComparada?.tipo==='CREDITO' ? 'Crédito disponible en el banco' : 'Saldo actual en el banco' }}<input type="number" name="saldoBanco" [(ngModel)]="saldoBanco" step="0.01" required /></label>

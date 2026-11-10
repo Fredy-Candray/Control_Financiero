@@ -1,19 +1,28 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Cuenta } from '../../models/cuenta';
 import { API_BASE_URL } from '../../api.config';
 import { readAuthSessionValue } from '../../services/auth.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { SeguimientoComponent } from '../seguimiento/seguimiento.component';
 
 @Component({
   selector: 'app-movimientos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeguimientoComponent],
   templateUrl: './movimientos.component.html',
   styleUrl: './movimientos.component.css'
 })
 export class MovimientosComponent implements OnInit {
+  vista: 'movimientos' | 'avisos' = 'movimientos';
+  private destroyRef = inject(DestroyRef);
+  seleccionarVista(vista: 'movimientos' | 'avisos'): void {
+    this.vista = vista;
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { vista: vista === 'avisos' ? 'avisos' : null }, queryParamsHandling: 'merge' });
+  }
   movimientos: any[] = [];
   cuentas: Cuenta[] = [];
   categorias: { id: number; nombre: string }[] = [];
@@ -88,9 +97,10 @@ export class MovimientosComponent implements OnInit {
   destinatarioExterno = '';
   private referenciaMovimiento = this.nuevaReferencia();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private route: ActivatedRoute, private router: Router) {}
 
   ngOnInit(): void {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => this.vista = params.get('vista') === 'avisos' ? 'avisos' : 'movimientos');
     this.cargarMovimientos();
     this.cargarCuentas();
     this.cargarCategorias();

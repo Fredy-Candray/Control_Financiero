@@ -6,7 +6,7 @@ bootstrapApplication(AppComponent, appConfig)
   .catch((err) => console.error(err));
 
 // A network-only worker supplies an offline notice without caching financial data.
-if ('serviceWorker' in navigator && window.isSecureContext) {
+if ('serviceWorker' in navigator && window.isSecureContext && !navigator.userAgent.includes('COFIAndroid/')) {
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register('/cofi-sw.js', { updateViaCache: 'none' })
       .catch(() => { /* Online access remains available without installation support. */ });

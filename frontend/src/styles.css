@@ -240,3 +240,11 @@ body.dark-theme .app-shell .topbar .topbar-left .mobile-hamburger.open { color: 
   .app-shell .user-pill > span:nth-child(2) { min-width:0; overflow-wrap:anywhere; }
   .app-shell .user-pill .avatar,.app-shell .user-menu-arrow { flex-shrink:0; }
 }
+
+/* Related tasks stay within their account or movement module on every screen size. */
+.module-tabs{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.module-tabs button{min-height:44px;padding:10px 16px;border:1px solid var(--card-border);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:.85rem;cursor:pointer}
+.module-tabs button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.module-tabs button:hover:not(.active){border-color:var(--accent);color:var(--accent)}
+.module-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(max-width:600px){.module-tabs button{flex:1 1 140px;padding:10px 12px;text-align:center}}
