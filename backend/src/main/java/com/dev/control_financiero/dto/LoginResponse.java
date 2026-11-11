@@ -11,4 +11,7 @@ public class LoginResponse {
     private Long userId;
     private String username;
     private String rol;
+    private boolean cambioPasswordPendiente;
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Long versionAcceso;
 }

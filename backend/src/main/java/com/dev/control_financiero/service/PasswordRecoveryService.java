@@ -77,18 +77,27 @@ public class PasswordRecoveryService {
 
     @Transactional
     public void restablecer(String rawToken, String nuevaPassword) {
+        PasswordAdminService.validarNueva(nuevaPassword);
         PasswordResetToken token = tokens.findByTokenHashAndUsedAtIsNullAndExpiresAtAfter(
                         hash(rawToken), LocalDateTime.now(ZONE))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "El enlace ya venció o no es válido. Solicita uno nuevo."));
-        Usuario usuario = token.getUsuario();
+        Usuario usuario = usuarios.findLockedById(token.getUsuario().getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La cuenta no está activa."));
+        // Vuelve a comprobar el enlace después del bloqueo del usuario: un administrador
+        // pudo invalidarlo mientras se esperaba el bloqueo.
+        if (tokens.findByTokenHashAndUsedAtIsNullAndExpiresAtAfter(hash(rawToken), LocalDateTime.now(ZONE)).isEmpty())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El enlace ya venció o no es válido. Solicita uno nuevo.");
         if (!Boolean.TRUE.equals(usuario.getActivo())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La cuenta no está activa.");
         }
         usuario.setPassword(passwordEncoder.encode(nuevaPassword));
+        usuario.setCambioPasswordPendiente(false);
+        usuario.setVersionAcceso(PasswordAdminService.version(usuario) + 1);
         token.setUsedAt(LocalDateTime.now(ZONE));
         usuarios.save(usuario);
         tokens.save(token);
+        tokens.deleteAllByUsuario_IdAndUsedAtIsNull(usuario.getId());
     }
 
     private String hash(String value) {

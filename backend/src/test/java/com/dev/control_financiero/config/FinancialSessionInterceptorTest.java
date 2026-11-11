@@ -8,6 +8,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.*;
 class FinancialSessionInterceptorTest {
+    @Test void sesionAnteriorSeInvalidaYTemporalSoloPuedeCambiarClave() throws Exception {
+        var user=Usuario.builder().activo(true).versionAcceso(1L).cambioPasswordPendiente(true).build();
+        when(users.findById(1L)).thenReturn(Optional.of(user));
+        var vieja=new MockHttpServletRequest("GET","/api/cuentas"); vieja.getSession().setAttribute("userId",1L);
+        var respuesta=new MockHttpServletResponse(); assertFalse(interceptor.preHandle(vieja,respuesta,new Object())); assertEquals(401,respuesta.getStatus());
+        var temporal=new MockHttpServletRequest("GET","/api/cuentas"); temporal.getSession().setAttribute("userId",1L); temporal.getSession().setAttribute("versionAcceso",1L);
+        respuesta=new MockHttpServletResponse(); assertFalse(interceptor.preHandle(temporal,respuesta,new Object())); assertEquals(428,respuesta.getStatus());
+        temporal.setRequestURI("/api/auth/password/inicial"); temporal.setMethod("POST");
+        assertTrue(interceptor.preHandle(temporal,new MockHttpServletResponse(),new Object()));
+    }
     final UsuarioRepository users=mock(UsuarioRepository.class);
     final CorsConfiguration cors=new CorsConfiguration();
     final FinancialSessionInterceptor interceptor=new FinancialSessionInterceptor(users,r->cors);

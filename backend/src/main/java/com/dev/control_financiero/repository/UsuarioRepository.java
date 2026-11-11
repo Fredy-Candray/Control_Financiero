@@ -21,6 +21,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     Optional<Usuario> findByUsername(String username);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select u from Usuario u where u.username = :username")
+    Optional<Usuario> findLockedByUsername(@org.springframework.data.repository.query.Param("username") String username);
+
     Optional<Usuario> findByCorreo(String correo);
 
     Optional<Usuario> findByCorreoIgnoreCase(String correo);

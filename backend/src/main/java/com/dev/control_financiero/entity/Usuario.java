@@ -8,6 +8,7 @@ import org.hibernate.Length;
 import java.time.LocalDateTime;
 
 @Entity
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "usuarios")
 @Getter
 @Setter
@@ -44,6 +45,15 @@ public class Usuario {
     @Column(nullable = false)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
+
+    @Builder.Default
+    @Column(name = "cambio_password_pendiente", nullable = false)
+    private Boolean cambioPasswordPendiente = false;
+
+    @Builder.Default
+    @Column(name = "version_acceso", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Long versionAcceso = 0L;
 
     @Column(nullable = false)
     private Boolean activo;

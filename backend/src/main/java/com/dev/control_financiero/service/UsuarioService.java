@@ -53,8 +53,9 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    @Transactional
     public LoginResponse login(LoginRequest request) {
-        Usuario usuario = usuarioRepository.findByUsername(request.getUsername())
+        Usuario usuario = usuarioRepository.findLockedByUsername(request.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos."));
 
         if (Boolean.FALSE.equals(usuario.getActivo())) {
@@ -79,6 +80,8 @@ public class UsuarioService {
                 .userId(usuario.getId())
                 .username(usuario.getUsername())
                 .rol(usuario.getRol() == null ? "Usuario" : usuario.getRol().getNombre())
+                .cambioPasswordPendiente(Boolean.TRUE.equals(usuario.getCambioPasswordPendiente()))
+                .versionAcceso(com.dev.control_financiero.service.PasswordAdminService.version(usuario))
                 .build();
     }
 
@@ -260,7 +263,7 @@ public class UsuarioService {
 
     private UsuarioResponse respuesta(Usuario usuario) {
         return new UsuarioResponse(usuario.getId(), usuario.getNombre(), usuario.getCorreo(), usuario.getTelefono(), usuario.getUsername(),
-                usuario.getActivo(), usuario.getFechaCreacion(), usuario.getRol().getNombre());
+                usuario.getActivo(), usuario.getFechaCreacion(), usuario.getRol().getNombre(), Boolean.TRUE.equals(usuario.getCambioPasswordPendiente()));
     }
 
     private PerfilUsuarioResponse perfil(Usuario usuario) {

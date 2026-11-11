@@ -35,6 +35,7 @@ public class AuthController {
     private final UsuarioService usuarioService;
     private final PasswordRecoveryService passwordRecoveryService;
     private final MenuService menuService;
+    private final com.dev.control_financiero.service.PasswordAdminService passwordAdminService;
     @org.springframework.beans.factory.annotation.Value("${app.registration.enabled:true}")
     private boolean registrationEnabled = true;
 
@@ -62,6 +63,7 @@ public class AuthController {
         servletRequest.changeSessionId();
         session.setAttribute("userId", response.getUserId());
         session.setAttribute("userRole", response.getRol());
+        session.setAttribute("versionAcceso", response.getVersionAcceso());
         boolean rememberMe = Boolean.TRUE.equals(request.getRememberMe());
         session.setMaxInactiveInterval(rememberMe ? 30 * 24 * 60 * 60 : 30 * 60);
         Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
@@ -72,6 +74,16 @@ public class AuthController {
         sessionCookie.setMaxAge(rememberMe ? 30 * 24 * 60 * 60 : -1);
         servletResponse.addCookie(sessionCookie);
         return response;
+    }
+
+    @PostMapping("/password/inicial")
+    public Map<String, String> cambiarPasswordInicial(@Valid @RequestBody com.dev.control_financiero.dto.CambiarPasswordInicialRequest body, HttpServletRequest request) {
+        Long id = usuarioId(request);
+        var session = request.getSession(false);
+        Long version = session.getAttribute("versionAcceso") instanceof Long valor ? valor : 0L;
+        passwordAdminService.cambiarInicial(id, version, body.nuevaPassword(), body.confirmarPassword());
+        session.invalidate();
+        return Map.of("message", "Contraseña actualizada. Inicia sesión con tu nueva contraseña.");
     }
 
     @GetMapping("/me")

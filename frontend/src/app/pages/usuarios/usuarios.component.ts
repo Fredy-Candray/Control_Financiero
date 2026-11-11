@@ -4,6 +4,8 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../../api.config';
 import { Subscription } from 'rxjs';
+import { AuthService, readAuthSessionValue } from '../../services/auth.service';
+import { Router } from '@angular/router';
 
 type RolUsuario = 'Administrador' | 'Usuario';
 type EstadoUsuario = 'Activo' | 'Inactivo';
@@ -38,8 +40,38 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   private temporizadorNotificacion?: number;
   private consultaFoto?: Subscription;
   cargandoFoto = false;
+  usuarioRestablecer: UsuarioVista | null = null;
+  restableciendo = false;
+  errorRestablecer = '';
+  readonly usuarioActualId = Number(readAuthSessionValue('userId'));
 
-  constructor(private readonly http: HttpClient) {}
+  solicitarRestablecimiento(usuario: UsuarioVista): void {
+    this.errorRestablecer = '';
+    this.usuarioRestablecer = usuario;
+  }
+
+  restablecerPassword(): void {
+    if (!this.usuarioRestablecer || this.restableciendo) return;
+    this.restableciendo = true;
+    const esPropio = this.usuarioRestablecer.id === this.usuarioActualId;
+    this.http.post<{ message: string }>(`${API_BASE_URL}/usuarios/${this.usuarioRestablecer.id}/restablecer-password`, {}).subscribe({
+      next: response => {
+        this.restableciendo = false;
+        this.usuarioRestablecer = null;
+        this.mostrarNotificacion('exito', response.message);
+        if (esPropio) {
+          this.auth.clearSession();
+          void this.router.navigateByUrl('/login');
+        }
+      },
+      error: error => {
+        this.restableciendo = false;
+        this.errorRestablecer = error?.error?.detail || this.mensajeErrorApi(error, 'No se pudo restablecer la contraseña.');
+      }
+    });
+  }
+
+  constructor(private readonly http: HttpClient, private readonly auth: AuthService, private readonly router: Router) {}
 
   ngOnInit(): void { this.cargarUsuarios(); }
 

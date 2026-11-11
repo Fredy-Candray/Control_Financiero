@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../api.config';
 
-export type AuthSessionKey = 'isLoggedIn' | 'username' | 'userId' | 'userRole';
+export type AuthSessionKey = 'isLoggedIn' | 'username' | 'userId' | 'userRole' | 'cambioPasswordPendiente';
 
 export function readAuthSessionValue(key: AuthSessionKey): string | null {
   return sessionStorage.getItem(key) ?? localStorage.getItem(key);
@@ -30,17 +30,18 @@ export class AuthService {
     return readAuthSessionValue(key);
   }
 
-  saveSession(response: { username?: string; userId?: number; rol?: string }, fallbackUsername: string, rememberMe: boolean): void {
+  saveSession(response: { username?: string; userId?: number; rol?: string; cambioPasswordPendiente?: boolean }, fallbackUsername: string, rememberMe: boolean): void {
     this.clearSession();
     const storage = rememberMe ? localStorage : sessionStorage;
     storage.setItem('isLoggedIn', 'true');
     storage.setItem('username', response.username || fallbackUsername);
     storage.setItem('userId', response.userId?.toString() || '1');
     storage.setItem('userRole', response.rol || 'Usuario');
+    storage.setItem('cambioPasswordPendiente', String(response.cambioPasswordPendiente === true));
   }
 
   clearSession(): void {
-    for (const key of ['isLoggedIn', 'username', 'userId', 'userRole']) {
+    for (const key of ['isLoggedIn', 'username', 'userId', 'userRole', 'cambioPasswordPendiente']) {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
     }
@@ -52,6 +53,10 @@ export class AuthService {
 
   restablecerPassword(token: string, nuevaPassword: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.apiUrl}/password/reset`, { token, nuevaPassword });
+  }
+
+  cambiarPasswordInicial(nuevaPassword: string, confirmarPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/password/inicial`, { nuevaPassword, confirmarPassword });
   }
 
   logout(): Observable<void> {

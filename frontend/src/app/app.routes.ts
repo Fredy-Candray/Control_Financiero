@@ -18,7 +18,7 @@ import { AuthService } from './services/auth.service';
 const authGuard: CanActivateFn = () => {
   const router = inject(Router);
   const isLoggedIn = inject(AuthService).isAuthenticated();
-
+  if (isLoggedIn && inject(AuthService).getValue('cambioPasswordPendiente') === 'true') return router.createUrlTree(['/cambiar-password']);
   return isLoggedIn ? true : router.createUrlTree(['/login']);
 };
 
@@ -59,6 +59,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
   // Recovery links must remain accessible even if this browser has a stale login marker.
   { path: 'reset-password', component: LoginComponent },
+  { path: 'cambiar-password', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'inicio', loadComponent: () => import('./pages/inicio/inicio.component').then(m => m.InicioComponent), canActivate: [authGuard] },
   { path: 'seguimiento', redirectTo: 'dinero-prestado', pathMatch: 'full' },

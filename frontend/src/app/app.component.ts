@@ -90,12 +90,21 @@ export class AppComponent implements OnInit {
     this.username = storedName?.trim() ? storedName : 'Invitado';
     this.isAuthenticated = this.authService.isAuthenticated();
     this.userRole = this.authService.getValue('userRole') || 'Usuario';
+    if (!this.isAuthenticated) {
+      this.sessionValidationStarted = false;
+      return;
+    }
     if (this.isAuthenticated && !this.sessionValidationStarted && !this.roleLookupInProgress) {
       this.sessionValidationStarted = true;
       this.roleLookupInProgress = true;
-      this.http.get<{ id: number; username: string; rol: string }>(`${API_BASE_URL}/auth/me`).subscribe({
+      this.http.get<{ id: number; username: string; rol: string; cambioPasswordPendiente?: boolean }>(`${API_BASE_URL}/auth/me`).subscribe({
         next: (user) => {
           this.roleLookupInProgress = false;
+          if (user.cambioPasswordPendiente) {
+            sessionStorage.setItem('cambioPasswordPendiente', 'true');
+            void this.router.navigateByUrl('/cambiar-password');
+            return;
+          }
           this.userRole = user.rol || 'Usuario';
           if (user.username?.trim()) this.username = user.username;
           const persistent = localStorage.getItem('isLoggedIn') === 'true';
@@ -123,16 +132,17 @@ export class AppComponent implements OnInit {
 
   private updateLayoutState(url: string): void {
     const normalizedUrl = url.split('?')[0].split('#')[0];
-    const isPasswordResetPage = normalizedUrl === '/reset-password';
+    const isPasswordResetPage = normalizedUrl === '/reset-password' || normalizedUrl === '/cambiar-password';
     if (isPasswordResetPage) {
       // A reset link is public; a stale client-side session must not redirect it to login.
       this.isAuthenticated = false;
+      this.sessionValidationStarted = false;
     } else {
       this.syncUserFromStorage();
     }
 
     const isPublicPage = normalizedUrl === '/login' || normalizedUrl === '/register'
-      || normalizedUrl === '/reset-password' || normalizedUrl === '/';
+      || normalizedUrl === '/reset-password' || normalizedUrl === '/cambiar-password' || normalizedUrl === '/';
 
     this.showTopbar = this.isAuthenticated && !isPublicPage;
     this.showSidebar = this.isAuthenticated && !isPublicPage;

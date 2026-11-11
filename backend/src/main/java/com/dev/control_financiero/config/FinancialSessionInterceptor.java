@@ -25,8 +25,19 @@ public class FinancialSessionInterceptor implements HandlerInterceptor {
         if (session == null || !(session.getAttribute("userId") instanceof Long id)) {
             response.sendError(401, "Inicia sesión nuevamente."); return false;
         }
-        if (!usuarios.findById(id).map(u -> Boolean.TRUE.equals(u.getActivo())).orElse(false)) {
+        var usuario = usuarios.findById(id).orElse(null);
+        if (usuario == null || !Boolean.TRUE.equals(usuario.getActivo())) {
             response.sendError(403, "La cuenta está inactiva."); return false;
+        }
+        long versionSesion = session.getAttribute("versionAcceso") instanceof Long valor ? valor : 0L;
+        if (versionSesion != com.dev.control_financiero.service.PasswordAdminService.version(usuario)) {
+            session.invalidate(); response.sendError(401, "La contraseña cambió. Inicia sesión nuevamente."); return false;
+        }
+        if (Boolean.TRUE.equals(usuario.getCambioPasswordPendiente())
+                && !request.getRequestURI().equals("/api/auth/me")
+                && !request.getRequestURI().equals("/api/auth/password/inicial")) {
+            response.setStatus(428); response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":\"PASSWORD_CHANGE_REQUIRED\",\"message\":\"Debes crear tu nueva contraseña.\"}"); return false;
         }
         var match = java.util.regex.Pattern.compile("/(?:usuario|resumen)/(\\d+)(?:/|$)").matcher(request.getRequestURI());
         if (match.find() && !id.toString().equals(match.group(1))) {

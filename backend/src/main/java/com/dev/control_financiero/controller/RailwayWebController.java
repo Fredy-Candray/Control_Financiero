@@ -10,7 +10,7 @@ import java.util.Map;
 @Controller
 @Profile("railway")
 public class RailwayWebController {
-    @GetMapping({"/", "/login", "/register", "/reset-password", "/dashboard", "/cuentas",
+    @GetMapping({"/", "/login", "/register", "/reset-password", "/cambiar-password", "/dashboard", "/cuentas",
             "/movimientos", "/calendario", "/reporte", "/reportes", "/perfil", "/usuarios", "/administrar-menu"})
     public String application() {
         return "forward:/index.html";

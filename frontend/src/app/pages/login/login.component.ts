@@ -17,7 +17,7 @@ export class LoginComponent {
   password = '';
   correoRecuperacion = '';
   confirmarPassword = '';
-  recoveryMode: 'login' | 'forgot' | 'reset' = 'login';
+  recoveryMode: 'login' | 'forgot' | 'reset' | 'inicial' = 'login';
   recoveryToken = '';
   recoveryMessage = '';
   recoveryError = '';
@@ -39,7 +39,7 @@ export class LoginComponent {
     this.route.queryParamMap.subscribe(params => {
       const token = params.get('token');
       this.recoveryToken = token || '';
-      this.recoveryMode = this.router.url.startsWith('/reset-password') ? 'reset' : 'login';
+      this.recoveryMode = this.router.url.startsWith('/cambiar-password') ? 'inicial' : this.router.url.startsWith('/reset-password') ? 'reset' : 'login';
       this.clearRecoveryNotice();
       if (this.recoveryMode === 'reset' && !this.recoveryToken) {
         this.recoveryError = 'El enlace de recuperación no es válido. Solicita uno nuevo.';
@@ -65,6 +65,10 @@ export class LoginComponent {
   }
 
   volverAlLogin(): void {
+    if (this.recoveryMode === 'inicial') {
+      this.authService.logout().subscribe({ error: () => undefined });
+      this.authService.clearSession();
+    }
     if (this.router.url.startsWith('/reset-password')) {
       this.authService.clearSession();
     }
@@ -93,9 +97,14 @@ export class LoginComponent {
   }
 
   restablecerPassword(): void {
+    if (this.recoveryBusy) return;
     this.clearRecoveryNotice();
     if (this.password.length < 8) {
       this.recoveryError = 'La contraseña debe tener al menos 8 caracteres.';
+      return;
+    }
+    if (new TextEncoder().encode(this.password).length > 72) {
+      this.recoveryError = 'La contraseña no puede superar 72 bytes. Reduce su longitud.';
       return;
     }
     if (this.password !== this.confirmarPassword) {
@@ -103,10 +112,14 @@ export class LoginComponent {
       return;
     }
     this.recoveryBusy = true;
-    this.authService.restablecerPassword(this.recoveryToken, this.password).subscribe({
+    const inicial = this.recoveryMode === 'inicial';
+    const peticion = inicial ? this.authService.cambiarPasswordInicial(this.password, this.confirmarPassword)
+      : this.authService.restablecerPassword(this.recoveryToken, this.password);
+    peticion.subscribe({
       next: response => {
         this.recoveryMessage = response.message;
         this.recoveryBusy = false;
+        if (inicial) { this.authService.clearSession(); this.password = ''; this.confirmarPassword = ''; this.recoveryMode = 'login'; }
       },
       error: err => {
         this.recoveryError = err?.error?.detail || err?.error?.message || 'El enlace ya venció o no es válido. Solicita uno nuevo.';
@@ -126,7 +139,8 @@ export class LoginComponent {
       next: (response) => {
         if (response?.success) {
           this.authService.saveSession(response, this.username, this.rememberMe);
-          this.router.navigate(['/dashboard']);
+          this.password = '';
+          this.router.navigate([response.cambioPasswordPendiente ? '/cambiar-password' : '/dashboard']);
         } else {
           this.showError('Usuario o contraseña incorrecta');
         }

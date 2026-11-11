@@ -19,6 +19,8 @@
     </div>
     <p *ngIf="recoveryMode === 'forgot'">Te enviaremos un enlace a tu correo para cambiar tu contraseña.</p>
     <p *ngIf="recoveryMode === 'reset'">Elige una contraseña nueva de al menos 8 caracteres.</p>
+    <p *ngIf="recoveryMode === 'inicial'">Tu contraseña es temporal. Crea y confirma una nueva de al menos 8 caracteres para continuar.</p>
+    <p class="recovery-message" *ngIf="recoveryMode === 'login' && recoveryMessage" role="status">{{ recoveryMessage }}</p>
 
     <form *ngIf="recoveryMode === 'login'" (ngSubmit)="onSubmit()">
       <label>
@@ -51,7 +53,7 @@
       <button class="text-button" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</button>
     </form>
 
-    <form *ngIf="recoveryMode === 'reset'" (ngSubmit)="restablecerPassword()">
+    <form *ngIf="recoveryMode === 'reset' || recoveryMode === 'inicial'" (ngSubmit)="restablecerPassword()">
       <label>Nueva contraseña
         <span class="password-input-wrap">
           <input [type]="mostrarNuevaPassword ? 'text' : 'password'" [(ngModel)]="password" name="nuevaPassword" autocomplete="new-password" required minlength="8" maxlength="100" />

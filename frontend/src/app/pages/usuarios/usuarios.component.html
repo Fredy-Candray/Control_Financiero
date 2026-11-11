@@ -33,7 +33,7 @@
             <td><span class="role-pill" [class.admin-role]="usuario.rol === 'Administrador'">{{ usuario.rol }}</span></td>
             <td><span class="status-pill" [class.inactive]="usuario.estado === 'Inactivo'"><i></i>{{ usuario.estado }}</span></td>
             <td class="date-cell">{{ usuario.fechaAlta }}</td>
-            <td><div class="row-actions"><button type="button" class="icon-button" (click)="abrirVer(usuario)" [attr.aria-label]="'Ver ' + usuario.nombre" title="Ver usuario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button><button type="button" class="icon-button" (click)="abrirEditar(usuario)" [attr.aria-label]="'Editar ' + usuario.nombre" title="Editar">✎</button><button *ngIf="usuario.estado === 'Activo'" type="button" class="icon-button delete-action" (click)="solicitarEliminacion(usuario)" [attr.aria-label]="'Desactivar ' + usuario.nombre" title="Desactivar usuario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m2 0-.9 14H6.9L6 6m4 4v7m4-7v7"/></svg></button></div></td>
+            <td><div class="row-actions"><button type="button" class="icon-button" (click)="abrirVer(usuario)" [attr.aria-label]="'Ver ' + usuario.nombre" title="Ver usuario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button><button type="button" class="icon-button" (click)="abrirEditar(usuario)" [attr.aria-label]="'Editar ' + usuario.nombre" title="Editar">✎</button><button *ngIf="usuario.estado === 'Activo'" type="button" class="icon-button" (click)="solicitarRestablecimiento(usuario)" [attr.aria-label]="'Restablecer contraseña de ' + usuario.nombre" title="Restablecer contraseña"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="m12 12 9 9m-3-3 3-3m-6 0 3-3"/></svg></button><button *ngIf="usuario.estado === 'Activo'" type="button" class="icon-button delete-action" (click)="solicitarEliminacion(usuario)" [attr.aria-label]="'Desactivar ' + usuario.nombre" title="Desactivar usuario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m2 0-.9 14H6.9L6 6m4 4v7m4-7v7"/></svg></button></div></td>
           </tr>
         </tbody>
       </table>
@@ -46,6 +46,15 @@
     <ng-template #emptyState><div class="empty-state" *ngIf="!cargando"><span class="empty-icon">⌕</span><h3>{{ errorCarga ? 'Usuarios no disponibles' : 'No encontramos usuarios' }}</h3><p>{{ errorCarga ? 'Comprueba que el servidor esté conectado.' : 'Prueba con otro término o cambia los filtros.' }}</p></div></ng-template>
   </section>
 </section>
+
+<div class="modal-backdrop" *ngIf="usuarioRestablecer as usuario">
+  <section class="modal-card confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="reset-title">
+    <h2 id="reset-title">¿Restablecer la contraseña?</h2>
+    <p>La contraseña de <strong>{{ usuario.nombre }}</strong> será temporalmente <strong>cofi</strong>. Sus sesiones anteriores se cerrarán y deberá crear una nueva contraseña al ingresar.</p>
+    <p class="form-error" *ngIf="errorRestablecer" role="alert">{{ errorRestablecer }}</p>
+    <div class="modal-actions"><button type="button" class="secondary-button" (click)="usuarioRestablecer = null" [disabled]="restableciendo">Cancelar</button><button type="button" class="primary-button" (click)="restablecerPassword()" [disabled]="restableciendo">{{ restableciendo ? 'Restableciendo…' : 'Restablecer contraseña' }}</button></div>
+  </section>
+</div>
 
 <div class="modal-backdrop" *ngIf="modalAbierto" (click)="cancelarModal()">
   <section class="modal-card" role="dialog" aria-modal="true" [attr.aria-label]="editandoId === null ? 'Crear usuario' : 'Editar usuario'" (click)="$event.stopPropagation()">

@@ -17,6 +17,16 @@ import java.util.List;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final com.dev.control_financiero.service.PasswordAdminService passwordAdminService;
+
+    @PostMapping("/{id}/restablecer-password")
+    public java.util.Map<String, String> restablecerPassword(@PathVariable Long id, jakarta.servlet.http.HttpServletRequest request) {
+        var session = request.getSession(false);
+        if (session == null || !(session.getAttribute("userId") instanceof Long administradorId))
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Inicia sesión nuevamente.");
+        passwordAdminService.restablecer(administradorId, id);
+        return java.util.Map.of("message", "Contraseña temporal: cofi. El usuario deberá crear una nueva al iniciar sesión.");
+    }
 
     @GetMapping
     public List<UsuarioResponse> listarUsuarios() {
