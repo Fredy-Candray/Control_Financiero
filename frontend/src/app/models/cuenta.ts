@@ -1,4 +1,7 @@
 export interface Cuenta {
+  fechaCorte?: string | null;
+  fechaPago?: string | null;
+  pendienteCiclo?: number | null;
   id: number;
   nombre: string;
   banco?: string | null;

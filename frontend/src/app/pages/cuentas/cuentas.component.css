@@ -121,3 +121,10 @@ input::placeholder { color: #9ca9b9; }
 .gmail-pagination button:disabled { opacity:.45; cursor:default; }
 .gmail-pagination button:not(:disabled):hover { color:var(--accent); border-color:var(--accent); }
 @media(max-width:640px) { .gmail-pagination { padding:16px 10px; gap:8px; font-size:.72rem; text-align:center; } .gmail-pagination button { padding:9px 10px; } }
+.card-cycle { margin-top: 1rem; display: grid; gap: .65rem; }
+.card-cycle dl { display: grid; gap: .4rem; margin: 0; font-size: .85rem; }
+.card-cycle dl div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .25rem .65rem; }
+.card-cycle dd { margin: 0; font-weight: 600; }
+.cycle-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1rem; background: rgb(0 0 0 / .6); }
+.cycle-dialog { width: min(100%, 30rem); max-height: 100%; overflow: auto; }
+.cycle-dialog form { display: grid; gap: .8rem; }

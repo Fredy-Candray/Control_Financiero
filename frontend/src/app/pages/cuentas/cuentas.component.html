@@ -53,6 +53,14 @@
       </ng-container>
       <div class="account-footer" *ngIf="cuenta.tipo !== 'CREDITO'">Disponible para tus movimientos</div>
       <div class="account-footer" *ngIf="cuenta.tipo === 'CREDITO' && cuenta.limiteCredito == null">Configura el límite para ver la disponibilidad</div>
+      <div class="card-cycle" *ngIf="cuenta.tipo === 'CREDITO'">
+        <dl *ngIf="cuenta.fechaCorte">
+          <div><dt>Fecha de corte</dt><dd>{{ cuenta.fechaCorte | date:'dd/MM/yyyy' }}</dd></div>
+          <div><dt>Fecha límite de pago</dt><dd>{{ cuenta.fechaPago | date:'dd/MM/yyyy' }}</dd></div>
+          <div><dt>Pendiente del ciclo</dt><dd>{{ cuenta.pendienteCiclo | currency:'USD' }}</dd></div>
+        </dl>
+        <button type="button" class="secondary-button" (click)="abrirCiclo(cuenta)">{{ cuenta.fechaCorte ? 'Actualizar ciclo' : 'Registrar ciclo' }}</button>
+      </div>
     </article>
   </div>
 
@@ -137,3 +145,20 @@
   </section>
   </ng-container>
 </section>
+
+<div class="cycle-backdrop" *ngIf="cicloCuenta as tarjeta">
+  <section class="form-card cycle-dialog" role="dialog" aria-modal="true" aria-labelledby="cycle-title" (keydown.escape)="!cicloGuardando && (cicloCuenta = null)">
+    <h2 id="cycle-title">Ciclo de {{ tarjeta.nombre }}</h2>
+    <p class="form-hint">Copia las fechas y el importe pendiente de tu banca. Actualiza el importe después de un abono y registra las fechas nuevas en cada corte.</p>
+    <form (ngSubmit)="guardarCiclo()" #cycleForm="ngForm">
+      <label>Fecha de corte<input type="date" name="fechaCorte" [(ngModel)]="ciclo.fechaCorte" required /></label>
+      <label>Fecha límite de pago<input type="date" name="fechaPago" [min]="ciclo.fechaCorte" [(ngModel)]="ciclo.fechaPago" required /></label>
+      <label>Pendiente del ciclo en USD<input type="number" name="pendienteCiclo" min="0" step="0.01" [(ngModel)]="ciclo.pendienteCiclo" required /></label>
+      <p *ngIf="cicloError" role="alert" class="state-card error">{{ cicloError }}</p>
+      <div class="edit-actions">
+        <button type="button" class="secondary-button" [disabled]="cicloGuardando" (click)="cicloCuenta = null">Cancelar</button>
+        <button type="submit" class="primary-button" [disabled]="cycleForm.invalid || cicloGuardando">Guardar ciclo</button>
+      </div>
+    </form>
+  </section>
+</div>

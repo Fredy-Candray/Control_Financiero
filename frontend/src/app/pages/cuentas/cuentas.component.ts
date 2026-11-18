@@ -17,6 +17,40 @@ import { SeguimientoComponent } from '../seguimiento/seguimiento.component';
   styleUrl: './cuentas.component.css'
 })
 export class CuentasComponent implements OnInit {
+  cicloCuenta: Cuenta | null = null;
+  ciclo = { fechaCorte: '', fechaPago: '', pendienteCiclo: null as number | null };
+  cicloGuardando = false;
+  cicloError = '';
+
+  abrirCiclo(cuenta: Cuenta): void {
+    this.cicloCuenta = cuenta;
+    this.ciclo = { fechaCorte: cuenta.fechaCorte ?? '', fechaPago: cuenta.fechaPago ?? '',
+      pendienteCiclo: cuenta.pendienteCiclo ?? null };
+    this.cicloError = '';
+  }
+
+  guardarCiclo(): void {
+    if (!this.cicloCuenta || this.cicloGuardando || !this.ciclo.fechaCorte || !this.ciclo.fechaPago
+        || this.ciclo.pendienteCiclo === null || this.ciclo.pendienteCiclo < 0) return;
+    if (this.ciclo.fechaPago < this.ciclo.fechaCorte) {
+      this.cicloError = 'La fecha de pago debe ser igual o posterior al corte.';
+      return;
+    }
+    this.cicloGuardando = true;
+    this.cicloError = '';
+    this.http.put(`${API_BASE_URL}/cuentas/${this.cicloCuenta.id}/ciclo`, this.ciclo)
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => {
+          this.cicloGuardando = false;
+          this.cicloCuenta = null;
+          this.cargarCuentas();
+        },
+        error: () => {
+          this.cicloGuardando = false;
+          this.cicloError = 'No se pudo guardar el ciclo. Revisa los datos e inténtalo de nuevo.';
+        }
+      });
+  }
   vista: 'cuentas' | 'comparar' = 'cuentas';
   private destroyRef = inject(DestroyRef);
   seleccionarVista(vista: 'cuentas' | 'comparar'): void {

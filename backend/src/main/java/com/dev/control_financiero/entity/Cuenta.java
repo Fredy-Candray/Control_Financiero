@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "cuentas")
 @Getter
 @Setter
@@ -41,6 +42,15 @@ public class Cuenta {
 
     @Column(precision = 18, scale = 2)
     private BigDecimal limiteCredito;
+
+    @Column(name = "fecha_corte")
+    private java.time.LocalDate fechaCorte;
+
+    @Column(name = "fecha_pago")
+    private java.time.LocalDate fechaPago;
+
+    @Column(name = "pendiente_ciclo", precision = 18, scale = 2)
+    private BigDecimal pendienteCiclo;
 
     @Column(nullable = false)
     private Boolean activa;

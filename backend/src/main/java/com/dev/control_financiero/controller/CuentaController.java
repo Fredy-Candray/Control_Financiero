@@ -16,6 +16,14 @@ public class CuentaController {
 
     private final CuentaService cuentaService;
 
+    @PutMapping("/{cuentaId}/ciclo")
+    public Cuenta guardarCiclo(@PathVariable Long cuentaId,
+            @Valid @RequestBody com.dev.control_financiero.dto.CicloTarjetaRequest ciclo,
+            jakarta.servlet.http.HttpServletRequest request) {
+        Long usuarioId = (Long) request.getSession(false).getAttribute("userId");
+        return cuentaService.guardarCiclo(cuentaId, usuarioId, ciclo);
+    }
+
     @PostMapping
     public Cuenta crearCuenta(@Valid @RequestBody CrearCuentaRequest request, jakarta.servlet.http.HttpServletRequest servletRequest) {
         request.setUsuarioId((Long) servletRequest.getSession(false).getAttribute("userId"));

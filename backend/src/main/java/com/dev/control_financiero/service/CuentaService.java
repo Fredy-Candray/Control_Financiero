@@ -94,6 +94,23 @@ public class CuentaService {
         return guardada;
     }
 
+    @Transactional
+    public Cuenta guardarCiclo(Long cuentaId, Long usuarioId, com.dev.control_financiero.dto.CicloTarjetaRequest ciclo) {
+        Cuenta cuenta = cuentaRepository.findLockedById(cuentaId)
+                .filter(c -> c.getUsuario().getId().equals(usuarioId))
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "No se encontró la cuenta."));
+        if (cuenta.getTipo() != com.dev.control_financiero.enums.TipoCuenta.CREDITO
+                || ciclo.fechaPago().isBefore(ciclo.fechaCorte())) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Selecciona una tarjeta de crédito y una fecha de pago igual o posterior al corte.");
+        }
+        cuenta.setFechaCorte(ciclo.fechaCorte());
+        cuenta.setFechaPago(ciclo.fechaPago());
+        cuenta.setPendienteCiclo(ciclo.pendienteCiclo());
+        return cuentaRepository.save(cuenta);
+    }
+
     public List<Cuenta> listarCuentas() {
         return cuentaRepository.findAll();
     }
